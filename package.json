@@ -6,13 +6,12 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
+    "db:reset": "prisma migrate reset --force",
+    "db:reset:no-seed": "prisma migrate reset --force --skip-seed",
     "worker:notifications": "node workers/notificationWorker.js",
     "import:courses": "node src/scripts/importCourses.js",
     "seed": "node prisma/seed.js",
     "repair:lesson-videos": "node src/scripts/repairLessonVideos.js"
-  },
-  "prisma": {
-    "seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@prisma/client": "^6.19.2",
