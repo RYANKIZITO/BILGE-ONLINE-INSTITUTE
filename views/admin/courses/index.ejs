@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Courses</title>
+</head>
+<body class="theme-<%= themePreference || "light" %>">
+  <div class="page stack-lg">
+    <div class="button-row">
+      <a class="back-link" href="/admin/dashboard">Back to Admin Dashboard</a>
+      <a class="button primary" href="/admin/courses/new">Add Course</a>
+    </div>
+
+    <header class="page-header">
+      <div>
+        <p class="page-eyebrow">Course Administration</p>
+        <h1>Manage Courses</h1>
+        <p class="page-subtitle">Create courses, assign instructors, and keep every course inside the right category.</p>
+      </div>
+    </header>
+
+    <% if (flash && flash.message) { %>
+      <div class="flash flash-<%= flash.type || "info" %>"><%= flash.message %></div>
+    <% } %>
+
+    <section class="card stack-md">
+      <% if (!courses || courses.length === 0) { %>
+        <div class="empty-state">No courses are available yet. Use Add Course to create the first one.</div>
+      <% } else { %>
+        <div class="search-bar">
+          <label class="sr-only" for="adminCourseSearch">Search courses</label>
+          <input
+            id="adminCourseSearch"
+            type="search"
+            placeholder="Search by course title, slug, category, or instructor..."
+          />
+        </div>
+
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Course</th>
+                <th>Category</th>
+                <th>Instructor</th>
+                <th>Status</th>
+                <th>Enrollments</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% courses.forEach((course) => { %>
+                <tr
+                  data-course-search="<%= [
+                    course.title,
+                    course.slug,
+                    course.category?.name || '',
+                    course.instructor?.name || '',
+                    course.instructor?.email || ''
+                  ].join(' ').toLowerCase() %>"
+                >
+                  <td>
+                    <strong><%= course.title %></strong>
+                    <div class="muted"><%= course.slug %></div>
+                  </td>
+                  <td><%= course.category?.name || "Unassigned" %></td>
+                  <td>
+                    <% if (course.instructor) { %>
+                      <strong><%= course.instructor.name %></strong>
+                      <div class="muted"><%= course.instructor.email %></div>
+                    <% } else { %>
+                      <span class="muted">No instructor</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <span class="badge <%= course.published ? 'success' : 'warning' %>"><%= course.status %></span>
+                    <div class="muted"><%= course.published ? "Published" : "Unpublished" %></div>
+                  </td>
+                  <td><%= course._count?.enrollments || 0 %></td>
+                  <td>
+                    <div class="button-row">
+                      <a class="button" href="/admin/courses/<%= course.id %>/edit">Edit</a>
+                      <form method="POST" action="/admin/courses/<%= course.id %>/delete" onsubmit="return confirm('Delete this course and its related records from the system?');">
+                        <button class="ghost" type="submit">Delete</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+        <div id="adminCourseSearchEmpty" class="empty-state" hidden>No courses match that search.</div>
+      <% } %>
+    </section>
+  </div>
+
+  <% if (courses && courses.length > 0) { %>
+    <script>
+      (() => {
+        const searchInput = document.getElementById("adminCourseSearch");
+        const rows = Array.from(document.querySelectorAll("tbody tr[data-course-search]"));
+        const emptyState = document.getElementById("adminCourseSearchEmpty");
+
+        if (!searchInput || rows.length === 0) return;
+
+        const applySearch = () => {
+          const query = searchInput.value.trim().toLowerCase();
+          let visibleCount = 0;
+
+          rows.forEach((row) => {
+            const haystack = row.dataset.courseSearch || "";
+            const matches = !query || haystack.includes(query);
+            row.style.display = matches ? "" : "none";
+            if (matches) visibleCount += 1;
+          });
+
+          if (emptyState) {
+            emptyState.hidden = visibleCount !== 0;
+          }
+        };
+
+        searchInput.addEventListener("input", applySearch);
+      })();
+    </script>
+  <% } %>
+</body>
+</html>

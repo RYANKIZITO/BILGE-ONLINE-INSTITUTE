@@ -1,0 +1,111 @@
+<form class="site-form career-application-form" method="post" action="/careers" enctype="multipart/form-data">
+  <input class="honeypot-field" type="text" name="website" value="" tabindex="-1" autocomplete="off" />
+
+  <div class="form-row">
+    <label class="form-field">
+      <span class="field-label">Full name</span>
+      <input type="text" name="fullName" value="<%= values?.fullName || '' %>" placeholder="Your full name" />
+    </label>
+    <label class="form-field">
+      <span class="field-label">Email address</span>
+      <input type="email" name="email" value="<%= values?.email || '' %>" placeholder="you@example.com" />
+    </label>
+  </div>
+
+  <div class="form-row">
+    <label class="form-field">
+      <span class="field-label">Phone number</span>
+      <input type="tel" name="phone" value="<%= values?.phone || '' %>" placeholder="+256..." />
+    </label>
+    <label class="form-field">
+      <span class="field-label">Location</span>
+      <input type="text" name="location" value="<%= values?.location || '' %>" placeholder="City, country" />
+    </label>
+  </div>
+
+  <div class="form-row">
+    <label class="form-field">
+      <span class="field-label">Instructor role</span>
+      <select name="role">
+        <option value="">Select an instructor role</option>
+        <% options.roleOptions.forEach((option) => { %>
+          <option value="<%= option %>" <%= values?.role === option ? 'selected' : '' %>><%= option %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label class="form-field">
+      <span class="field-label">Employment type</span>
+      <select name="employmentType">
+        <option value="">Select an option</option>
+        <% options.employmentTypeOptions.forEach((option) => { %>
+          <option value="<%= option %>" <%= values?.employmentType === option ? 'selected' : '' %>><%= option %></option>
+        <% }) %>
+      </select>
+    </label>
+  </div>
+
+  <div class="form-row">
+    <label class="form-field">
+      <span class="field-label">Experience level</span>
+      <select name="experienceLevel">
+        <option value="">Select your level</option>
+        <% options.experienceLevelOptions.forEach((option) => { %>
+          <option value="<%= option %>" <%= values?.experienceLevel === option ? 'selected' : '' %>><%= option %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label class="form-field">
+      <span class="field-label">Availability</span>
+      <input type="text" name="availability" value="<%= values?.availability || '' %>" placeholder="Immediate, 2 weeks, 1 month..." />
+    </label>
+  </div>
+
+  <div class="form-row">
+    <label class="form-field">
+      <span class="field-label">LinkedIn URL</span>
+      <input type="url" name="linkedinUrl" value="<%= values?.linkedinUrl || '' %>" placeholder="https://linkedin.com/in/..." />
+    </label>
+    <label class="form-field">
+      <span class="field-label">Portfolio or website</span>
+      <input type="url" name="portfolioUrl" value="<%= values?.portfolioUrl || '' %>" placeholder="https://yourportfolio.com" />
+    </label>
+  </div>
+
+  <div class="form-row form-row--single">
+    <label class="form-field">
+      <span class="field-label">Salary expectation</span>
+      <input type="text" name="salaryExpectation" value="<%= values?.salaryExpectation || '' %>" placeholder="Optional" />
+    </label>
+  </div>
+
+  <label class="form-field">
+    <span class="field-label">Why do you want to work with Bilge?</span>
+    <textarea name="coverLetter" placeholder="Share your relevant experience, strengths, and the kind of impact you want to make at Bilge."><%= values?.coverLetter || '' %></textarea>
+    <span class="field-note">Minimum 80 characters. This helps the team review your application faster.</span>
+  </label>
+
+  <div class="form-row career-upload-row">
+    <label class="form-field upload-card">
+      <span class="field-label">Resume / CV</span>
+      <input type="file" name="resumeFile" accept=".pdf,.doc,.docx,.rtf,.txt,.jpg,.jpeg,.png,.webp" />
+      <span class="file-help">Required. PDF, DOC, DOCX, RTF, TXT, JPG, PNG, or WebP up to 10MB.</span>
+    </label>
+    <label class="form-field upload-card">
+      <span class="field-label">Intro video</span>
+      <input type="file" name="introVideo" accept=".mp4,.webm,.mov,.m4v,video/mp4,video/webm,video/quicktime" />
+      <span class="file-help">Optional. Upload a brief introduction video up to 10MB in MP4, WebM, MOV, or M4V.</span>
+    </label>
+  </div>
+
+  <div class="form-row career-upload-row">
+    <label class="form-field upload-card">
+      <span class="field-label">Supporting documents</span>
+      <input type="file" name="supportingDocuments" multiple accept=".pdf,.doc,.docx,.rtf,.txt,.jpg,.jpeg,.png,.webp" />
+      <span class="file-help">Optional. Certificates, portfolio samples, references, or any supporting files. Up to 4 files.</span>
+    </label>
+  </div>
+
+  <div class="hero-actions career-form-actions">
+    <button class="button button-cta-light" type="submit">Submit application</button>
+  </div>
+</form>

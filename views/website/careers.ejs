@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include("partials/head") %>
+  <body>
+    <div class="site-shell careers-page">
+      <%- include("partials/header") %>
+      <main>
+        <% const activeVacancies = (page.vacancies || []).filter((item) => item.isOpen); %>
+        <section class="page-hero">
+          <div class="container careers-hero-grid">
+            <article class="page-hero-panel">
+              <%- include("components/breadcrumbs", { items: [{ label: "Careers" }] }) %>
+              <%- include("components/flash", { flash }) %>
+              <span class="eyebrow"><%= page.hero.eyebrow %></span>
+              <h1 class="careers-hero-title"><%= page.hero.title %></h1>
+              <p><%= page.hero.subtitle %></p>
+              <div class="hero-actions">
+                <a class="button button-cta-light" href="#career-application-form">Apply now</a>
+                <a class="button-secondary" href="mailto:Bilgeonlineinstitute@gmail.com">Talk to recruitment</a>
+              </div>
+            </article>
+
+            <aside class="career-panel careers-hero-side">
+              <span class="eyebrow">Instructor recruitment</span>
+              <h3>Faculty recruitment at a glance.</h3>
+              <div class="careers-metric-grid">
+                <% page.metrics.forEach((metric) => { %>
+                  <article class="metric-card">
+                    <strong><%= metric.value %></strong>
+                    <span><%= metric.label %></span>
+                  </article>
+                <% }) %>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container">
+            <div class="section-copy">
+              <span class="eyebrow"><%= activeVacancies.length ? "Current vacancies" : "Who we're looking for" %></span>
+              <h2>
+                <%= activeVacancies.length
+                  ? "Current instructor openings at Bilge Online Institute."
+                  : "Subject-matter experts who can teach with clarity, warmth, and real industry depth." %>
+              </h2>
+              <p>
+                <%= activeVacancies.length
+                  ? "Only the active vacancies below appear in the application form, so applicants always choose from the current intake."
+                  : "We are actively seeking instructors across the following disciplines and adjacent specializations." %>
+              </p>
+            </div>
+            <div class="cards-grid four">
+              <% (activeVacancies.length ? activeVacancies : page.highlights).forEach((item) => { %>
+                <article class="value-card career-signal-card">
+                  <h3><%= item.title %></h3>
+                  <% if (item.meta) { %>
+                    <span class="career-chip"><%= item.meta %></span>
+                  <% } %>
+                  <% if (item.deadlineLabel) { %>
+                    <span class="career-chip">Deadline: <%= item.deadlineLabel %></span>
+                  <% } %>
+                  <p><%= item.body %></p>
+                </article>
+              <% }) %>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container contact-grid careers-main-grid">
+            <div class="career-side-stack">
+              <article class="career-panel">
+                <span class="eyebrow">What you bring</span>
+                <h3>The standards we expect from Bilge instructors.</h3>
+                <div class="career-opportunity-grid">
+                  <% page.openings.forEach((opening) => { %>
+                    <article class="detail-card career-opportunity-card">
+                      <span class="career-chip"><%= opening.meta %></span>
+                      <h4><%= opening.title %></h4>
+                      <p><%= opening.body %></p>
+                    </article>
+                  <% }) %>
+                </div>
+              </article>
+
+              <article class="career-panel">
+                <span class="eyebrow">What Bilge offers</span>
+                <h3>Why strong instructors choose to grow with Bilge.</h3>
+                <div class="career-principles">
+                  <% page.principles.forEach((principle) => { %>
+                    <div class="soft-banner">
+                      <strong><%= principle %></strong>
+                    </div>
+                  <% }) %>
+                </div>
+              </article>
+
+              <article class="career-panel">
+                <span class="eyebrow">How to apply</span>
+                <h3>Send a focused application package before the deadline.</h3>
+                <div class="career-process">
+                  <% page.process.forEach((step, index) => { %>
+                    <div class="timeline-card career-process-card">
+                      <span class="career-process-card__index">0<%= index + 1 %></span>
+                      <div>
+                        <h4><%= step.title %></h4>
+                        <p><%= step.body %></p>
+                      </div>
+                    </div>
+                  <% }) %>
+                </div>
+              </article>
+            </div>
+
+            <article class="form-card career-form-card" id="career-application-form">
+              <span class="eyebrow">Application form</span>
+              <h3>Submit your instructor application to Bilge.</h3>
+              <% if (activeVacancies.length) { %>
+                <p class="career-form-intro">
+                  Your submission is emailed directly to
+                  <strong>Bilgeonlineinstitute@gmail.com</strong> with your uploaded files.
+                </p>
+                <div class="soft-banner career-form-note">
+                  <strong>Required for this intake</strong>
+                  <span>
+                    Upload your CV plus a brief cover letter or a short video introduction of up to 2 minutes.
+                    The role list below is generated only from Bilge's active vacancies.
+                  </span>
+                </div>
+                <% if (formErrors?.length) { %>
+                  <div class="flash-banner flash-error">
+                    <strong>Please fix the following</strong>
+                    <span><%= formErrors.join(" ") %></span>
+                  </div>
+                <% } %>
+                <%- include("components/career-application-form", { values: formValues, options: page }) %>
+              <% } else { %>
+                <div class="soft-banner career-form-note">
+                  <strong>No active vacancies right now</strong>
+                  <span>The careers CMS controls this form. As soon as a vacancy is marked active, it will appear here and in the role selector.</span>
+                </div>
+              <% } %>
+            </article>
+          </div>
+        </section>
+      </main>
+      <%- include("partials/footer") %>
+    </div>
+    <script src="/public/js/website-theme.js" defer></script>
+  </body>
+</html>

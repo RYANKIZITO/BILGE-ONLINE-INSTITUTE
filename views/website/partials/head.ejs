@@ -1,0 +1,96 @@
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= pageSeo?.title || pageTitle || "Bilge Online Institute" %></title>
+  <meta
+    name="description"
+    content="<%= pageSeo?.description || 'Bilge Online Institute public website' %>"
+  />
+  <% if (pageSeo?.canonicalPath) { %>
+    <link rel="canonical" href="<%= pageSeo.canonicalPath %>" />
+  <% } %>
+  <link rel="icon" type="image/png" href="/public/images/branding/favicon.png" />
+  <link rel="apple-touch-icon" href="/public/images/branding/favicon.png" />
+  <script>
+    (function () {
+      try {
+        var themeKey = "bilge-website-theme";
+        var languageKey = "bilge-language-preference";
+        var legacyLanguageKey = "bilge-website-language";
+        var translationCookieKey = "googtrans";
+        var languageParamKey = "__bilge_lang";
+        var normalizeLanguage = function (languageCode) {
+          var value = String(languageCode || "").trim();
+          if (!value) return "en";
+          if (/^zh-cn$/i.test(value)) return "zh-CN";
+          if (/^zh-tw$/i.test(value)) return "zh-TW";
+          return value.split("-")[0].toLowerCase();
+        };
+        var storedTheme = window.localStorage.getItem(themeKey);
+        var theme =
+          storedTheme === "light" || storedTheme === "dark"
+            ? storedTheme
+            : window.matchMedia("(prefers-color-scheme: light)").matches
+              ? "light"
+              : "dark";
+        var params = new URLSearchParams(window.location.search);
+        var requestedLanguage = params.get(languageParamKey);
+        var serverLanguage = <%- JSON.stringify(languagePreference || null) %>;
+        var storedLanguage =
+          window.localStorage.getItem(languageKey) || window.localStorage.getItem(legacyLanguageKey);
+        var browserLanguage = (navigator.language || "en").toLowerCase();
+        var resolvedLanguage =
+          normalizeLanguage(requestedLanguage || serverLanguage || storedLanguage || browserLanguage || "en");
+        var hostname = window.location.hostname || "";
+        var cookieDomain =
+          hostname && hostname !== "localhost" && !/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)
+            ? ";domain=." + hostname
+            : "";
+        var clearCookie = function () {
+          var expired = translationCookieKey + "=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT;SameSite=Lax";
+          document.cookie = expired;
+          if (cookieDomain) {
+            document.cookie = expired + cookieDomain;
+          }
+        };
+        var setCookie = function (languageCode) {
+          var cookieValue = "/en/" + languageCode;
+          var baseCookie =
+            translationCookieKey + "=" + cookieValue + ";path=/;max-age=31536000;SameSite=Lax";
+          document.cookie = baseCookie;
+          if (cookieDomain) {
+            document.cookie = baseCookie + cookieDomain;
+          }
+        };
+        document.documentElement.setAttribute("data-theme", theme);
+        document.documentElement.style.colorScheme = theme;
+        document.documentElement.setAttribute("lang", resolvedLanguage);
+        window.__bilgeServerLanguagePreference = serverLanguage;
+        window.__bilgeLanguageUserAuthenticated = <%- JSON.stringify(Boolean(user)) %>;
+        window.__bilgePreferredLanguage = resolvedLanguage;
+
+        if (resolvedLanguage) {
+          window.localStorage.setItem(languageKey, resolvedLanguage);
+          window.localStorage.setItem(legacyLanguageKey, resolvedLanguage);
+        }
+
+        if (resolvedLanguage && resolvedLanguage !== "en") {
+          setCookie(resolvedLanguage);
+        } else {
+          clearCookie();
+        }
+      } catch (error) {
+        document.documentElement.setAttribute("data-theme", "dark");
+        document.documentElement.style.colorScheme = "dark";
+        document.documentElement.setAttribute("lang", "en");
+        window.__bilgeServerLanguagePreference = <%- JSON.stringify(languagePreference || null) %>;
+        window.__bilgeLanguageUserAuthenticated = <%- JSON.stringify(Boolean(user)) %>;
+        window.__bilgePreferredLanguage = "en";
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="/public/css/language-selector.css" />
+  <link rel="stylesheet" href="/public/css/website.css" />
+  <script src="/public/js/website-preferences.js" defer></script>
+  <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
+</head>

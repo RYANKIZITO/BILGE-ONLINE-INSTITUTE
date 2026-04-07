@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= assessment.title %></title>
+</head>
+<body class="theme-<%= themePreference || "light" %>">
+  <div class="page stack-lg">
+    <div>
+      <a class="back-link" href="/courses/<%= course.slug %>/assessments">Back to Assessments</a>
+      <header class="page-header">
+        <div>
+          <p class="page-eyebrow">Assessment Review</p>
+          <h1><%= assessment.title %></h1>
+          <% if (assessment.description) { %>
+            <p class="page-subtitle"><%= assessment.description %></p>
+          <% } %>
+        </div>
+      </header>
+    </div>
+
+    <% if (flash && flash.message) { %>
+      <div class="flash flash-<%= flash.type || "info" %>"><%= flash.message %></div>
+    <% } %>
+
+    <% if (retakeSummary) { %>
+      <section class="attempt-box stack-sm">
+        <strong>Retake Policy</strong>
+        <div class="split">
+          <span>Pass mark: <%= retakeSummary.passMarkScore %> / <%= assessment.maxScore %> (<%= retakeSummary.passPercent %>%)</span>
+          <span>Attempts used: <%= retakeSummary.attemptsUsed %> / <%= retakeSummary.maxAttempts %></span>
+          <span>Attempts remaining: <%= retakeSummary.attemptsRemaining %></span>
+        </div>
+
+        <% if (retakeSummary.submissions && retakeSummary.submissions.length > 0) { %>
+          <ul>
+            <% retakeSummary.submissions.forEach((item) => { %>
+              <li>Attempt <strong><%= item.attempt %></strong> - Score <strong><%= item.score %> / <%= assessment.maxScore %></strong></li>
+            <% }) %>
+          </ul>
+        <% } %>
+      </section>
+    <% } %>
+
+    <% if (submission) { %>
+      <div class="flash <%= retakeSummary && !retakeSummary.hasPassed ? "flash-error" : "flash-success" %>">
+        <strong>Latest attempt submitted.</strong>
+        <div>Attempt: <%= submission.attempt %></div>
+        <div>Score: <%= submission.score %> / <%= assessment.maxScore %></div>
+        <% if (retakeSummary?.bestSubmission) { %>
+          <div>Best score: <%= retakeSummary.bestSubmission.score %> / <%= assessment.maxScore %></div>
+        <% } %>
+        <div>Status: <strong><%= retakeSummary?.hasPassed ? "Passed" : "Not yet passed" %></strong></div>
+      </div>
+    <% } %>
+
+    <form class="stack-lg" method="POST" action="/courses/<%= course.slug %>/assessments/<%= assessment.id %>/submit">
+      <% assessment.questions.forEach((question, index) => { %>
+        <% const existingAnswer = answersByQuestionId[question.id]; %>
+        <% const shortTextFeedback = shortTextFeedbackByQuestionId ? shortTextFeedbackByQuestionId[question.id] : null; %>
+
+        <section class="question-card stack-md">
+          <div>
+            <p class="page-eyebrow">Question <%= index + 1 %></p>
+            <h2 style="font-size: 1.2rem; margin-bottom: 0.5rem;"><%= question.prompt %></h2>
+          </div>
+
+          <% if (question.type === "MULTIPLE_CHOICE") { %>
+            <div class="stack-sm">
+              <% question.options.forEach((option, optionIndex) => { %>
+                <%
+                  const isSelected = existingAnswer?.selectedOptionIndex === optionIndex;
+                  const isCorrectOption = question.correctOptionIndex === optionIndex;
+                  let optionClass = "list-card";
+
+                  if (submission && isCorrectOption && isSelected) {
+                    optionClass += " flash-success";
+                  } else if (submission && isCorrectOption) {
+                    optionClass += " flash-info";
+                  } else if (submission && isSelected && !isCorrectOption) {
+                    optionClass += " flash-error";
+                  }
+                %>
+                <label class="<%= optionClass %>" style="display: flex; gap: 0.75rem; align-items: flex-start; margin-bottom: 0;">
+                  <input
+                    type="radio"
+                    name="question_<%= question.id %>"
+                    value="<%= optionIndex %>"
+                    <%= isSelected ? "checked" : "" %>
+                    <%= (retakeSummary && !retakeSummary.canRetake && submission) || retakeSummary?.hasPassed ? "disabled" : "" %>
+                    style="width: auto; margin-top: 0.1rem;"
+                  />
+                  <span><%= option %></span>
+                </label>
+              <% }) %>
+            </div>
+
+            <% if (submission) { %>
+              <% if (existingAnswer?.isCorrect === true) { %>
+                <div class="flash flash-success">Correct answer selected.</div>
+              <% } else { %>
+                <div class="flash flash-error">Your selected answer was not correct. The correct answer is highlighted above.</div>
+              <% } %>
+            <% } %>
+          <% } %>
+
+          <% if (question.type === "SHORT_TEXT") { %>
+            <div class="field">
+              <label for="question_<%= question.id %>">Your answer</label>
+              <textarea
+                id="question_<%= question.id %>"
+                name="question_<%= question.id %>"
+                <%= (retakeSummary && !retakeSummary.canRetake && submission) || retakeSummary?.hasPassed ? "disabled" : "" %>
+              ><%= existingAnswer?.answerText || "" %></textarea>
+            </div>
+
+            <% if (submission) { %>
+              <div class="answer-review">
+                <strong>Your submitted answer</strong>
+                <div><%= existingAnswer?.answerText || "No answer submitted." %></div>
+              </div>
+
+              <% if (shortTextFeedback) { %>
+                <div class="keyword-box">
+                  <strong>Keyword grading</strong>
+                  <div class="keyword-list" style="margin-top: 0.75rem;">
+                    <% shortTextFeedback.matchedKeywords.forEach((keyword) => { %>
+                      <span class="badge success"><%= keyword %></span>
+                    <% }) %>
+                    <% shortTextFeedback.missedKeywords.forEach((keyword) => { %>
+                      <span class="badge danger"><%= keyword %></span>
+                    <% }) %>
+                  </div>
+                  <div class="muted" style="margin-top: 0.75rem;">
+                    Matched keywords: <strong><%= shortTextFeedback.matchedCount %></strong> / <%= shortTextFeedback.totalKeywords %>
+                  </div>
+                </div>
+              <% } %>
+            <% } %>
+          <% } %>
+        </section>
+      <% }) %>
+
+      <% if (!retakeSummary?.hasPassed && (!submission || retakeSummary?.canRetake)) { %>
+        <div class="button-row">
+          <button class="primary" type="submit"><%= submission ? "Retake Assessment" : "Submit Assessment" %></button>
+        </div>
+      <% } %>
+    </form>
+  </div>
+</body>
+</html>

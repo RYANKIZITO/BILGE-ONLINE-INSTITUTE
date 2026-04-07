@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login</title>
+</head>
+<body class="theme-<%= themePreference || "light" %>">
+  <div class="auth-shell">
+    <section class="auth-card">
+      <aside class="auth-aside">
+        <%- include("partials/brand-panel", {
+          mark: "Bilge Online Institute",
+          kicker: "Secure academic access",
+          title: "Return to a professional digital campus built for serious learning.",
+          description: "Sign in to continue your Bilge experience across courses, assessments, academic records, certificates, and guided progress tracking.",
+          highlights: [
+            {
+              title: "Academic credibility",
+              description: "Keep transcripts, performance tracking, and verified completion records in one secure workspace.",
+            },
+            {
+              title: "Organized progression",
+              description: "Move from lessons to assessments and certificates with clear structure and polished navigation.",
+            },
+            {
+              title: "Institute-grade continuity",
+              description: "Students, instructors, and administrators operate inside one connected academic platform.",
+            },
+          ],
+          metrics: [
+            { value: "Courses", label: "Structured learning delivery" },
+            { value: "Records", label: "Transcript and profile continuity" },
+            { value: "Certificates", label: "Verified completion workflow" },
+          ],
+          supportText: "Trusted learning infrastructure for ambitious students, instructors, and modern academic operations.",
+        }) %>
+      </aside>
+
+      <main class="auth-main">
+        <div class="stack-md">
+          <header>
+            <p class="page-eyebrow">Welcome Back</p>
+            <h2 class="page-title">Sign in to continue</h2>
+            <p class="page-subtitle">Use your institute credentials to access your dashboard.</p>
+          </header>
+
+          <% if (error) { %>
+            <div class="flash flash-error"><%= error %></div>
+          <% } %>
+
+          <div class="auth-socials" aria-label="Social sign in options">
+            <a
+              class="button social-button"
+              href="<%= socialAuth?.google?.enabled ? '/auth/google?mode=login' : '#' %>"
+              <%= socialAuth?.google?.enabled ? '' : 'aria-disabled="true" tabindex="-1"' %>
+            >
+              Continue with Google
+            </a>
+            <a
+              class="button social-button"
+              href="<%= socialAuth?.apple?.enabled ? '/auth/apple?mode=login' : '#' %>"
+              <%= socialAuth?.apple?.enabled ? '' : 'aria-disabled="true" tabindex="-1"' %>
+            >
+              Continue with Apple ID
+            </a>
+          </div>
+
+          <% if (!socialAuth?.google?.enabled || !socialAuth?.apple?.enabled) { %>
+            <p class="muted auth-meta">
+              Social sign-in buttons appear here now. Add the matching provider environment variables to enable them fully.
+            </p>
+          <% } %>
+
+          <div class="auth-divider" aria-hidden="true"><span>or sign in with email</span></div>
+
+          <form class="auth-form" method="POST" action="/login">
+            <div class="field">
+              <label for="email">Email</label>
+              <input id="email" name="email" type="email" autocomplete="email" required />
+            </div>
+
+            <div class="field">
+              <label for="password">Password</label>
+              <input id="password" name="password" type="password" autocomplete="current-password" required />
+            </div>
+
+            <button class="primary" type="submit">Sign In</button>
+          </form>
+
+          <p class="muted">New student or instructor? <a href="/register">Create an account</a></p>
+        </div>
+      </main>
+    </section>
+  </div>
+</body>
+</html>

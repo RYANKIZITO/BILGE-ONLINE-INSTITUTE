@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title><%= course.title %> Gradebook</title>
+
+<style>
+.catalog-link {
+  text-decoration: none;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #f9f9f9;
+  display: inline-block;
+  margin-bottom: 12px;
+  margin-right: 8px;
+}
+
+.flash {
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  border: 1px solid #ddd;
+  background: #fff;
+}
+
+.flash-success {
+  border-color: #b7e2c4;
+  background: #e7f6ec;
+  color: #146c43;
+}
+
+.flash-error {
+  border-color: #f5c2c7;
+  background: #f8d7da;
+  color: #842029;
+}
+
+.flash-info {
+  border-color: #c7dcff;
+  background: #f0f7ff;
+  color: #1d4ed8;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.summary-card {
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+}
+
+.summary-card strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+
+th, td {
+  border: 1px solid #e5e5e5;
+  padding: 8px;
+  text-align: left;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 12px;
+  border: 1px solid #ccc;
+}
+
+.status-badge.submitted {
+  background: #e7f6ec;
+  color: #146c43;
+  border-color: #b7e2c4;
+}
+
+.status-badge.pending {
+  background: #fff3cd;
+  color: #664d03;
+  border-color: #ffe69c;
+}
+</style>
+</head>
+
+<body class="theme-<%= themePreference || "light" %>">
+<a class="catalog-link" href="/courses/<%= course.slug %>">← Back to Course</a>
+<a class="catalog-link" href="/courses/<%= course.slug %>/assessments">Assessments</a>
+
+<h1><%= course.title %> Gradebook</h1>
+
+<% if (flash && flash.message) { %>
+  <div class="flash flash-<%= flash.type || "info" %>"><%= flash.message %></div>
+<% } %>
+
+<div class="summary-grid">
+  <div class="summary-card">
+    <strong>Continuous Percent</strong>
+    <%= gradeSummary.continuousPercent.toFixed(2) %>%
+  </div>
+
+  <div class="summary-card">
+    <strong>Continuous Weighted</strong>
+    <%= gradeSummary.continuousWeighted.toFixed(2) %>
+  </div>
+
+  <div class="summary-card">
+    <strong>Mid-Programme Percent</strong>
+    <%= gradeSummary.midPercent.toFixed(2) %>%
+  </div>
+
+  <div class="summary-card">
+    <strong>Mid-Programme Weighted</strong>
+    <%= gradeSummary.midWeighted.toFixed(2) %>
+  </div>
+
+  <div class="summary-card">
+    <strong>Final Capstone Percent</strong>
+    <%= gradeSummary.finalCapstonePercent.toFixed(2) %>%
+  </div>
+
+  <div class="summary-card">
+    <strong>Final Capstone Weighted</strong>
+    <%= gradeSummary.finalCapstoneWeighted.toFixed(2) %>
+  </div>
+
+  <div class="summary-card">
+    <strong>Final Course Mark</strong>
+    <%= gradeSummary.finalCourseMark.toFixed(2) %>%
+  </div>
+</div>
+
+<% if (!assessments || assessments.length === 0) { %>
+  <p>No published assessments available for this course.</p>
+<% } else { %>
+  <table>
+    <thead>
+      <tr>
+        <th>Assessment</th>
+        <th>Type</th>
+        <th>Weight</th>
+        <th>Score</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% assessments.forEach((assessment) => { %>
+        <% const submission = submissionsByAssessmentId[assessment.id]; %>
+        <tr>
+          <td><%= assessment.title %></td>
+          <td><%= assessment.type.replaceAll("_", " ") %></td>
+          <td><%= assessment.categoryWeight %>%</td>
+          <td>
+            <% if (submission && submission.score != null) { %>
+              <%= submission.score %> / <%= assessment.maxScore %>
+            <% } else { %>
+              -
+            <% } %>
+          </td>
+          <td>
+            <% if (submission) { %>
+              <span class="status-badge submitted">Submitted</span>
+            <% } else { %>
+              <span class="status-badge pending">Pending</span>
+            <% } %>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+<% } %>
+</body>
+</html>
+

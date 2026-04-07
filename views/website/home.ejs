@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include("partials/head") %>
+  <body>
+    <%
+      const intentIcon = (icon) => {
+        switch (icon) {
+          case "launch":
+            return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+          case "switch":
+            return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10l-2.8-2.8M17 17H7l2.8 2.8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+          case "growth":
+            return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 17 18 7M11 7h7v7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+          default:
+            return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5a7 7 0 1 0 7 7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="m15 9 4-4M19 9V5h-4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        }
+      };
+
+      const initials = (name = "Bilge Learner") =>
+        String(name)
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean)
+          .slice(0, 2)
+          .map((part) => part.charAt(0).toUpperCase())
+          .join("") || "BL";
+    %>
+    <div class="site-shell">
+      <%- include("partials/header") %>
+
+      <main>
+        <section class="hero hero--home">
+          <div class="container hero-grid">
+            <div class="hero-copy">
+              <%- include("components/flash", { flash }) %>
+              <span class="eyebrow"><%= home.hero.eyebrow %></span>
+              <h1><%= home.hero.title %></h1>
+              <p><%= home.hero.subtitle %></p>
+              <div class="hero-actions">
+                <a class="button button-cta-light" href="/programmes">Explore Programmes</a>
+                <a class="button-secondary" href="/admissions">Admissions Guide</a>
+              </div>
+              <div class="stats-row">
+                <span class="metric-chip"><%= home.stats.courseCount %> published programmes</span>
+                <span class="metric-chip"><%= home.stats.instructorCount %> visible faculty profiles</span>
+                <span class="metric-chip"><%= home.stats.categoryCount %> active categories</span>
+              </div>
+            </div>
+
+            <div class="hero-panel home-hero-panel">
+              <article class="feature-panel">
+                <span class="eyebrow">Before you enroll</span>
+                <h3>Programme information, admissions guidance, and learner records in one place.</h3>
+                <p>
+                  Use the public website to review programmes, compare categories, read admissions
+                  guidance, and contact the institute before registration.
+                </p>
+                <div class="home-hero-points">
+                  <div class="stack-item">
+                    <strong>Programme information</strong>
+                    Browse published programmes by category, title, and current availability.
+                  </div>
+                  <div class="stack-item">
+                    <strong>Admissions guidance</strong>
+                    Read enrollment steps, FAQs, tuition details, and institute contact information.
+                  </div>
+                  <div class="stack-item">
+                    <strong>Learning records</strong>
+                    After registration, students continue into the Bilge LMS for classes, records,
+                    and certificates.
+                  </div>
+                </div>
+              </article>
+              <article class="metric-card">
+                <strong><%= home.stats.certificateCount %></strong>
+                <span>Certificates issued across the Bilge learning system.</span>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container">
+            <div class="intent-panel">
+              <div class="intent-panel__header">
+                <span class="eyebrow">Guided start</span>
+                <h2>What brings you to Bilge today?</h2>
+                <p>Choose a direction and move into the right programmes, admissions steps, or discovery path.</p>
+              </div>
+              <div class="intent-row">
+                <% home.intentPaths.forEach((path) => { %>
+                  <a class="intent-chip" href="<%= path.href %>">
+                    <span class="intent-chip__icon"><%- intentIcon(path.icon) %></span>
+                    <span><%= path.label %></span>
+                  </a>
+                <% }) %>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container">
+            <div class="section-copy section-copy--split">
+              <div>
+                <span class="eyebrow">Trending programmes</span>
+                <h2>Browse current programmes by theme and demand.</h2>
+              </div>
+              <p>
+                These collections group published programmes so you can scan options quickly from the homepage.
+              </p>
+            </div>
+            <div class="curation-grid">
+              <% home.discoveryCollections.forEach((collection) => { %>
+                <article class="curation-column">
+                  <div class="curation-column__header">
+                    <div>
+                      <h3><%= collection.title %></h3>
+                      <p><%= collection.description %></p>
+                    </div>
+                    <a href="<%= collection.href %>">Explore</a>
+                  </div>
+                  <div class="curation-column__list">
+                    <% collection.courses.forEach((course) => { %>
+                      <%- include("components/home-course-compact", { course }) %>
+                    <% }) %>
+                  </div>
+                </article>
+              <% }) %>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container">
+            <div class="section-copy section-copy--split">
+              <div>
+                <span class="eyebrow">Explore careers</span>
+                <h2>Explore programmes by career direction.</h2>
+              </div>
+              <a class="section-link" href="/programmes">Explore all programmes</a>
+            </div>
+            <div class="pathway-grid">
+              <% home.careerPathways.forEach((pathway) => { %>
+                <article class="pathway-card pathway-card--<%= pathway.accent %>">
+                  <a class="pathway-card__media" href="<%= pathway.href %>">
+                    <% if (pathway.imageUrl) { %>
+                      <img src="<%= pathway.imageUrl %>" alt="<%= pathway.title %> pathway" loading="lazy" />
+                    <% } else { %>
+                      <div class="pathway-card__fallback"><%= pathway.title %></div>
+                    <% } %>
+                  </a>
+                  <div class="pathway-card__body">
+                    <span class="kicker-label">Bilge pathway</span>
+                    <h3><a href="<%= pathway.href %>"><%= pathway.title %></a></h3>
+                    <p><%= pathway.description %></p>
+                    <strong><%= pathway.supportingTitle %></strong>
+                  </div>
+                </article>
+              <% }) %>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container">
+            <div class="spotlight-panel">
+              <div class="spotlight-panel__header">
+                <div>
+                  <span class="eyebrow">Professional certificate spotlight</span>
+                  <h2>Compare programmes often chosen for professional certification routes.</h2>
+                </div>
+                <p>
+                  Use this section to review structured, career-focused programmes before opening the full catalogue.
+                </p>
+              </div>
+              <div class="spotlight-grid">
+                <% home.certificationSpotlight.forEach((course) => { %>
+                  <%- include("components/home-course-feature", { course }) %>
+                <% }) %>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container">
+            <div class="section-copy section-copy--split">
+              <div>
+                <span class="eyebrow">Popular by category</span>
+                <h2>Compare programmes by subject area.</h2>
+              </div>
+              <p>
+                Categories make it easier to review related programmes before moving into the full programmes page.
+              </p>
+            </div>
+            <div class="curation-grid">
+              <% home.categoryShowcases.forEach((collection) => { %>
+                <article class="curation-column">
+                  <div class="curation-column__header">
+                    <div>
+                      <h3><%= collection.title %></h3>
+                      <p>Focused pathways grouped to make comparison easier.</p>
+                    </div>
+                    <a href="<%= collection.href %>">View</a>
+                  </div>
+                  <div class="curation-column__list">
+                    <% collection.courses.forEach((course) => { %>
+                      <%- include("components/home-course-compact", { course }) %>
+                    <% }) %>
+                  </div>
+                </article>
+              <% }) %>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container">
+            <div class="section-copy section-copy--split">
+              <div>
+                <span class="eyebrow">Why people choose Bilge</span>
+                <h2>Read learner and stakeholder feedback.</h2>
+              </div>
+              <p>
+                These comments summarize how learners and reviewers describe the programmes and support.
+              </p>
+            </div>
+            <div class="trust-grid">
+              <% home.testimonials.forEach((testimonial) => { %>
+                <article class="trust-card">
+                  <div class="trust-card__header">
+                    <% if (testimonial.profilePhotoUrl) { %>
+                      <img
+                        class="trust-card__avatar"
+                        src="<%= testimonial.profilePhotoUrl %>"
+                        alt="<%= testimonial.name %>"
+                        loading="lazy"
+                      />
+                    <% } else { %>
+                      <div class="trust-card__avatar trust-card__avatar--fallback"><%= initials(testimonial.name) %></div>
+                    <% } %>
+                    <div>
+                      <strong><%= testimonial.name %></strong>
+                      <span><%= [testimonial.role, testimonial.organization].filter(Boolean).join(", ") || "Bilge learner perspective" %></span>
+                    </div>
+                  </div>
+                  <p>"<%= testimonial.quote %>"</p>
+                </article>
+              <% }) %>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container">
+            <div class="section-copy section-copy--split">
+              <div>
+                <span class="eyebrow">Frequently asked questions</span>
+                <h2>Frequently asked questions before enrollment.</h2>
+              </div>
+              <a class="section-link" href="/faqs">View all FAQs</a>
+            </div>
+            <div class="faq-stack-home">
+              <% home.featuredFaqs.forEach((faq, index) => { %>
+                <%- include("components/faq-item", { faq, open: index === 0 }) %>
+              <% }) %>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container">
+            <div class="spotlight-panel spotlight-panel--fresh">
+              <div class="spotlight-panel__header">
+                <div>
+                  <span class="eyebrow">New on Bilge</span>
+                  <h2>Recently added or newly featured programmes.</h2>
+                </div>
+                <p>
+                  Use this section to spot newer listings before browsing the full programmes page.
+                </p>
+              </div>
+              <div class="spotlight-grid">
+                <% home.newProgrammes.forEach((course) => { %>
+                  <%- include("components/home-course-feature", { course }) %>
+                <% }) %>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container cta-panel">
+            <span class="eyebrow">Ready to move forward?</span>
+            <h3>Browse programmes, review admissions, or contact the institute.</h3>
+            <p>
+              Choose the next step that matches where you are in the decision process.
+            </p>
+            <div class="hero-actions">
+              <a class="button button-cta-light" href="/programmes">Browse programmes</a>
+              <a class="button-secondary" href="/admissions">Read admissions guide</a>
+              <a class="button-ghost" href="/contact">Contact Bilge</a>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <%- include("partials/footer") %>
+    </div>
+    <script src="/public/js/website-theme.js" defer></script>
+  </body>
+</html>

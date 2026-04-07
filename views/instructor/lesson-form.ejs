@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= mode === "edit" ? "Edit Lesson" : "Create Lesson" %></title>
+
+    <link rel="stylesheet" href="/public/css/dashboards.css" />
+
+    <style>
+      .catalog-link {
+        text-decoration: none;
+        padding: 6px 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        background: #f9f9f9;
+        display: inline-block;
+        margin-right: 8px;
+        margin-bottom: 12px;
+      }
+
+      form {
+        max-width: 800px;
+      }
+
+      label {
+        display: block;
+        margin-top: 12px;
+        font-weight: 600;
+      }
+
+      input[type="text"],
+      input[type="url"],
+      input[type="number"],
+      textarea {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        margin-top: 6px;
+      }
+
+      textarea {
+        min-height: 160px;
+      }
+
+      .checkbox-row {
+        margin-top: 12px;
+      }
+
+      .checkbox-row label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 0;
+        font-weight: 600;
+      }
+
+      .checkbox-row input[type="checkbox"] {
+        margin: 0;
+      }
+    </style>
+  </head>
+
+  <body class="theme-<%= themePreference || "light" %>">
+    <div class="page">
+      <header class="page-header">
+        <div>
+          <h1><%= mode === "edit" ? "Edit Lesson" : "Create Lesson" %></h1>
+          <p class="muted"><%= course.title %></p>
+        </div>
+
+        <nav class="nav-links">
+          <a href="/instructor/courses/<%= course.id %>/manage">Back to Course</a>
+        </nav>
+      </header>
+
+      <% if (flash && flash.message) { %>
+        <div class="flash flash-<%= flash.type || "info" %>"><%= flash.message %></div>
+      <% } %>
+
+      <% const formAction = mode === "edit"
+        ? `/instructor/lessons/${lesson.id}`
+        : `/instructor/courses/${course.id}/lessons`; %>
+
+      <form method="POST" action="<%= formAction %>" enctype="multipart/form-data">
+        <label for="title">Title</label>
+        <input id="title" name="title" type="text" value="<%= lesson?.title || "" %>" required />
+
+        <label for="content">Content</label>
+        <textarea id="content" name="content"><%= lesson?.content || "" %></textarea>
+
+        <label for="docxFile">Upload DOCX</label>
+        <input
+          id="docxFile"
+          name="docxFile"
+          type="file"
+          accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        />
+        <p class="muted">Upload a DOCX document if this lesson uses a document instead of video.</p>
+
+        <label for="videoUrl">Video URL</label>
+        <input id="videoUrl" name="videoUrl" type="url" value="<%= lesson?.videoUrl || "" %>" />
+
+        <label for="videoFile">Upload Video</label>
+        <input
+          id="videoFile"
+          name="videoFile"
+          type="file"
+          accept="video/mp4,video/webm,video/quicktime,video/x-m4v,video/x-msvideo,video/x-matroska,.mp4,.webm,.mov,.m4v,.avi,.mkv"
+        />
+        <p class="muted">Upload a file OR paste an external URL. If you upload a file, the LMS sends it to Cloudflare Stream for storage and delivery automatically.</p>
+        <p class="muted">You can upload MP4, WebM, MOV, M4V, AVI, or MKV. External lesson links still stay external and are not copied into Cloudflare.</p>
+
+        <label for="videoDurationSec">Video Duration (seconds)</label>
+        <input
+          id="videoDurationSec"
+          name="videoDurationSec"
+          type="number"
+          min="0"
+          step="1"
+          value="<%= lesson?.videoDurationSec ?? "" %>"
+        />
+
+        <div class="checkbox-row">
+          <label for="published">
+            <input id="published" type="checkbox" name="published" <%= lesson?.published ? "checked" : "" %> />
+            <span>Published</span>
+          </label>
+        </div>
+
+        <button type="submit"><%= mode === "edit" ? "Save Changes" : "Create Lesson" %></button>
+      </form>
+    </div>
+  </body>
+</html>
+

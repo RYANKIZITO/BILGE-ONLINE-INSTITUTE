@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Question</title>
+    <link rel="stylesheet" href="/public/css/dashboards.css" />
+
+    <style>
+      form {
+        max-width: 900px;
+      }
+
+      label {
+        display: block;
+        margin-top: 12px;
+        font-weight: 600;
+      }
+
+      input[type="text"],
+      textarea,
+      select {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        margin-top: 6px;
+      }
+
+      textarea {
+        min-height: 120px;
+      }
+
+      .mcq-block,
+      .short-text-block {
+        margin-top: 16px;
+        padding: 16px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+      }
+
+      .option-row {
+        margin-top: 10px;
+      }
+
+      .helper-text {
+        margin-top: 6px;
+        color: #666;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+
+  <body class="theme-<%= themePreference || "light" %>">
+    <div class="page">
+      <header class="page-header">
+        <div>
+          <h1>Add Question</h1>
+          <p class="muted"><%= course.title %> — <%= assessment.title %></p>
+        </div>
+
+        <nav class="nav-links">
+          <a href="/instructor/courses/<%= course.id %>/assessments/<%= assessment.id %>">
+            Back to Questions
+          </a>
+        </nav>
+      </header>
+
+      <% if (flash && flash.message) { %>
+        <div class="flash flash-<%= flash.type || "info" %>">
+          <%= flash.message %>
+        </div>
+      <% } %>
+
+      <form
+        method="POST"
+        action="/instructor/courses/<%= course.id %>/assessments/<%= assessment.id %>/questions"
+      >
+        <label for="prompt">Question Prompt</label>
+        <textarea id="prompt" name="prompt" required></textarea>
+
+        <label for="type">Question Type</label>
+        <select id="type" name="type" required>
+          <option value="MULTIPLE_CHOICE">Multiple Choice</option>
+          <option value="SHORT_TEXT">Short Text</option>
+        </select>
+
+        <div id="mcq-fields" class="mcq-block">
+          <h3 style="margin-top:0;">Multiple Choice Options</h3>
+
+          <div class="option-row">
+            <label for="option0">Option 1</label>
+            <input id="option0" name="option0" type="text" />
+          </div>
+
+          <div class="option-row">
+            <label for="option1">Option 2</label>
+            <input id="option1" name="option1" type="text" />
+          </div>
+
+          <div class="option-row">
+            <label for="option2">Option 3</label>
+            <input id="option2" name="option2" type="text" />
+          </div>
+
+          <div class="option-row">
+            <label for="option3">Option 4</label>
+            <input id="option3" name="option3" type="text" />
+          </div>
+
+          <div class="option-row">
+            <label for="correctOptionIndex">Correct Option</label>
+            <select id="correctOptionIndex" name="correctOptionIndex">
+              <option value="0">Option 1</option>
+              <option value="1">Option 2</option>
+              <option value="2">Option 3</option>
+              <option value="3">Option 4</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="short-text-fields" class="short-text-block">
+          <h3 style="margin-top:0;">Short Text Auto-Grading</h3>
+
+          <label for="gradingKeywords">Required Keywords</label>
+          <textarea id="gradingKeywords" name="gradingKeywords"></textarea>
+          <p class="helper-text">
+            Enter keywords separated by commas. Example: microphone, audio, clarity
+          </p>
+          <p class="helper-text">
+            The student's answer will be marked correct only if all listed keywords are found.
+          </p>
+        </div>
+
+        <button type="submit" class="button" style="margin-top:16px;">
+          Save Question
+        </button>
+      </form>
+    </div>
+
+    <script>
+      const typeSelect = document.getElementById("type");
+      const mcqFields = document.getElementById("mcq-fields");
+      const shortTextFields = document.getElementById("short-text-fields");
+
+      function syncQuestionTypeUI() {
+        const isMcq = typeSelect.value === "MULTIPLE_CHOICE";
+        mcqFields.style.display = isMcq ? "block" : "none";
+        shortTextFields.style.display = isMcq ? "none" : "block";
+      }
+
+      typeSelect.addEventListener("change", syncQuestionTypeUI);
+      syncQuestionTypeUI();
+    </script>
+  </body>
+</html>
+

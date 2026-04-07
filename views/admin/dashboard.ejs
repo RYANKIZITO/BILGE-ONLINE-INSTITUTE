@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="/public/css/dashboards.css" />
+</head>
+<body class="theme-<%= themePreference || "light" %> admin-dashboard-page">
+  <div class="page dashboard-shell">
+    <section class="hero-panel dashboard-hero">
+      <header class="page-header">
+        <div>
+          <p class="page-eyebrow">Operations Center</p>
+          <h1>Welcome, <%= user?.name || "Admin" %></h1>
+          <p class="page-subtitle">Monitor platform activity, manage users, and keep course operations moving smoothly.</p>
+        </div>
+        <nav class="nav-links dashboard-hero-nav">
+          <a href="/admin/cms">CMS</a>
+          <a href="/admin/settings/users">Manage Users</a>
+          <a href="/admin/courses">Manage Courses</a>
+          <% if (user?.profileCompleted) { %>
+            <a href="/settings">Settings</a>
+          <% } %>
+          <% if (user?.role === "SUPER_ADMIN") { %>
+            <a href="/super-admin/dashboard">Super Admin</a>
+          <% } %>
+        </nav>
+      </header>
+    </section>
+
+    <% if (flash && flash.message) { %>
+      <div class="flash flash-<%= flash.type || "info" %>"><%= flash.message %></div>
+    <% } %>
+
+    <section class="dashboard-kpis">
+      <article class="card dashboard-kpi">
+        <h3>Pending Actions</h3>
+        <% if (pendingActionsAvailable) { %>
+          <div class="metric-label">Draft workload</div>
+          <p class="big"><%= pendingDrafts %></p>
+          <div class="split">
+            <span>Draft courses: <%= pendingDrafts %></span>
+            <span>Unpublished: <%= unpublishedCount %></span>
+          </div>
+        <% } else { %>
+          <p class="muted">Operational data is still being prepared.</p>
+        <% } %>
+      </article>
+
+      <article class="card dashboard-kpi">
+        <h3>Students Overview</h3>
+        <% if (studentsOverviewAvailable) { %>
+          <div class="metric-label">Registered students</div>
+          <p class="big"><%= totalStudents %></p>
+          <div class="split">
+            <span>Active this week: <%= activeStudentsWeek %></span>
+            <span>Enrollments today: <%= enrollmentsToday %></span>
+          </div>
+        <% } else { %>
+          <p class="muted">Student analytics are coming soon.</p>
+        <% } %>
+      </article>
+    </section>
+
+    <section class="card dashboard-panel" id="engagement-monitor">
+      <div class="dashboard-panel-header">
+        <div>
+          <p class="page-eyebrow">Instructor Engagement</p>
+          <h2>ActiveState Monitoring</h2>
+          <p class="muted"><%= (engagementPeriodOptions || []).find((option) => option.value === engagementPeriod)?.label || "Monthly" %> engagement reporting across live-session compliance, question response, and course-community participation.</p>
+        </div>
+        <form
+          method="GET"
+          action="/admin/dashboard"
+          class="engagement-period-form"
+          data-live-form
+          data-live-target="#engagement-monitor"
+          data-live-auto-submit="change"
+        >
+          <% if (studentLookup?.studentQuery) { %>
+            <input type="hidden" name="studentQuery" value="<%= studentLookup.studentQuery %>" />
+          <% } %>
+          <% if (studentLookup?.selectedStudentId) { %>
+            <input type="hidden" name="studentId" value="<%= studentLookup.selectedStudentId %>" />
+          <% } %>
+          <label for="engagementPeriod" class="sr-only">Engagement period</label>
+          <select id="engagementPeriod" name="engagementPeriod" onchange="this.form.submit()">
+            <% (engagementPeriodOptions || []).forEach((option) => { %>
+              <option value="<%= option.value %>" <%= engagementPeriod === option.value ? "selected" : "" %>><%= option.label %></option>
+            <% }) %>
+          </select>
+        </form>
+      </div>
+
+      <% if (!engagementAvailable || !instructorEngagementSnapshots || instructorEngagementSnapshots.length === 0) { %>
+        <div class="empty-state">Instructor engagement data will appear after instructors are assigned to courses.</div>
+      <% } else { %>
+        <div class="table-wrap dashboard-table">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Instructor</th>
+                <th>Courses</th>
+                <th>ActiveState</th>
+                <th>Attendance</th>
+                <th>Response Speed</th>
+                <th>Overdue Q&A</th>
+                <th>Engagement Volume</th>
+                <th>Verification</th>
+                <th>Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% instructorEngagementSnapshots.forEach((snapshot) => { %>
+                <% const stateTone = snapshot.activeState === "Active" ? "success" : snapshot.activeState === "At-Risk" ? "warning" : "info"; %>
+                <tr>
+                  <td>
+                    <strong><%= snapshot.instructorName %></strong>
+                    <div class="muted"><%= snapshot.instructorEmail %></div>
+                  </td>
+                  <td>
+                    <% if (!snapshot.courses || snapshot.courses.length === 0) { %>
+                      <span class="muted">No assigned courses</span>
+                    <% } else { %>
+                      <% const primaryCourse = snapshot.courses[0]; %>
+                      <% const remainingCourses = snapshot.courses.slice(1); %>
+                      <div class="engagement-course-list">
+                        <div class="engagement-course-primary"><%= primaryCourse.title %></div>
+                        <% if (remainingCourses.length > 0) { %>
+                          <div class="muted">Showing 1 of <%= snapshot.courses.length %> courses</div>
+                          <details class="engagement-course-details">
+                            <summary>Show <%= remainingCourses.length %> more course<%= remainingCourses.length === 1 ? "" : "s" %></summary>
+                            <div class="stack-sm engagement-course-extra">
+                              <% remainingCourses.forEach((course) => { %>
+                                <div><%= course.title %></div>
+                              <% }) %>
+                            </div>
+                          </details>
+                        <% } %>
+                      </div>
+                    <% } %>
+                  </td>
+                  <td><span class="badge <%= stateTone %>"><%= snapshot.activeState %></span></td>
+                  <td><%= Number(snapshot.attendanceRate || 0).toFixed(1) %>%</td>
+                  <td><%= snapshot.averageResponseHours === null ? "No answered questions" : `${Number(snapshot.averageResponseHours).toFixed(1)} hrs` %></td>
+                  <td><%= snapshot.pendingQuestionsOverSla %></td>
+                  <td><%= snapshot.engagementVolume %></td>
+                  <td>
+                    <div><strong><%= snapshot.verificationSummary?.VERIFIED || 0 %></strong> verified</div>
+                    <% if ((snapshot.verificationSummary?.PENDING || 0) > 0) { %>
+                      <div class="muted"><%= snapshot.verificationSummary.PENDING %> pending</div>
+                    <% } %>
+                    <% if ((snapshot.verificationSummary?.UNVERIFIED || 0) > 0) { %>
+                      <div class="muted"><%= snapshot.verificationSummary.UNVERIFIED %> unverified</div>
+                    <% } %>
+                  </td>
+                  <td><strong><%= Number(snapshot.performanceScore || 0).toFixed(1) %></strong></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
+
+    <section class="card dashboard-panel">
+      <div class="dashboard-panel-header">
+        <div>
+          <p class="page-eyebrow">Live Session Tomorrow</p>
+          <h2>Next-Day Flagging Notice</h2>
+          <p class="muted">These reminders are shown in your local time and help you keep an eye on tomorrow’s planned teaching activity across the institution.</p>
+        </div>
+      </div>
+
+      <div data-live-tomorrow-section>
+        <% if (!nextDayLiveSessionAlerts || nextDayLiveSessionAlerts.length === 0) { %>
+          <div class="empty-state" data-live-tomorrow-empty>No live sessions are currently lined up for tomorrow.</div>
+        <% } else { %>
+          <div class="table-wrap dashboard-table" data-live-tomorrow-list>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Course</th>
+                  <th>Instructor</th>
+                  <th>Session</th>
+                  <th>Verification</th>
+                  <th>Join</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% nextDayLiveSessionAlerts.forEach((session) => { %>
+                  <tr data-live-tomorrow-item data-session-start-time="<%= new Date(session.startTime).toISOString() %>">
+                    <td><strong><%= session.courseTitle %></strong></td>
+                    <td>
+                      <strong><%= session.instructor || "Instructor" %></strong>
+                      <div class="muted"><%= session.instructorEmail || "" %></div>
+                    </td>
+                    <td>
+                      <div><strong><%= session.sessionTypeLabel %></strong></div>
+                      <div class="muted">
+                        <time data-local-datetime="<%= new Date(session.startTime).toISOString() %>" data-local-format="session"><%= new Date(session.startTime).toLocaleString() %></time>
+                      </div>
+                      <div class="muted">Tomorrow in your local time</div>
+                    </td>
+                    <td><span class="badge <%= session.verificationStatus === "VERIFIED" ? "success" : session.verificationStatus === "UNVERIFIED" ? "warning" : "info" %>"><%= session.verificationLabel %></span></td>
+                    <td>
+                      <% if (session.canJoin) { %>
+                        <% const nextDayJoinOpen = new Date(session.startTime).getTime() <= Date.now(); %>
+                        <a
+                          class="button ghost <%= nextDayJoinOpen ? "" : "is-disabled" %>"
+                          <% if (nextDayJoinOpen) { %>href="<%= session.meetingUrl %>"<% } %>
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          data-live-session-join
+                          data-live-session-url="<%= session.meetingUrl %>"
+                          data-session-start-time="<%= new Date(session.startTime).toISOString() %>"
+                        >Join Session</a>
+                      <% } else { %>
+                        <span class="muted">Link not added yet</span>
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+          <div class="empty-state" data-live-tomorrow-empty hidden>No live sessions are currently lined up for tomorrow in your local time.</div>
+        <% } %>
+      </div>
+    </section>
+
+    <section class="card dashboard-panel">
+      <div class="dashboard-panel-header">
+        <div>
+          <p class="page-eyebrow">Live Session Access</p>
+          <h2>Admin Spot-Check Join</h2>
+          <p class="muted">Join any instructor live class directly for real-time confirmation without changing the instructor logging flow. Times are shown in your local time.</p>
+        </div>
+      </div>
+
+      <% if (!adminLiveSessions || adminLiveSessions.length === 0) { %>
+        <div class="empty-state">No live sessions with join links are available right now.</div>
+      <% } else { %>
+        <div class="table-wrap dashboard-table">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Course</th>
+                <th>Instructor</th>
+                <th>Session</th>
+                <th>Verification</th>
+                <th>Join</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% adminLiveSessions.forEach((session) => { %>
+                <tr>
+                  <td><strong><%= session.course.title %></strong></td>
+                  <td>
+                    <strong><%= session.course.instructor?.name || "Instructor" %></strong>
+                    <div class="muted"><%= session.course.instructor?.email || "" %></div>
+                  </td>
+                  <td>
+                    <div><strong><%= session.sessionTypeLabel %></strong></div>
+                    <div class="muted">
+                      <time data-local-datetime="<%= new Date(session.scheduledStartTime).toISOString() %>" data-local-format="session"><%= new Date(session.scheduledStartTime).toLocaleString() %></time>
+                    </div>
+                    <div class="muted"><%= session.monitorState %></div>
+                  </td>
+                  <td><span class="badge <%= session.verificationStatus === "VERIFIED" ? "success" : session.verificationStatus === "UNVERIFIED" ? "warning" : "info" %>"><%= session.verificationLabel %></span></td>
+                  <td>
+                    <% const adminJoinOpen = new Date(session.scheduledStartTime).getTime() <= Date.now(); %>
+                    <a
+                      class="button primary <%= adminJoinOpen ? "" : "is-disabled" %>"
+                      <% if (adminJoinOpen) { %>href="<%= session.meetingUrl %>"<% } %>
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-live-session-join
+                      data-live-session-url="<%= session.meetingUrl %>"
+                      data-session-start-time="<%= new Date(session.scheduledStartTime).toISOString() %>"
+                    >Join Session</a>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
+
+    <section class="card stack-md" id="student-overview">
+      <div class="page-header" style="margin-bottom: 0;">
+        <div>
+          <p class="page-eyebrow">Student Lookup</p>
+          <h2>Students List</h2>
+          <p class="muted">Search by full name, system student ID, or national ID, or pick a student from the list to inspect profile, enrollment, payment, certificate, and transcript information.</p>
+        </div>
+      </div>
+
+      <form
+        class="search-bar"
+        method="GET"
+        action="/admin/dashboard"
+        data-live-form
+        data-live-target="#student-overview"
+        data-live-auto-submit="change"
+      >
+        <input type="hidden" name="engagementPeriod" value="<%= engagementPeriod || 'monthly' %>" />
+        <input
+          type="text"
+          name="studentQuery"
+          placeholder="Search by name, student ID, or national ID"
+          value="<%= studentLookup?.studentQuery || "" %>"
+        />
+        <select name="studentId" style="min-width: 320px;">
+          <option value="">Choose student from list</option>
+          <% (studentLookup?.studentOptions || []).forEach((student) => { %>
+            <option value="<%= student.id %>" <%= studentLookup?.selectedStudentId === student.id ? "selected" : "" %>>
+              <%= student.studentCode || student.id %> - <%= student.fullName || student.name %>
+            </option>
+          <% }) %>
+        </select>
+        <button type="submit">Find Student</button>
+        <% if (studentLookup?.studentQuery || studentLookup?.selectedStudentId) { %>
+          <a class="button ghost" href="/admin/dashboard#student-overview">Clear</a>
+        <% } %>
+      </form>
+
+      <% if (studentLookup?.studentQuery) { %>
+        <div class="stack-sm">
+          <div class="label">Search Results</div>
+          <% if (!studentLookup.matchingStudents || studentLookup.matchingStudents.length === 0) { %>
+            <div class="empty-state">No students matched "<%= studentLookup.studentQuery %>".</div>
+          <% } else { %>
+            <div class="button-row">
+              <% studentLookup.matchingStudents.forEach((student) => { %>
+                <a
+                  class="button"
+                  href="/admin/dashboard?studentQuery=<%= encodeURIComponent(studentLookup.studentQuery) %>&studentId=<%= student.id %>#student-overview"
+                  data-live-link
+                  data-live-target="#student-overview"
+                >
+                  <%= student.studentCode || student.id %> - <%= student.fullName || student.name %>
+                </a>
+              <% }) %>
+            </div>
+          <% } %>
+        </div>
+      <% } %>
+
+      <% if (studentLookup?.selectedStudent) { %>
+        <section class="section-card stack-md">
+          <div>
+            <p class="page-eyebrow">Student Record</p>
+            <h3><%= studentLookup.selectedStudent.fullName || studentLookup.selectedStudent.name %></h3>
+          </div>
+
+          <div class="meta-grid">
+            <div class="meta-item">
+              <span class="meta-label">Student ID</span>
+              <span class="meta-value" style="display: block; overflow-wrap: anywhere; word-break: break-word; line-height: 1.35;"><%= studentLookup.selectedStudent.studentCode || studentLookup.selectedStudent.id %></span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">National ID</span>
+              <span class="meta-value" style="display: block; overflow-wrap: anywhere; word-break: break-word; line-height: 1.35;"><%= studentLookup.selectedStudent.nationalIdNumber || "Not provided" %></span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Email</span>
+              <span class="meta-value"><%= studentLookup.selectedStudent.email %></span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Phone</span>
+              <span class="meta-value"><%= studentLookup.selectedStudent.phoneNumber || "Not provided" %></span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Nationality</span>
+              <span class="meta-value"><%= studentLookup.selectedStudent.nationality || "Not provided" %></span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Profile Status</span>
+              <span class="meta-value"><%= studentLookup.selectedStudent.profileCompleted ? "Completed" : "Incomplete" %></span>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-card stack-md">
+          <div>
+            <p class="page-eyebrow">Academic & Financial Overview</p>
+            <h3>Enrollments, Payments, Certificates</h3>
+          </div>
+
+          <% if (!studentLookup.selectedStudentCourses || studentLookup.selectedStudentCourses.length === 0) { %>
+            <div class="empty-state">This student has not enrolled in any course yet.</div>
+          <% } else { %>
+            <div class="table-wrap dashboard-table dashboard-table--records">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Course</th>
+                    <th>Enrollment</th>
+                    <th>Payment Details</th>
+                    <th>Certificate</th>
+                    <th>Transcript</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% studentLookup.selectedStudentCourses.forEach((record) => { %>
+                    <tr>
+                      <td class="dashboard-cell-identity">
+                        <strong><%= record.enrollment.course.title %></strong>
+                        <div class="muted">Instructor: <%= record.enrollment.course.instructor?.name || "Unassigned" %></div>
+                      </td>
+                      <td class="dashboard-cell-stack">
+                        <div><%= record.enrollment.completed ? "Completed" : "In Progress" %></div>
+                        <div class="muted">Joined: <%= new Date(record.enrollment.createdAt).toLocaleDateString() %></div>
+                      </td>
+                      <td class="dashboard-cell-stack">
+                        <% if (record.latestPayment) { %>
+                          <div><strong><%= record.latestPayment.status %></strong> via <%= record.latestPayment.provider %></div>
+                          <div class="muted"><%= record.latestPayment.amount %> <%= record.latestPayment.currency %></div>
+                          <div class="muted">Ref: <%= record.latestPayment.reference %></div>
+                        <% } else { %>
+                          <span class="muted">No payment record</span>
+                        <% } %>
+                      </td>
+                      <td class="dashboard-cell-stack">
+                        <% if (record.certificate) { %>
+                          <div style="overflow-wrap: anywhere; word-break: break-word; line-height: 1.35;"><strong><%= record.certificate.certificateNumber || "Pending Number" %></strong></div>
+                          <div class="muted">Issued: <%= new Date(record.certificate.issuedAt).toLocaleDateString() %></div>
+                          <a href="/certificates/<%= record.certificate.verificationCode %>">Open Certificate</a>
+                        <% } else { %>
+                          <span class="muted">Not yet acquired</span>
+                        <% } %>
+                      </td>
+                      <td class="dashboard-cell-stack">
+                        <div><strong>Final Mark:</strong> <%= Number(record.finalCourseMark || 0).toFixed(1) %>%</div>
+                        <div class="muted"><%= record.transcriptRows.length %> transcript row(s)</div>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </section>
+
+        <section class="section-card stack-md">
+          <div>
+            <p class="page-eyebrow">Enrollment Cancellation History</p>
+            <h3>Student Cancellation Records</h3>
+          </div>
+
+          <% if (!studentLookup.selectedStudentCancellations || studentLookup.selectedStudentCancellations.length === 0) { %>
+            <div class="empty-state">This student has not cancelled any enrollments yet.</div>
+          <% } else { %>
+            <div class="table-wrap dashboard-table dashboard-table--cancellations">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Course</th>
+                    <th>Reason</th>
+                    <th>Requested Switch</th>
+                    <th>Extra Note</th>
+                    <th>Review Status</th>
+                    <th>Decision</th>
+                    <th>Cancelled</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% studentLookup.selectedStudentCancellations.forEach((cancellation, index) => { %>
+                    <% const studentReviewModalId = `student-review-modal-${index}`; %>
+                    <tr>
+                      <td class="dashboard-cell-identity"><strong><%= cancellation.course?.title || "Course" %></strong></td>
+                      <td class="dashboard-cell-note"><%= cancellation.reasonLabel %></td>
+                      <td>
+                        <% if (cancellation.requestedTargetCourse?.title) { %>
+                          <div class="review-switch-card">
+                            <strong><%= cancellation.requestedTargetCourse.title %></strong>
+                            <div class="muted">Switch request captured</div>
+                          </div>
+                        <% } else { %>
+                          <div class="review-switch-empty">
+                            <strong>No target course selected</strong>
+                            <div class="muted">This request can only be handled as a refund or decline.</div>
+                          </div>
+                        <% } %>
+                      </td>
+                      <td class="dashboard-cell-note"><%= cancellation.reasonText || "-" %></td>
+                      <td class="dashboard-cell-stack dashboard-review-cell">
+                        <div class="dashboard-review-summary">
+                          <div><strong><%= cancellation.refundStatusLabel %></strong></div>
+                          <% if (cancellation.refundAmount) { %>
+                            <div class="muted"><%= cancellation.refundAmount %> <%= cancellation.refundCurrency %></div>
+                          <% } %>
+                          <% if (cancellation.requestedTargetCourse?.title) { %>
+                            <div class="muted">Switch to <%= cancellation.requestedTargetCourse.title %></div>
+                          <% } else if (cancellation.refundRecommended) { %>
+                            <div class="muted">Refund review flagged</div>
+                          <% } %>
+                          <button
+                            type="button"
+                            class="button ghost review-read-button"
+                            data-review-modal-trigger="<%= studentReviewModalId %>"
+                          >
+                            Read Me
+                          </button>
+                        </div>
+                        <div class="review-modal" id="<%= studentReviewModalId %>" hidden>
+                          <div class="review-modal__backdrop" data-review-modal-close></div>
+                          <div class="review-modal__panel" role="dialog" aria-modal="true" aria-labelledby="<%= studentReviewModalId %>-title">
+                            <div class="review-modal__header">
+                              <div>
+                                <p class="page-eyebrow">Review Status</p>
+                                <h3 id="<%= studentReviewModalId %>-title"><%= cancellation.refundStatusLabel %></h3>
+                              </div>
+                              <button type="button" class="review-modal__icon" aria-label="Close" data-review-modal-close>&times;</button>
+                            </div>
+                            <div class="review-modal__body">
+                              <% if (cancellation.refundAmount) { %>
+                                <div class="review-modal__item"><strong>Amount:</strong> <%= cancellation.refundAmount %> <%= cancellation.refundCurrency %></div>
+                              <% } %>
+                              <% if (cancellation.refundRecommended) { %>
+                                <div class="review-modal__item">Reason marked as potentially reasonable</div>
+                              <% } %>
+                              <% if (cancellation.requestedTargetCourse?.title) { %>
+                                <div class="review-modal__item">Requested switch to <strong><%= cancellation.requestedTargetCourse.title %></strong></div>
+                                <% if (cancellation.switchFinancialSummary) { %>
+                                  <div class="review-modal__item"><%= cancellation.switchFinancialSummary.summaryText %></div>
+                                  <% if (cancellation.switchFinancialSummary.sourceCourseFee !== null && cancellation.switchFinancialSummary.targetCourseFee !== null) { %>
+                                    <div class="review-modal__item">
+                                      Source: <%= cancellation.switchFinancialSummary.sourceCourseFee %> <%= cancellation.switchFinancialSummary.currency %>,
+                                      Target: <%= cancellation.switchFinancialSummary.targetCourseFee %> <%= cancellation.switchFinancialSummary.currency %>,
+                                      Transfer: <%= cancellation.switchFinancialSummary.transferAmount %> <%= cancellation.switchFinancialSummary.currency %>
+                                    </div>
+                                  <% } %>
+                                <% } %>
+                              <% } %>
+                              <% if (cancellation.providerAdjustmentStatus) { %>
+                                <div class="review-modal__item">Financial action: <%= cancellation.providerAdjustmentStatus %></div>
+                              <% } %>
+                              <% if (cancellation.topUpPayment?.id) { %>
+                                <div class="review-modal__item">Top-up payment: <%= cancellation.topUpPayment.status %> via <%= cancellation.topUpPayment.provider %></div>
+                              <% } %>
+                              <% if (cancellation.reviewedByDisplayName) { %>
+                                <div class="review-modal__item">Reviewed by <%= cancellation.reviewedByDisplayName %></div>
+                              <% } %>
+                              <% if (cancellation.refundDecisionNote) { %>
+                                <div class="review-modal__item"><%= cancellation.refundDecisionNote %></div>
+                              <% } %>
+                            </div>
+                            <div class="review-modal__footer">
+                              <button type="button" class="button primary" data-review-modal-close>Done</button>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="dashboard-decision-cell">
+                        <% if (cancellation.refundReviewStatus === "PENDING_REVIEW") { %>
+                          <form method="POST" action="/admin/enrollment-cancellations/<%= cancellation.id %>/refund-review" class="stack-sm review-form">
+                            <% if (!cancellation.requestedTargetCourse?.id) { %>
+                              <div class="muted review-helper">Switch approval appears only when the student selected a target course.</div>
+                            <% } %>
+                            <select name="refundDecision" required>
+                              <option value="">Choose decision</option>
+                              <option value="APPROVED">Approve Refund</option>
+                              <% if (cancellation.requestedTargetCourse?.id) { %>
+                                <option value="SWITCH_APPROVED"><%= cancellation.switchFinancialSummary?.direction === "TOP_UP_REQUIRED" ? "Approve Switch / Require Top-Up" : "Approve Switch" %></option>
+                              <% } %>
+                              <option value="DECLINED">Decline</option>
+                            </select>
+                            <textarea name="refundDecisionNote" rows="2" placeholder="Optional admin note"></textarea>
+                            <button type="submit">Save Decision</button>
+                          </form>
+                        <% } else { %>
+                          <span class="muted">No action pending</span>
+                        <% } %>
+                      </td>
+                      <td class="dashboard-cell-date"><%= new Date(cancellation.createdAt).toLocaleString() %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </section>
+
+        <% if (studentLookup.selectedStudentCourses && studentLookup.selectedStudentCourses.length > 0) { %>
+          <section class="section-card stack-md">
+            <div>
+              <p class="page-eyebrow">Transcript Extra</p>
+              <h3>Assessment Records</h3>
+            </div>
+
+            <% studentLookup.selectedStudentCourses.forEach((record) => { %>
+              <div class="card stack-md">
+                <div class="split">
+                  <div>
+                    <strong><%= record.enrollment.course.title %></strong>
+                    <div class="muted">Instructor: <%= record.enrollment.course.instructor?.name || "Unassigned" %></div>
+                  </div>
+                  <div>
+                    <span class="badge info">Final: <%= Number(record.finalCourseMark || 0).toFixed(1) %>%</span>
+                  </div>
+                </div>
+
+                <% if (!record.transcriptRows || record.transcriptRows.length === 0) { %>
+                  <div class="empty-state">No assessment transcript rows found for this course yet.</div>
+                <% } else { %>
+                  <div class="table-wrap dashboard-table dashboard-table--records">
+                    <table class="table">
+                      <thead>
+                        <tr>
+                          <th>Assessment</th>
+                          <th>Type</th>
+                          <th>Score</th>
+                          <th>Attempt</th>
+                          <th>Submitted</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% record.transcriptRows.forEach((row) => { %>
+                          <tr>
+                            <td><strong><%= row.title %></strong></td>
+                            <td><%= row.type %></td>
+                            <td><%= row.score === null ? "-" : `${row.score}/${row.maxScore}` %></td>
+                            <td><%= row.attempt ?? "-" %></td>
+                            <td><%= row.submittedAt ? new Date(row.submittedAt).toLocaleDateString() : "-" %></td>
+                          </tr>
+                        <% }) %>
+                      </tbody>
+                    </table>
+                  </div>
+                <% } %>
+              </div>
+            <% }) %>
+          </section>
+        <% } %>
+      <% } %>
+    </section>
+
+    <section class="card dashboard-panel">
+      <div class="dashboard-panel-header">
+        <div>
+          <p class="page-eyebrow">Enrollment Cancellations</p>
+          <h2>Recent Student Cancellation Reasons</h2>
+          <p class="muted">Track the most recent cancellation requests and the reasons students selected.</p>
+        </div>
+      </div>
+
+      <% if (!recentEnrollmentCancellations || recentEnrollmentCancellations.length === 0) { %>
+        <div class="empty-state">No student enrollment cancellations have been recorded yet.</div>
+      <% } else { %>
+            <div class="table-wrap dashboard-table dashboard-table--cancellations">
+              <table class="table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Course</th>
+                <th>Reason</th>
+                <th>Requested Switch</th>
+                <th>Extra Note</th>
+                <th>Review Status</th>
+                <th>Decision</th>
+                <th>Cancelled</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% recentEnrollmentCancellations.forEach((cancellation, index) => { %>
+                <% const recentReviewModalId = `recent-review-modal-${index}`; %>
+                <tr>
+                  <td class="dashboard-cell-identity">
+                    <strong><%= cancellation.studentDisplayName %></strong>
+                    <div class="muted"><%= cancellation.user?.email || "" %></div>
+                  </td>
+                  <td class="dashboard-cell-identity"><strong><%= cancellation.course?.title || "Course" %></strong></td>
+                  <td class="dashboard-cell-note"><%= cancellation.reasonLabel %></td>
+                  <td>
+                    <% if (cancellation.requestedTargetCourse?.title) { %>
+                      <div class="review-switch-card">
+                        <strong><%= cancellation.requestedTargetCourse.title %></strong>
+                        <div class="muted">Switch request captured</div>
+                      </div>
+                    <% } else { %>
+                      <div class="review-switch-empty">
+                        <strong>No target course selected</strong>
+                        <div class="muted">This request can only be handled as a refund or decline.</div>
+                      </div>
+                    <% } %>
+                  </td>
+                  <td class="dashboard-cell-note"><%= cancellation.reasonText || "-" %></td>
+                  <td class="dashboard-cell-stack dashboard-review-cell">
+                    <div class="dashboard-review-summary">
+                      <div><strong><%= cancellation.refundStatusLabel %></strong></div>
+                      <% if (cancellation.refundAmount) { %>
+                        <div class="muted"><%= cancellation.refundAmount %> <%= cancellation.refundCurrency %></div>
+                      <% } %>
+                      <% if (cancellation.requestedTargetCourse?.title) { %>
+                        <div class="muted">Switch to <%= cancellation.requestedTargetCourse.title %></div>
+                      <% } else if (cancellation.refundRecommended) { %>
+                        <div class="muted">Refund review flagged</div>
+                      <% } %>
+                      <button
+                        type="button"
+                        class="button ghost review-read-button"
+                        data-review-modal-trigger="<%= recentReviewModalId %>"
+                      >
+                        Read Me
+                      </button>
+                    </div>
+                    <div class="review-modal" id="<%= recentReviewModalId %>" hidden>
+                      <div class="review-modal__backdrop" data-review-modal-close></div>
+                      <div class="review-modal__panel" role="dialog" aria-modal="true" aria-labelledby="<%= recentReviewModalId %>-title">
+                        <div class="review-modal__header">
+                          <div>
+                            <p class="page-eyebrow">Review Status</p>
+                            <h3 id="<%= recentReviewModalId %>-title"><%= cancellation.refundStatusLabel %></h3>
+                          </div>
+                          <button type="button" class="review-modal__icon" aria-label="Close" data-review-modal-close>&times;</button>
+                        </div>
+                        <div class="review-modal__body">
+                          <% if (cancellation.refundAmount) { %>
+                            <div class="review-modal__item"><strong>Amount:</strong> <%= cancellation.refundAmount %> <%= cancellation.refundCurrency %></div>
+                          <% } %>
+                          <% if (cancellation.refundRecommended) { %>
+                            <div class="review-modal__item">Reason marked as potentially reasonable</div>
+                          <% } %>
+                          <% if (cancellation.requestedTargetCourse?.title) { %>
+                            <div class="review-modal__item">Requested switch to <strong><%= cancellation.requestedTargetCourse.title %></strong></div>
+                            <% if (cancellation.switchFinancialSummary) { %>
+                              <div class="review-modal__item"><%= cancellation.switchFinancialSummary.summaryText %></div>
+                              <% if (cancellation.switchFinancialSummary.sourceCourseFee !== null && cancellation.switchFinancialSummary.targetCourseFee !== null) { %>
+                                <div class="review-modal__item">
+                                  Source: <%= cancellation.switchFinancialSummary.sourceCourseFee %> <%= cancellation.switchFinancialSummary.currency %>,
+                                  Target: <%= cancellation.switchFinancialSummary.targetCourseFee %> <%= cancellation.switchFinancialSummary.currency %>,
+                                  Transfer: <%= cancellation.switchFinancialSummary.transferAmount %> <%= cancellation.switchFinancialSummary.currency %>
+                                </div>
+                              <% } %>
+                            <% } %>
+                          <% } %>
+                          <% if (cancellation.providerAdjustmentStatus) { %>
+                            <div class="review-modal__item">Financial action: <%= cancellation.providerAdjustmentStatus %></div>
+                          <% } %>
+                          <% if (cancellation.topUpPayment?.id) { %>
+                            <div class="review-modal__item">Top-up payment: <%= cancellation.topUpPayment.status %> via <%= cancellation.topUpPayment.provider %></div>
+                          <% } %>
+                          <% if (cancellation.reviewedByDisplayName) { %>
+                            <div class="review-modal__item">Reviewed by <%= cancellation.reviewedByDisplayName %></div>
+                          <% } %>
+                          <% if (cancellation.refundDecisionNote) { %>
+                            <div class="review-modal__item"><%= cancellation.refundDecisionNote %></div>
+                          <% } %>
+                        </div>
+                        <div class="review-modal__footer">
+                          <button type="button" class="button primary" data-review-modal-close>Done</button>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="dashboard-decision-cell">
+                    <% if (cancellation.refundReviewStatus === "PENDING_REVIEW") { %>
+                      <form method="POST" action="/admin/enrollment-cancellations/<%= cancellation.id %>/refund-review" class="stack-sm review-form">
+                        <% if (!cancellation.requestedTargetCourse?.id) { %>
+                          <div class="muted review-helper">Switch approval appears only when the student selected a target course.</div>
+                        <% } %>
+                        <select name="refundDecision" required>
+                          <option value="">Choose decision</option>
+                          <option value="APPROVED">Approve Refund</option>
+                          <% if (cancellation.requestedTargetCourse?.id) { %>
+                            <option value="SWITCH_APPROVED"><%= cancellation.switchFinancialSummary?.direction === "TOP_UP_REQUIRED" ? "Approve Switch / Require Top-Up" : "Approve Switch" %></option>
+                          <% } %>
+                          <option value="DECLINED">Decline</option>
+                        </select>
+                        <textarea name="refundDecisionNote" rows="2" placeholder="Optional admin note"></textarea>
+                        <button type="submit">Save Decision</button>
+                      </form>
+                    <% } else { %>
+                      <span class="muted">No action pending</span>
+                    <% } %>
+                  </td>
+                  <td class="dashboard-cell-date"><%= new Date(cancellation.createdAt).toLocaleString() %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
+
+    <section class="card dashboard-panel">
+      <div class="dashboard-panel-header">
+        <div>
+          <p class="page-eyebrow">Course Intelligence</p>
+          <h2>Course Overview</h2>
+          <p class="muted"><%= courseOverviewMode === "top" ? "Top courses by enrollments" : "Latest courses" %></p>
+        </div>
+      </div>
+
+      <% if (courseOverview.length === 0) { %>
+        <div class="empty-state">No courses are available yet.</div>
+      <% } else { %>
+        <div class="table-wrap dashboard-table">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Course</th>
+                <% if (courseOverviewMode === "top") { %>
+                  <th>Enrollments</th>
+                <% } %>
+              </tr>
+            </thead>
+            <tbody>
+              <% courseOverview.forEach(course => { %>
+                <tr>
+                  <td><strong><%= course.title %></strong></td>
+                  <% if (courseOverviewMode === "top") { %>
+                    <td><%= course.enrollments %></td>
+                  <% } %>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
+
+    <section class="quick-links">
+      <a class="quick-link" href="/admin/cms">
+        <strong>CMS</strong>
+        <span class="muted">Update the Faculty page, insights posts, and live careers vacancies.</span>
+      </a>
+      <a class="quick-link" href="/admin/settings/users">
+        <strong>Manage Users</strong>
+        <span class="muted">Update roles, create admin accounts, and assign instructors.</span>
+      </a>
+      <a class="quick-link" href="/admin/courses">
+        <strong>Manage Courses</strong>
+        <span class="muted">Review publishing readiness and course structure.</span>
+      </a>
+    </section>
+  </div>
+
+  <script>
+    (() => {
+      const setModalState = (modal, open) => {
+        if (!modal) return;
+        modal.hidden = !open;
+        document.body.classList.toggle("review-modal-open", open);
+      };
+
+      document.addEventListener("click", (event) => {
+        const trigger = event.target.closest("[data-review-modal-trigger]");
+        if (trigger) {
+          const modal = document.getElementById(trigger.dataset.reviewModalTrigger);
+          setModalState(modal, true);
+          return;
+        }
+
+        const closeButton = event.target.closest("[data-review-modal-close]");
+        if (closeButton) {
+          setModalState(closeButton.closest(".review-modal"), false);
+        }
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape") return;
+        document.querySelectorAll(".review-modal:not([hidden])").forEach((modal) => {
+          setModalState(modal, false);
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

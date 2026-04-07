@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include("partials/head") %>
+  <body>
+    <div class="site-shell">
+      <%- include("partials/header") %>
+      <main>
+        <section class="page-hero">
+          <div class="container page-hero-panel">
+            <%- include("components/breadcrumbs", { items: [{ href: '/categories', label: 'Categories' }, { label: category.name }] }) %>
+            <span class="eyebrow">Category view</span>
+            <h1><%= category.name %></h1>
+            <p>Browse the exact programmes currently assigned to this Bilge category.</p>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container">
+            <% if (courses.length) { %>
+              <div class="catalogue-section__header">
+                <div>
+                  <span class="eyebrow">Category</span>
+                  <h2><%= category.name %></h2>
+                </div>
+                <span class="catalogue-section__count"><%= courses.length %> course(s)</span>
+              </div>
+              <div class="course-grid">
+                <% courses.forEach((course) => { %>
+                  <%- include("components/course-card", { course }) %>
+                <% }) %>
+              </div>
+            <% } else { %>
+              <div class="empty-state form-card">
+                <h3>No programmes available in this category yet.</h3>
+                <p>As Bilge publishes more programmes in this field, they will appear here automatically.</p>
+              </div>
+            <% } %>
+          </div>
+        </section>
+      </main>
+      <%- include("partials/footer") %>
+    </div>
+    <script src="/public/js/website-theme.js" defer></script>
+  </body>
+</html>

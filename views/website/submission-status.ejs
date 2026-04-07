@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include("partials/head") %>
+  <body>
+    <div class="site-shell">
+      <%- include("partials/header") %>
+      <main>
+        <section class="page-hero">
+          <div class="container status-hero-grid">
+            <article class="page-hero-panel status-hero-panel">
+              <span class="eyebrow"><%= submission.hero.eyebrow %></span>
+              <h1><%= submission.hero.title %></h1>
+              <p><%= submission.hero.description %></p>
+              <div class="hero-actions">
+                <a class="button button-cta-light" href="<%= submission.primaryAction.href %>">
+                  <%= submission.primaryAction.label %>
+                </a>
+                <a class="button-secondary" href="<%= submission.secondaryAction.href %>">
+                  <%= submission.secondaryAction.label %>
+                </a>
+              </div>
+            </article>
+
+            <aside class="status-side-panel">
+              <article class="detail-card status-detail-card">
+                <span class="eyebrow">Next step</span>
+                <h3><%= submission.detailTitle %></h3>
+                <p><%= submission.detailBody %></p>
+              </article>
+            </aside>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container">
+            <div class="section-copy">
+              <span class="eyebrow">What this means</span>
+              <h2>Clear feedback after every website form submission.</h2>
+              <p>These pages confirm exactly what happened so users are not left guessing.</p>
+            </div>
+            <div class="cards-grid two">
+              <% submission.highlights.forEach((item) => { %>
+                <article class="value-card status-highlight-card">
+                  <h3><%= item %></h3>
+                </article>
+              <% }) %>
+            </div>
+          </div>
+        </section>
+      </main>
+      <%- include("partials/footer") %>
+    </div>
+    <script src="/public/js/website-theme.js" defer></script>
+  </body>
+</html>

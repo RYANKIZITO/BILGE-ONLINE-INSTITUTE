@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit Course</title>
+</head>
+<body class="theme-<%= themePreference || "light" %>">
+  <div class="page page-narrow stack-lg">
+    <div class="button-row">
+      <a class="back-link" href="/admin/courses">Back to Manage Courses</a>
+    </div>
+
+    <header class="page-header">
+      <div>
+        <p class="page-eyebrow">Course Administration</p>
+        <h1>Edit Course</h1>
+        <p class="page-subtitle">Update course ownership, category placement, and readiness without affecting existing student flows.</p>
+      </div>
+    </header>
+
+    <% if (flash && flash.message) { %>
+      <div class="flash flash-<%= flash.type || "info" %>"><%= flash.message %></div>
+    <% } %>
+
+    <section class="form-card stack-md">
+      <div class="notice">
+        Editing <strong><%= course.title %></strong>
+        <div class="muted">Current slug: <%= course.slug %></div>
+      </div>
+
+      <form class="form-grid" method="POST" action="/admin/courses/<%= course.id %>">
+        <div class="field field-full">
+          <label for="title">Course Title</label>
+          <input id="title" name="title" type="text" value="<%= values.title %>" required />
+        </div>
+
+        <div class="field field-full">
+          <label for="description">Description</label>
+          <textarea id="description" name="description" required><%= values.description %></textarea>
+        </div>
+
+        <div class="field">
+          <label for="categoryId">Category</label>
+          <select id="categoryId" name="categoryId" required>
+            <option value="">Select category</option>
+            <% categories.forEach((category) => { %>
+              <option value="<%= category.id %>" <%= values.categoryId === category.id ? "selected" : "" %>><%= category.name %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="instructorId">Instructor</label>
+          <select id="instructorId" name="instructorId" required>
+            <option value="">Select instructor</option>
+            <% instructors.forEach((instructor) => { %>
+              <option value="<%= instructor.id %>" <%= values.instructorId === instructor.id ? "selected" : "" %>><%= instructor.name %> (<%= instructor.email %>)</option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="status">Status</label>
+          <select id="status" name="status" required>
+            <% statuses.forEach((statusOption) => { %>
+              <option value="<%= statusOption %>" <%= values.status === statusOption ? "selected" : "" %>><%= statusOption %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="published">Publishing</label>
+          <label style="display:flex; align-items:center; gap:0.6rem; margin:0;">
+            <input id="published" name="published" type="checkbox" style="width:auto;" <%= values.published ? "checked" : "" %> />
+            <span>Published</span>
+          </label>
+        </div>
+
+        <div class="field field-full">
+          <button class="primary" type="submit">Save Changes</button>
+        </div>
+      </form>
+
+      <form method="POST" action="/admin/courses/<%= course.id %>/delete" onsubmit="return confirm('Delete this course and its related records from the system?');">
+        <button class="ghost" type="submit">Delete Course</button>
+      </form>
+    </section>
+  </div>
+</body>
+</html>

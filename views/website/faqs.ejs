@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include("partials/head") %>
+  <body>
+    <div class="site-shell">
+      <%- include("partials/header") %>
+      <main>
+        <section class="page-hero">
+          <div class="container page-hero-panel">
+            <%- include("components/breadcrumbs", { items: [{ label: "FAQs" }] }) %>
+            <span class="eyebrow">Frequently asked questions</span>
+            <h1>Frequently asked questions from future Bilge learners.</h1>
+            <p>Browse answers about programmes, admissions, fees, certificates, and the study experience before you enroll.</p>
+          </div>
+        </section>
+
+        <% Object.entries(groupedFaqs).forEach(([category, items]) => { %>
+          <section class="section">
+            <div class="container">
+              <div class="section-copy faq-section-copy">
+                <span class="eyebrow"><%= category %></span>
+                <h2><%= category %> questions</h2>
+              </div>
+              <div class="faq-list">
+                <% items.forEach((faq, index) => { %>
+                  <%- include("components/faq-item", { faq, open: index === 0 }) %>
+                <% }) %>
+              </div>
+            </div>
+          </section>
+        <% }) %>
+      </main>
+      <%- include("partials/footer") %>
+    </div>
+    <script src="/public/js/website-theme.js" defer></script>
+  </body>
+</html>

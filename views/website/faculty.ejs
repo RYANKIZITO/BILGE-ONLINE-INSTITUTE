@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include("partials/head") %>
+  <body>
+    <div class="site-shell">
+      <%- include("partials/header") %>
+      <main>
+        <section class="page-hero">
+          <div class="container page-hero-panel">
+            <%- include("components/breadcrumbs", { items: [{ label: "Faculty" }] }) %>
+            <span class="eyebrow">Public faculty</span>
+            <h1>Meet the faculty and instructors at Bilge Online Institute.</h1>
+            <p>Each profile lists teaching areas, background, and expertise so you can understand who supports each learning area.</p>
+          </div>
+        </section>
+
+        <% if (trustees?.length) { %>
+          <% const leadTrustee = trustees[0] || null; %>
+          <% const supportingTrustees = trustees.slice(1); %>
+          <section class="section">
+            <div class="container">
+              <div class="section-copy faculty-section-copy">
+                <span class="eyebrow">Trustee Board</span>
+                <h2>Trustee stewardship and institutional governance.</h2>
+                <p>The Trustee Board provides governance guidance, institutional accountability, and strategic stewardship for Bilge Online Institute.</p>
+              </div>
+              <div class="org-chart" aria-label="Bilge trustee board hierarchy">
+                <% if (leadTrustee) { %>
+                  <div class="org-chart__leader">
+                    <article class="person-card administrator-card administrator-card--leader">
+                      <img
+                        class="avatar administrator-card__avatar administrator-card__avatar--leader"
+                        src="<%= leadTrustee.profilePhotoUrl %>"
+                        alt="<%= leadTrustee.name || leadTrustee.role %>"
+                      />
+                      <span class="administrator-card__label"><%= leadTrustee.label %></span>
+                      <h3><%= leadTrustee.name || leadTrustee.role %></h3>
+                      <span class="person-role administrator-card__office"><%= leadTrustee.name ? leadTrustee.role : leadTrustee.office %></span>
+                      <% if (leadTrustee.name) { %>
+                        <span class="administrator-card__department"><%= leadTrustee.office %></span>
+                      <% } %>
+                      <div class="faculty-card-actions faculty-card-actions--center">
+                        <button
+                          type="button"
+                          class="button-secondary"
+                          data-profile-modal-trigger="<%= leadTrustee.modalId %>"
+                        >
+                          CV Highlights
+                        </button>
+                      </div>
+                    </article>
+                  </div>
+                <% } %>
+
+                <% if (supportingTrustees.length) { %>
+                  <div class="org-chart__reports">
+                    <% supportingTrustees.forEach((trustee) => { %>
+                      <article class="person-card administrator-card administrator-card--report">
+                        <img
+                          class="avatar administrator-card__avatar"
+                          src="<%= trustee.profilePhotoUrl %>"
+                          alt="<%= trustee.name || trustee.role %>"
+                        />
+                        <span class="administrator-card__label"><%= trustee.label %></span>
+                        <h3><%= trustee.name || trustee.role %></h3>
+                        <span class="person-role administrator-card__office"><%= trustee.name ? trustee.role : trustee.office %></span>
+                        <% if (trustee.name) { %>
+                          <span class="administrator-card__department"><%= trustee.office %></span>
+                        <% } %>
+                        <div class="faculty-card-actions faculty-card-actions--center">
+                          <button
+                            type="button"
+                            class="button-secondary"
+                            data-profile-modal-trigger="<%= trustee.modalId %>"
+                          >
+                            CV Highlights
+                          </button>
+                        </div>
+                      </article>
+                    <% }) %>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          </section>
+        <% } %>
+
+        <% if (administrators?.length) { %>
+          <% const leadAdministrator = administrators[0] || null; %>
+          <% const supportingAdministrators = administrators.slice(1); %>
+          <section class="section">
+            <div class="container">
+              <div class="section-copy faculty-section-copy">
+                <span class="eyebrow">Administration</span>
+                <h2>Institute administration and leadership offices.</h2>
+                <p>These are the key administrative roles commonly found in a structured online institute and the responsibilities attached to them.</p>
+              </div>
+              <div class="org-chart" aria-label="Bilge administration hierarchy">
+                <% if (leadAdministrator) { %>
+                  <div class="org-chart__leader">
+                    <article class="person-card administrator-card administrator-card--leader">
+                      <img
+                        class="avatar administrator-card__avatar administrator-card__avatar--leader"
+                        src="<%= leadAdministrator.profilePhotoUrl %>"
+                        alt="<%= leadAdministrator.name || leadAdministrator.role %>"
+                      />
+                      <span class="administrator-card__label"><%= leadAdministrator.label %></span>
+                      <h3><%= leadAdministrator.name || leadAdministrator.role %></h3>
+                      <span class="person-role administrator-card__office"><%= leadAdministrator.name ? leadAdministrator.role : leadAdministrator.office %></span>
+                      <% if (leadAdministrator.name) { %>
+                        <span class="administrator-card__department"><%= leadAdministrator.office %></span>
+                      <% } %>
+                      <div class="faculty-card-actions faculty-card-actions--center">
+                        <button
+                          type="button"
+                          class="button-secondary"
+                          data-profile-modal-trigger="<%= leadAdministrator.modalId %>"
+                        >
+                          CV Highlights
+                        </button>
+                      </div>
+                    </article>
+                  </div>
+                <% } %>
+
+                <% if (supportingAdministrators.length) { %>
+                  <div class="org-chart__reports">
+                    <% supportingAdministrators.forEach((administrator) => { %>
+                      <article class="person-card administrator-card administrator-card--report">
+                        <img
+                          class="avatar administrator-card__avatar"
+                          src="<%= administrator.profilePhotoUrl %>"
+                          alt="<%= administrator.name || administrator.role %>"
+                        />
+                        <span class="administrator-card__label"><%= administrator.label %></span>
+                        <h3><%= administrator.name || administrator.role %></h3>
+                        <span class="person-role administrator-card__office"><%= administrator.name ? administrator.role : administrator.office %></span>
+                        <% if (administrator.name) { %>
+                          <span class="administrator-card__department"><%= administrator.office %></span>
+                        <% } %>
+                        <div class="faculty-card-actions faculty-card-actions--center">
+                          <button
+                            type="button"
+                            class="button-secondary"
+                            data-profile-modal-trigger="<%= administrator.modalId %>"
+                          >
+                            CV Highlights
+                          </button>
+                        </div>
+                      </article>
+                    <% }) %>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          </section>
+        <% } %>
+
+        <section class="section">
+          <div class="container">
+            <div class="section-copy faculty-section-copy">
+              <span class="eyebrow">Instructors</span>
+              <h2>Faculty and instructor profiles.</h2>
+              <p>Review the teaching team by subject area, background, and visible expertise.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container people-grid">
+            <% faculty.forEach((member) => { %>
+              <article class="person-card faculty-person-card">
+                <div class="faculty-person-card__media">
+                  <span class="faculty-person-card__eyebrow">Bilge instructor</span>
+                  <% if (member.profilePhotoUrl) { %>
+                    <img class="avatar faculty-person-card__avatar" src="<%= member.profilePhotoUrl %>" alt="<%= member.name %>" />
+                  <% } else { %>
+                    <div class="avatar faculty-person-card__avatar faculty-person-card__avatar--fallback"><%= member.name.charAt(0).toUpperCase() %></div>
+                  <% } %>
+                </div>
+                <div class="faculty-person-card__body">
+                  <span class="person-role faculty-person-card__headline"><%= member.headline %></span>
+                  <h3><%= member.name %></h3>
+                  <p class="faculty-person-card__summary"><%= member.shortBio %></p>
+                  <% if (member.expertise.length) { %>
+                    <div class="faculty-person-card__chips">
+                      <% member.expertise.slice(0, 3).forEach((skill) => { %>
+                        <span class="pill faculty-person-card__pill"><%= skill %></span>
+                      <% }) %>
+                    </div>
+                  <% } %>
+                  <div class="faculty-person-card__meta">
+                    <span><%= member.courses.length %> published <%= member.courses.length === 1 ? "course" : "courses" %></span>
+                  </div>
+                  <div class="faculty-card-actions">
+                    <button
+                      type="button"
+                      class="button-secondary"
+                      data-profile-modal-trigger="<%= member.modalId %>"
+                    >
+                      View profile
+                    </button>
+                  </div>
+                </div>
+              </article>
+            <% }) %>
+          </div>
+        </section>
+
+        <% const leadershipProfiles = [...(trustees || []), ...(administrators || [])]; %>
+        <% leadershipProfiles.forEach((profile) => { %>
+          <div class="profile-modal" id="<%= profile.modalId %>" hidden>
+            <div class="profile-modal__backdrop" data-profile-modal-close></div>
+            <div class="profile-modal__panel" role="dialog" aria-modal="true" aria-labelledby="<%= profile.modalId %>-title">
+                <div class="profile-modal__header">
+                  <div>
+                    <span class="profile-modal__eyebrow"><%= profile.label %></span>
+                  <h3 id="<%= profile.modalId %>-title"><%= profile.name || profile.role %></h3>
+                  <p><%= profile.name ? profile.role : profile.office %></p>
+                  <% if (profile.name) { %>
+                    <p><%= profile.office %></p>
+                  <% } %>
+                  </div>
+                <button type="button" class="profile-modal__icon" aria-label="Close" data-profile-modal-close>&times;</button>
+              </div>
+                <div class="profile-modal__body">
+                  <div class="profile-modal__identity">
+                    <img class="profile-modal__avatar" src="<%= profile.profilePhotoUrl %>" alt="<%= profile.name || profile.role %>" />
+                  <div class="profile-modal__summary">
+                      <strong>Professional Summary</strong>
+                      <p><%= profile.summary %></p>
+                    </div>
+                  </div>
+                <% if (profile.resumeHighlights?.length) { %>
+                  <div class="profile-modal__section">
+                    <strong>CV Highlights</strong>
+                    <div class="profile-modal__chips">
+                      <% profile.resumeHighlights.forEach((item) => { %>
+                        <span class="pill"><%= item %></span>
+                      <% }) %>
+                    </div>
+                  </div>
+                <% } %>
+              </div>
+              <div class="profile-modal__footer">
+                <button type="button" class="button-primary" data-profile-modal-close>Close</button>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+
+        <% faculty.forEach((member) => { %>
+          <div class="profile-modal" id="<%= member.modalId %>" hidden>
+            <div class="profile-modal__backdrop" data-profile-modal-close></div>
+            <div class="profile-modal__panel" role="dialog" aria-modal="true" aria-labelledby="<%= member.modalId %>-title">
+              <div class="profile-modal__header">
+                <div>
+                  <span class="profile-modal__eyebrow">Instructor profile</span>
+                  <h3 id="<%= member.modalId %>-title"><%= member.name %></h3>
+                  <p><%= member.headline %></p>
+                </div>
+                <button type="button" class="profile-modal__icon" aria-label="Close" data-profile-modal-close>&times;</button>
+              </div>
+              <div class="profile-modal__body">
+                <div class="profile-modal__identity">
+                  <% if (member.profilePhotoUrl) { %>
+                    <img class="profile-modal__avatar" src="<%= member.profilePhotoUrl %>" alt="<%= member.name %>" />
+                  <% } else { %>
+                    <div class="profile-modal__avatar profile-modal__avatar--fallback"><%= member.name.charAt(0).toUpperCase() %></div>
+                  <% } %>
+                  <div class="profile-modal__summary">
+                    <strong>Professional Summary</strong>
+                    <p><%= member.longBio || member.shortBio %></p>
+                  </div>
+                </div>
+                <% if (member.expertise?.length) { %>
+                  <div class="profile-modal__section">
+                    <strong>Expertise</strong>
+                    <div class="profile-modal__chips">
+                      <% member.expertise.forEach((skill) => { %>
+                        <span class="pill"><%= skill %></span>
+                      <% }) %>
+                    </div>
+                  </div>
+                <% } %>
+                <% if (member.courses?.length) { %>
+                  <div class="profile-modal__section">
+                    <strong>Visible Programmes</strong>
+                    <div class="profile-modal__list">
+                      <% member.courses.forEach((course) => { %>
+                        <a href="/programmes/<%= course.slug %>"><%= course.title %></a>
+                      <% }) %>
+                    </div>
+                  </div>
+                <% } %>
+              </div>
+              <div class="profile-modal__footer">
+                <button type="button" class="button-primary" data-profile-modal-close>Close</button>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </main>
+      <%- include("partials/footer") %>
+    </div>
+    <script src="/public/js/website-theme.js" defer></script>
+    <script>
+      (() => {
+        const setProfileModalState = (modal, open) => {
+          if (!modal) return;
+          modal.hidden = !open;
+          document.body.classList.toggle("profile-modal-open", open);
+        };
+
+        document.addEventListener("click", (event) => {
+          const trigger = event.target.closest("[data-profile-modal-trigger]");
+          if (trigger) {
+            const modal = document.getElementById(trigger.getAttribute("data-profile-modal-trigger"));
+            setProfileModalState(modal, true);
+            return;
+          }
+
+          const closeButton = event.target.closest("[data-profile-modal-close]");
+          if (closeButton) {
+            setProfileModalState(closeButton.closest(".profile-modal"), false);
+          }
+        });
+
+        document.addEventListener("keydown", (event) => {
+          if (event.key !== "Escape") return;
+          document.querySelectorAll(".profile-modal:not([hidden])").forEach((modal) => {
+            setProfileModalState(modal, false);
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>

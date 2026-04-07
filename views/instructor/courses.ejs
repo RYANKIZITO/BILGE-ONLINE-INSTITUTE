@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Courses</title>
+    <link rel="stylesheet" href="/public/css/dashboards.css" />
+    <style>
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th, td {
+        border: 1px solid #e5e5e5;
+        padding: 8px;
+        text-align: left;
+      }
+      .catalog-link {
+        text-decoration: none;
+        padding: 6px 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        background: #f9f9f9;
+        display: inline-block;
+        margin-right: 8px;
+      }
+    </style>
+  </head>
+  <body class="theme-<%= themePreference || "light" %>">
+    <div class="page">
+      <header class="page-header">
+        <div>
+          <h1>My Courses</h1>
+          <p class="muted">Manage courses assigned to you</p>
+        </div>
+        <nav class="nav-links">
+          <a href="/instructor/dashboard">Back to Dashboard</a>
+        </nav>
+      </header>
+
+      <% if (flash && flash.message) { %>
+        <div class="flash flash-<%= flash.type || "info" %>"><%= flash.message %></div>
+      <% } %>
+
+      <% if (!courses || courses.length === 0) { %>
+        <p class="muted">No assigned courses yet.</p>
+      <% } else { %>
+        <table>
+          <thead>
+            <tr>
+              <th>Course</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% courses.forEach((course) => { %>
+              <tr>
+                <td><%= course.title %></td>
+                <td><%= course.published ? "Published" : course.status %></td>
+                <td><%= new Date(course.createdAt).toLocaleDateString() %></td>
+                <td>
+                  <a class="catalog-link" href="/instructor/courses/<%= course.id %>/manage">
+                    Manage
+                  </a>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  </body>
+</html>
+
+

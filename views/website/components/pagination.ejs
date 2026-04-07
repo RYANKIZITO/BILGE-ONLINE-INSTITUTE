@@ -1,0 +1,11 @@
+<% if (pagination && pagination.totalPages > 1) { %>
+  <nav class="pagination" aria-label="Pagination">
+    <% if (pagination.hasPrevious) { %>
+      <a class="button-ghost" href="<%= basePath %>?<%= buildQuery({ ...query, page: pagination.previousPage }) %>">Previous</a>
+    <% } %>
+    <span class="pagination-status">Page <%= pagination.currentPage %> of <%= pagination.totalPages %></span>
+    <% if (pagination.hasNext) { %>
+      <a class="button-ghost" href="<%= basePath %>?<%= buildQuery({ ...query, page: pagination.nextPage }) %>">Next</a>
+    <% } %>
+  </nav>
+<% } %>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title><%= course.title %> Gradebook</title>
+<link rel="stylesheet" href="/public/css/dashboards.css" />
+
+<style>
+.catalog-link {
+  text-decoration: none;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #f9f9f9;
+  display: inline-block;
+  margin-right: 8px;
+  margin-bottom: 12px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+
+th, td {
+  border: 1px solid #e5e5e5;
+  padding: 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.flash {
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  border: 1px solid #ddd;
+  background: #fff;
+}
+
+.flash-success {
+  border-color: #b7e2c4;
+  background: #e7f6ec;
+  color: #146c43;
+}
+
+.flash-error {
+  border-color: #f5c2c7;
+  background: #f8d7da;
+  color: #842029;
+}
+
+.flash-info {
+  border-color: #c7dcff;
+  background: #f0f7ff;
+  color: #1d4ed8;
+}
+</style>
+</head>
+
+<body class="theme-<%= themePreference || "light" %>">
+<div class="page">
+      <header class="page-header">
+        <div>
+      <h1><%= course.title %> Gradebook</h1>
+      <p class="muted">Student performance overview</p>
+    </div>
+
+    <nav class="nav-links">
+      <a href="/instructor/courses/<%= course.id %>/manage">Back to Course</a>
+    </nav>
+  </header>
+
+  <% if (flash && flash.message) { %>
+    <div class="flash flash-<%= flash.type || "info" %>"><%= flash.message %></div>
+  <% } %>
+
+  <% if (!gradeRows || gradeRows.length === 0) { %>
+    <p class="muted">No enrolled students yet.</p>
+  <% } else { %>
+    <table>
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Email</th>
+          <th>Continuous %</th>
+          <th>Mid %</th>
+          <th>Final %</th>
+          <th>Course Mark %</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% gradeRows.forEach((row) => { %>
+          <tr>
+            <td><%= row.student.name %></td>
+            <td><%= row.student.email %></td>
+            <td><%= row.summary.continuousPercent.toFixed(2) %>%</td>
+            <td><%= row.summary.midPercent.toFixed(2) %>%</td>
+            <td><%= row.summary.finalCapstonePercent.toFixed(2) %>%</td>
+            <td><strong><%= row.summary.finalCourseMark.toFixed(2) %>%</strong></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+</body>
+</html>
+

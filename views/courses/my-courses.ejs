@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Courses</title>
+</head>
+<body class="theme-<%= themePreference || "light" %>">
+  <div class="page stack-lg">
+    <div>
+      <a class="back-link" href="/courses">Back to All Courses</a>
+      <header class="page-header">
+        <div>
+          <p class="page-eyebrow">Student Library</p>
+          <h1>My Courses</h1>
+          <p class="page-subtitle">Your enrolled programmes, ready for study, revision, and continued progress.</p>
+        </div>
+      </header>
+    </div>
+
+    <% if (flash && flash.message) { %>
+      <div class="flash flash-<%= flash.type || "info" %>"><%= flash.message %></div>
+    <% } %>
+
+    <% const truncate = (text, length = 160) => {
+      const value = String(text || "");
+      return value.length > length ? `${value.slice(0, length - 3)}...` : value;
+    }; %>
+
+    <% if (pendingSwitchTopUps && pendingSwitchTopUps.length > 0) { %>
+      <section class="stack-md">
+        <div>
+          <p class="page-eyebrow">Pending Program Switches</p>
+          <h2>Complete Your Top-Up</h2>
+          <p class="muted">These switch requests were approved by admin, but the new course costs more than the original one. Finish the top-up to unlock the new course automatically.</p>
+        </div>
+
+        <div class="course-grid">
+          <% pendingSwitchTopUps.forEach((request) => { %>
+            <article class="card course-card">
+              <header>
+                <div class="button-row">
+                  <span class="badge warning">Top-Up Required</span>
+                </div>
+                <h2><%= request.requestedTargetCourse?.title || "Target Course" %></h2>
+              </header>
+
+              <p class="muted">Switching from <strong><%= request.course?.title || "Current Course" %></strong>.</p>
+              <p class="muted">Amount due: <strong><%= request.switchBalanceAmount %> <%= request.switchPricingCurrency %></strong></p>
+              <% if (request.topUpPayment) { %>
+                <p class="muted">Provider: <%= request.topUpPayment.provider %> | Payment status: <%= request.topUpPayment.status %></p>
+              <% } %>
+
+              <div class="course-actions">
+                <a class="button primary" href="/payments/switch-top-up/<%= request.id %>">Complete Top-Up</a>
+              </div>
+            </article>
+          <% }) %>
+        </div>
+      </section>
+    <% } %>
+
+    <% if ((!enrollments || enrollments.length === 0) && (!pendingSwitchTopUps || pendingSwitchTopUps.length === 0)) { %>
+      <div class="empty-state">
+        <p>You are not enrolled in any courses yet.</p>
+        <a class="button primary" href="/courses">Browse Courses</a>
+      </div>
+    <% } %>
+
+    <% if (enrollments && enrollments.length > 0) { %>
+      <section class="course-grid">
+        <% enrollments.forEach((enrollment) => { %>
+          <% const course = enrollment.course; %>
+          <article class="card course-card">
+            <header>
+              <div class="button-row">
+                <span class="badge <%= course.status === "READY" ? "success" : "warning" %>"><%= course.status %></span>
+                <% if (enrollment.completed) { %>
+                  <span class="badge info">Revision Access</span>
+                <% } %>
+              </div>
+              <h2><%= course.title %></h2>
+            </header>
+            <p><%= truncate(course.description) %></p>
+            <% if (course.slug) { %>
+              <div class="course-actions">
+                <a class="button primary" href="/courses/<%= course.slug %><%= enrollment.completed ? '?view=1' : '' %>">
+                  <%= enrollment.completed ? "Review Course" : "Open Course" %>
+                </a>
+              </div>
+            <% } %>
+
+            <% if (enrollment.canCancelEnrollment) { %>
+              <details class="stack-sm" style="margin-top: 1rem;">
+                <summary>Cancel Enrollment</summary>
+                <form method="POST" action="/courses/<%= course.id %>/cancel-enrollment" class="stack-sm" style="margin-top: 0.85rem;">
+                  <label for="reasonOption-<%= enrollment.id %>">Why are you cancelling?</label>
+                  <select id="reasonOption-<%= enrollment.id %>" name="reasonOption">
+                    <option value="">Choose a reason</option>
+                    <% (enrollmentCancellationReasonOptions || []).forEach((option) => { %>
+                      <option value="<%= option.value %>"><%= option.label %></option>
+                    <% }) %>
+                  </select>
+                  <p class="muted">If you choose a target course below, the system will automatically treat this as a switch request even if you leave this reason blank.</p>
+
+                  <label for="requestedTargetCourseId-<%= enrollment.id %>">If you want to switch, choose the new course</label>
+                  <select id="requestedTargetCourseId-<%= enrollment.id %>" name="requestedTargetCourseId">
+                    <option value="">Not switching, just cancelling</option>
+                    <% (switchableCourseOptions || []).forEach((courseOption) => { %>
+                      <option value="<%= courseOption.id %>"><%= courseOption.title %></option>
+                    <% }) %>
+                  </select>
+                  <% if (!switchableCourseOptions || switchableCourseOptions.length === 0) { %>
+                    <p class="muted">There are no other published READY courses available to switch into right now.</p>
+                  <% } %>
+
+                  <label for="reasonText-<%= enrollment.id %>">Short answer if none of the options fit</label>
+                  <textarea
+                    id="reasonText-<%= enrollment.id %>"
+                    name="reasonText"
+                    rows="3"
+                    placeholder="Optional, unless you choose Other."
+                  ></textarea>
+
+                  <div class="button-row">
+                    <button type="submit">Confirm Cancellation</button>
+                  </div>
+                  <p class="muted">This is only available before you start any lesson in the course.</p>
+                  <p class="muted">If you switch to a more expensive course, extra payment may still be required. If the new course is cheaper, admin can review the remaining credit or refund.</p>
+                </form>
+              </details>
+            <% } else if (!enrollment.completed) { %>
+              <p class="muted" style="margin-top: 1rem;">Cancellation is only available before you start any lesson in the course.</p>
+            <% } %>
+          </article>
+        <% }) %>
+      </section>
+    <% } %>
+  </div>
+</body>
+</html>

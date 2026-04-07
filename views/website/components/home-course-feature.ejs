@@ -1,0 +1,14 @@
+<article class="programme-feature-card">
+  <a class="programme-feature-card__cover" href="/programmes/<%= course.slug %>">
+    <img
+      class="programme-feature-card__image"
+      src="<%= course.coverImageUrl %>"
+      alt="<%= course.title %> programme cover"
+      loading="lazy"
+    />
+  </a>
+  <div class="programme-feature-card__body">
+    <span class="programme-feature-card__eyebrow"><%= course.categoryName %></span>
+    <h3><a href="/programmes/<%= course.slug %>"><%= course.title %></a></h3>
+  </div>
+</article>

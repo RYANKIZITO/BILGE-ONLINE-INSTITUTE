@@ -1,0 +1,31 @@
+<% layout('layouts/main') %>
+
+<h2><%= lesson.title %></h2>
+
+<div>
+  <%= lesson.content %>
+</div>
+
+<button id="completeLesson">Mark as Completed</button>
+
+<script>
+document.getElementById('completeLesson').addEventListener('click', async () => {
+  const res = await fetch('/progress/complete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      lessonId: '<%= lesson.id %>',
+      courseId: '<%= lesson.courseId %>'
+    })
+  });
+
+  const data = await res.json();
+  if (data.courseCompleted) {
+    alert('Course completed! Certificate will be generated.');
+  } else {
+    alert('Lesson marked completed');
+  }
+});
+</script>
+
+

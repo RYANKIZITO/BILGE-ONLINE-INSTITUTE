@@ -1,0 +1,129 @@
+.google-translate-anchor,
+.goog-logo-link,
+.goog-te-gadget span,
+iframe.skiptranslate {
+  display: none !important;
+}
+
+body {
+  top: 0 !important;
+}
+
+.skiptranslate {
+  display: none !important;
+}
+
+.bilge-language-dock {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1400;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.25);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    opacity 180ms ease,
+    visibility 180ms ease;
+}
+
+.theme-light .bilge-language-dock {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
+}
+
+.bilge-language-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #f8fafc;
+}
+
+.theme-light .bilge-language-control {
+  color: #0f172a;
+}
+
+.bilge-language-control span {
+  white-space: nowrap;
+}
+
+.bilge-language-control select {
+  min-width: 9.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.82);
+  color: #f8fafc;
+  padding: 0.5rem 2.2rem 0.5rem 0.85rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.theme-light .bilge-language-control select {
+  background: rgba(248, 250, 252, 0.98);
+  color: #0f172a;
+  border-color: rgba(148, 163, 184, 0.45);
+}
+
+.bilge-language-control select:focus {
+  outline: 2px solid rgba(56, 189, 248, 0.45);
+  outline-offset: 2px;
+}
+
+.bilge-language-dock.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-1rem);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.1);
+}
+
+@media (max-width: 760px) {
+  .bilge-language-dock {
+    top: auto;
+    right: 0.8rem;
+    bottom: 0.8rem;
+    left: 0.8rem;
+    justify-content: center;
+    border-radius: 1rem;
+  }
+
+  .bilge-language-control {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .bilge-language-control select {
+    min-width: 0;
+    width: 60%;
+  }
+
+  .bilge-language-dock.is-hidden {
+    transform: translateY(calc(100% + 1rem));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bilge-language-dock {
+    transition: none;
+  }
+}
+
+@media print {
+  .bilge-language-dock {
+    display: none !important;
+  }
+}

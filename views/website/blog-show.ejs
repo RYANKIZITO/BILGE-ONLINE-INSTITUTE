@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include("partials/head") %>
+  <body>
+    <div class="site-shell">
+      <%- include("partials/header") %>
+      <main>
+        <section class="page-hero">
+          <div class="container page-hero-panel">
+            <%- include("components/breadcrumbs", { items: [{ href: '/insights', label: 'Insights' }, { label: post.title }] }) %>
+            <span class="eyebrow"><%= post.category?.name || "Bilge Insight" %></span>
+            <h1><%= post.title %></h1>
+            <p><%= post.excerpt %></p>
+            <div class="stats-row">
+              <span class="metric-chip"><%= post.authorName %></span>
+              <% if (post.publishedAt) { %>
+                <span class="metric-chip"><%= new Date(post.publishedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) %></span>
+              <% } %>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container content-grid">
+            <article class="narrative-card">
+              <span class="kicker-label">Article</span>
+              <h3><%= post.title %></h3>
+              <p><%= post.content %></p>
+            </article>
+            <article class="resource-card">
+              <span class="kicker-label">Related insights</span>
+              <div class="meta-list">
+                <% relatedPosts.forEach((related) => { %>
+                  <div>
+                    <strong><a href="/insights/<%= related.slug %>"><%= related.title %></a></strong>
+                    <span><%= related.excerpt %></span>
+                  </div>
+                <% }) %>
+              </div>
+            </article>
+          </div>
+        </section>
+      </main>
+      <%- include("partials/footer") %>
+    </div>
+    <script src="/public/js/website-theme.js" defer></script>
+  </body>
+</html>

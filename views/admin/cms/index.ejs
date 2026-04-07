@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <link rel="stylesheet" href="/public/css/dashboards.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CMS</title>
+</head>
+<body class="theme-<%= themePreference || "light" %>">
+  <div class="page stack-lg cms-page">
+    <div class="button-row">
+      <a class="back-link" href="<%= user?.role === 'SUPER_ADMIN' ? '/super-admin/dashboard' : '/admin/dashboard' %>">Back to Dashboard</a>
+      <a class="back-link" href="/admin/settings/users">Manage Users</a>
+    </div>
+
+    <header class="page-header">
+      <div>
+        <p class="page-eyebrow">Content Management System</p>
+        <h1>Website CMS</h1>
+        <p class="page-subtitle">Manage the public faculty page, insights, and careers vacancies from one workspace.</p>
+      </div>
+    </header>
+
+    <% if (flash && flash.message) { %>
+      <div class="flash flash-<%= flash.type || "info" %>"><%= flash.message %></div>
+    <% } %>
+
+    <section class="dashboard-kpis">
+      <article class="card dashboard-kpi">
+        <h3>Faculty</h3>
+        <p class="big"><%= (leadership?.trustees?.length || 0) + (leadership?.administrators?.length || 0) + (instructors?.filter((item) => item.profile?.visible)?.length || 0) %></p>
+        <div class="split">
+          <span>Trustees: <%= leadership?.trustees?.length || 0 %></span>
+          <span>Administration: <%= leadership?.administrators?.length || 0 %></span>
+          <span>Visible instructors: <%= instructors?.filter((item) => item.profile?.visible)?.length || 0 %></span>
+        </div>
+      </article>
+
+      <article class="card dashboard-kpi">
+        <h3>Insights</h3>
+        <p class="big"><%= blogPosts?.length || 0 %></p>
+        <div class="split">
+          <span>Categories: <%= blogCategories?.length || 0 %></span>
+          <span>Published: <%= blogPosts?.filter((post) => post.status === "PUBLISHED")?.length || 0 %></span>
+          <span>Drafts: <%= blogPosts?.filter((post) => post.status === "DRAFT")?.length || 0 %></span>
+        </div>
+      </article>
+
+      <article class="card dashboard-kpi">
+        <h3>Careers</h3>
+        <p class="big"><%= careers?.vacancies?.filter((item) => item.isOpen)?.length || 0 %></p>
+        <div class="split">
+          <span>Open vacancies: <%= careers?.vacancies?.filter((item) => item.isOpen)?.length || 0 %></span>
+          <span>Closed vacancies: <%= careers?.vacancies?.filter((item) => !item.isOpen)?.length || 0 %></span>
+        </div>
+        <p class="muted">Only open vacancies appear in the public application form.</p>
+      </article>
+    </section>
+
+    <nav class="quick-links">
+      <a class="quick-link" href="#leadership">
+        <strong>Faculty Leadership</strong>
+        <span class="muted">Board of Trustees and institute administration.</span>
+      </a>
+      <a class="quick-link" href="#instructors">
+        <strong>Instructors</strong>
+        <span class="muted">Update visible faculty profiles and hide instructors when needed.</span>
+      </a>
+      <a class="quick-link" href="#blog-categories">
+        <strong>Insight Categories</strong>
+        <span class="muted">Organize public insights and announcements.</span>
+      </a>
+      <a class="quick-link" href="#blog-posts">
+        <strong>Insights</strong>
+        <span class="muted">Create, edit, publish, and delete posts.</span>
+      </a>
+      <a class="quick-link" href="#careers">
+        <strong>Careers Page</strong>
+        <span class="muted">Edit page copy and hiring guidance.</span>
+      </a>
+      <a class="quick-link" href="#careers-vacancies">
+        <strong>Vacancies</strong>
+        <span class="muted">Open and close public role applications.</span>
+      </a>
+    </nav>
+
+    <section class="form-card stack-lg cms-section" id="leadership">
+      <div>
+        <p class="page-eyebrow">Faculty</p>
+        <h2>Leadership Profiles</h2>
+        <p class="muted">These records drive the public faculty page from the Board of Trustees down through institute administration.</p>
+      </div>
+
+      <form class="form-grid" method="POST" action="/admin/cms/leadership" enctype="multipart/form-data">
+        <div class="field">
+          <label for="leadership-group">Group</label>
+          <select id="leadership-group" name="group" required>
+            <% leadershipGroups.forEach((group) => { %>
+              <option value="<%= group.value %>"><%= group.label %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="field">
+          <label for="leadership-name">Person name</label>
+          <input id="leadership-name" type="text" name="name" placeholder="Optional for role-only entries" />
+        </div>
+        <div class="field">
+          <label for="leadership-role">Role</label>
+          <input id="leadership-role" type="text" name="role" placeholder="Chairman Board" required />
+        </div>
+        <div class="field">
+          <label for="leadership-office">Office</label>
+          <input id="leadership-office" type="text" name="office" placeholder="Trustee Board" required />
+        </div>
+        <div class="field">
+          <label for="leadership-label">Label</label>
+          <input id="leadership-label" type="text" name="label" placeholder="Trustee leadership" />
+        </div>
+        <div class="field">
+          <label for="leadership-order">Sort order</label>
+          <input id="leadership-order" type="number" name="sortOrder" value="0" />
+        </div>
+        <div class="field field-full">
+          <label for="leadership-photo">Upload picture</label>
+          <input id="leadership-photo" type="file" name="profilePhoto" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+        </div>
+        <div class="field field-full">
+          <label for="leadership-summary">Summary</label>
+          <textarea id="leadership-summary" name="summary" rows="4" placeholder="Short public professional summary" required></textarea>
+        </div>
+        <div class="field field-full">
+          <label for="leadership-highlights">CV Highlights</label>
+          <textarea id="leadership-highlights" name="resumeHighlights" rows="4" placeholder="One highlight per line"></textarea>
+        </div>
+        <div class="field field-full">
+          <button class="primary" type="submit">Add Leadership Profile</button>
+        </div>
+      </form>
+
+      <div class="cms-collection-grid">
+        <% leadershipGroups.forEach((group) => { %>
+          <% const profiles = group.value === "administration" ? leadership.administrators : leadership.trustees; %>
+          <section class="section-card stack-md cms-leadership-group">
+            <div>
+              <p class="page-eyebrow"><%= group.label %></p>
+              <h3><%= profiles.length %> profile<%= profiles.length === 1 ? "" : "s" %></h3>
+              <p class="muted">Open a position below to review or edit the assigned member profile.</p>
+            </div>
+
+            <% profiles.forEach((profile) => { %>
+              <details class="cms-leadership-item" <%= profile.sortOrder === 0 ? "open" : "" %>>
+                <summary class="cms-leadership-item__summary">
+                  <span class="cms-leadership-item__index"><%= String(profile.sortOrder + 1).padStart(2, '0') %></span>
+                  <span class="cms-leadership-item__copy">
+                    <strong><%= profile.role %></strong>
+                    <span><%= profile.name || "Position awaiting named member" %> · <%= profile.office %></span>
+                  </span>
+                  <span class="badge info"><%= profile.label %></span>
+                </summary>
+
+                <div class="cms-leadership-item__panel">
+                  <form class="form-grid" method="POST" action="/admin/cms/leadership/<%= profile.id %>" enctype="multipart/form-data">
+                    <div class="field">
+                      <label>Group</label>
+                      <select name="group" required>
+                        <% leadershipGroups.forEach((option) => { %>
+                          <option value="<%= option.value %>" <%= option.value === group.value ? "selected" : "" %>><%= option.label %></option>
+                        <% }) %>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label>Name</label>
+                      <input type="text" name="name" value="<%= profile.name || '' %>" />
+                    </div>
+                    <div class="field">
+                      <label>Role</label>
+                      <input type="text" name="role" value="<%= profile.role %>" required />
+                    </div>
+                    <div class="field">
+                      <label>Office</label>
+                      <input type="text" name="office" value="<%= profile.office %>" required />
+                    </div>
+                    <div class="field">
+                      <label>Label</label>
+                      <input type="text" name="label" value="<%= profile.label || '' %>" />
+                    </div>
+                    <div class="field">
+                      <label>Sort order</label>
+                      <input type="number" name="sortOrder" value="<%= profile.sortOrder %>" />
+                    </div>
+                    <div class="field field-full">
+                      <label>Upload picture</label>
+                      <div class="cms-leadership-photo-row">
+                        <% if (profile.profilePhotoUrl) { %>
+                          <img class="cms-leadership-photo" src="<%= profile.profilePhotoUrl %>" alt="<%= profile.name || profile.role %>" />
+                          <span class="muted">Upload a new image only if you want to replace the current one.</span>
+                        <% } else { %>
+                          <span class="muted">No image uploaded yet.</span>
+                        <% } %>
+                      </div>
+                      <input type="file" name="profilePhoto" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+                    </div>
+                    <div class="field field-full">
+                      <label>Summary</label>
+                      <textarea name="summary" rows="4" required><%= profile.summary %></textarea>
+                    </div>
+                    <div class="field field-full">
+                      <label>CV Highlights</label>
+                      <textarea name="resumeHighlights" rows="4"><%= (profile.resumeHighlights || []).join('\n') %></textarea>
+                    </div>
+                    <div class="field field-full cms-form-actions">
+                      <button class="primary" type="submit">Save Changes</button>
+                    </div>
+                  </form>
+
+                  <form method="POST" action="/admin/cms/leadership/<%= profile.id %>/delete" onsubmit="return confirm('Remove this leadership profile from the faculty page?');">
+                    <button type="submit" class="danger">Delete Profile</button>
+                  </form>
+                </div>
+              </details>
+            <% }) %>
+          </section>
+        <% }) %>
+      </div>
+    </section>
+
+    <section class="form-card stack-lg cms-section" id="instructors">
+      <div>
+        <p class="page-eyebrow">Faculty</p>
+        <h2>Instructor Profiles</h2>
+        <p class="muted">Create or replace instructor accounts from Manage Users, then control their public faculty profiles here. Hiding a profile removes it from the faculty page.</p>
+      </div>
+
+      <div class="cms-collection-grid">
+        <% instructors.forEach((instructor) => { %>
+          <% const profile = instructor.profile || {}; %>
+          <article class="card stack-md cms-entry-card">
+            <div class="split">
+              <div>
+                <strong><%= instructor.name %></strong>
+                <div class="muted"><%= instructor.email %></div>
+              </div>
+              <div class="button-row">
+                <span class="badge <%= profile.visible ? 'success' : 'warning' %>"><%= profile.visible ? 'Visible' : 'Hidden' %></span>
+                <% if (profile.featured) { %>
+                  <span class="badge info">Featured</span>
+                <% } %>
+              </div>
+            </div>
+
+            <div class="split">
+              <span class="muted">Published courses: <%= instructor.publishedCourseCount %></span>
+              <span class="muted">Public slug: <%= profile.slug || "Not set" %></span>
+            </div>
+
+            <form class="form-grid" method="POST" action="/admin/cms/instructors/<%= instructor.id %>">
+              <div class="field">
+                <label>Full name</label>
+                <input type="text" name="fullName" value="<%= instructor.name %>" />
+              </div>
+              <div class="field">
+                <label>Slug</label>
+                <input type="text" name="slug" value="<%= profile.slug || '' %>" placeholder="Generated if left blank" />
+              </div>
+              <div class="field field-full">
+                <label>Photo URL</label>
+                <input type="text" name="profilePhotoUrl" value="<%= instructor.profilePhotoUrl || '' %>" placeholder="/uploads/photo.jpg or /public/..." />
+              </div>
+              <div class="field field-full">
+                <label>Headline</label>
+                <input type="text" name="headline" value="<%= profile.headline || '' %>" placeholder="Instructor headline" />
+              </div>
+              <div class="field field-full">
+                <label>Short bio</label>
+                <textarea name="shortBio" rows="3"><%= profile.shortBio || '' %></textarea>
+              </div>
+              <div class="field field-full">
+                <label>Long bio</label>
+                <textarea name="longBio" rows="5"><%= profile.longBio || '' %></textarea>
+              </div>
+              <div class="field field-full">
+                <label>Expertise</label>
+                <textarea name="expertise" rows="4" placeholder="One skill per line"><%= Array.isArray(profile.expertise) ? profile.expertise.join('\n') : '' %></textarea>
+              </div>
+              <div class="field">
+                <label>LinkedIn URL</label>
+                <input type="text" name="linkedinUrl" value="<%= profile.linkedinUrl || '' %>" />
+              </div>
+              <div class="field">
+                <label>X / Twitter URL</label>
+                <input type="text" name="twitterUrl" value="<%= profile.twitterUrl || '' %>" />
+              </div>
+              <div class="field">
+                <label>Website URL</label>
+                <input type="text" name="websiteUrl" value="<%= profile.websiteUrl || '' %>" />
+              </div>
+              <div class="field cms-checkbox-row">
+                <label class="checkbox">
+                  <input type="checkbox" name="featured" value="1" <%= profile.featured ? 'checked' : '' %> />
+                  <span>Feature on public pages</span>
+                </label>
+                <label class="checkbox">
+                  <input type="checkbox" name="visible" value="1" <%= profile.visible ? 'checked' : '' %> />
+                  <span>Show on faculty page</span>
+                </label>
+              </div>
+              <div class="field field-full">
+                <button class="primary" type="submit">Save Instructor Profile</button>
+              </div>
+            </form>
+          </article>
+        <% }) %>
+      </div>
+    </section>
+
+    <section class="form-card stack-lg cms-section" id="blog-categories">
+      <div>
+        <p class="page-eyebrow">Insights</p>
+        <h2>Insight Categories</h2>
+      </div>
+
+      <form class="form-grid" method="POST" action="/admin/cms/blog/categories">
+        <div class="field">
+          <label for="blog-category-name">Category name</label>
+          <input id="blog-category-name" type="text" name="name" placeholder="Learning" required />
+        </div>
+        <div class="field field-full">
+          <label for="blog-category-description">Description</label>
+          <textarea id="blog-category-description" name="description" rows="3"></textarea>
+        </div>
+        <div class="field field-full">
+          <button class="primary" type="submit">Add Category</button>
+        </div>
+      </form>
+
+      <div class="cms-collection-grid">
+        <% blogCategories.forEach((category) => { %>
+          <article class="card stack-md cms-entry-card">
+            <div class="split">
+              <strong><%= category.name %></strong>
+              <span class="muted"><%= category.slug %></span>
+            </div>
+            <form class="form-grid" method="POST" action="/admin/cms/blog/categories/<%= category.id %>">
+              <div class="field">
+                <label>Name</label>
+                <input type="text" name="name" value="<%= category.name %>" required />
+              </div>
+              <div class="field field-full">
+                <label>Description</label>
+                <textarea name="description" rows="3"><%= category.description || '' %></textarea>
+              </div>
+              <div class="field field-full cms-form-actions">
+                <button class="primary" type="submit">Save Category</button>
+              </div>
+            </form>
+            <form method="POST" action="/admin/cms/blog/categories/<%= category.id %>/delete" onsubmit="return confirm('Delete this category?');">
+              <button type="submit" class="danger">Delete Category</button>
+            </form>
+          </article>
+        <% }) %>
+      </div>
+    </section>
+
+    <section class="form-card stack-lg cms-section" id="blog-posts">
+      <div>
+        <p class="page-eyebrow">Insights</p>
+        <h2>Insight Posts</h2>
+        <p class="muted">Admins and superadmins can create, publish, unpublish, and delete public insight posts here.</p>
+      </div>
+
+      <form class="form-grid" method="POST" action="/admin/cms/blog/posts">
+        <div class="field">
+          <label for="blog-post-title">Title</label>
+          <input id="blog-post-title" type="text" name="title" required />
+        </div>
+        <div class="field">
+          <label for="blog-post-category">Category</label>
+          <select id="blog-post-category" name="categoryId">
+            <option value="">No category</option>
+            <% blogCategories.forEach((category) => { %>
+              <option value="<%= category.id %>"><%= category.name %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="field">
+          <label for="blog-post-author">Author name</label>
+          <input id="blog-post-author" type="text" name="authorName" value="Bilge Online Institute" />
+        </div>
+        <div class="field">
+          <label for="blog-post-status">Status</label>
+          <select id="blog-post-status" name="status">
+            <% blogStatuses.forEach((status) => { %>
+              <option value="<%= status %>"><%= status %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="field field-full">
+          <label for="blog-post-image">Featured image URL</label>
+          <input id="blog-post-image" type="text" name="featuredImageUrl" />
+        </div>
+        <div class="field field-full">
+          <label for="blog-post-excerpt">Excerpt</label>
+          <textarea id="blog-post-excerpt" name="excerpt" rows="3" required></textarea>
+        </div>
+        <div class="field field-full">
+          <label for="blog-post-content">Content</label>
+          <textarea id="blog-post-content" name="content" rows="8" required></textarea>
+        </div>
+        <div class="field">
+          <label for="blog-post-meta-title">Meta title</label>
+          <input id="blog-post-meta-title" type="text" name="metaTitle" />
+        </div>
+        <div class="field">
+          <label for="blog-post-meta-description">Meta description</label>
+          <input id="blog-post-meta-description" type="text" name="metaDescription" />
+        </div>
+        <div class="field cms-checkbox-row">
+          <label class="checkbox">
+            <input type="checkbox" name="featured" value="1" />
+            <span>Feature this post</span>
+          </label>
+        </div>
+        <div class="field field-full">
+          <button class="primary" type="submit">Create Insight Post</button>
+        </div>
+      </form>
+
+      <div class="stack-lg">
+        <% blogPosts.forEach((post) => { %>
+          <article class="card stack-md cms-entry-card">
+            <div class="split">
+              <div>
+                <strong><%= post.title %></strong>
+                <div class="muted"><%= post.category?.name || 'Uncategorized' %> · <%= post.slug %></div>
+              </div>
+              <div class="button-row">
+                <span class="badge <%= post.status === 'PUBLISHED' ? 'success' : 'warning' %>"><%= post.status %></span>
+                <% if (post.featured) { %>
+                  <span class="badge info">Featured</span>
+                <% } %>
+              </div>
+            </div>
+
+            <form class="form-grid" method="POST" action="/admin/cms/blog/posts/<%= post.id %>">
+              <div class="field">
+                <label>Title</label>
+                <input type="text" name="title" value="<%= post.title %>" required />
+              </div>
+              <div class="field">
+                <label>Category</label>
+                <select name="categoryId">
+                  <option value="">No category</option>
+                  <% blogCategories.forEach((category) => { %>
+                    <option value="<%= category.id %>" <%= post.categoryId === category.id ? 'selected' : '' %>><%= category.name %></option>
+                  <% }) %>
+                </select>
+              </div>
+              <div class="field">
+                <label>Author name</label>
+                <input type="text" name="authorName" value="<%= post.authorName || '' %>" />
+              </div>
+              <div class="field">
+                <label>Status</label>
+                <select name="status">
+                  <% blogStatuses.forEach((status) => { %>
+                    <option value="<%= status %>" <%= post.status === status ? 'selected' : '' %>><%= status %></option>
+                  <% }) %>
+                </select>
+              </div>
+              <div class="field field-full">
+                <label>Featured image URL</label>
+                <input type="text" name="featuredImageUrl" value="<%= post.featuredImageUrl || '' %>" />
+              </div>
+              <div class="field field-full">
+                <label>Excerpt</label>
+                <textarea name="excerpt" rows="3" required><%= post.excerpt %></textarea>
+              </div>
+              <div class="field field-full">
+                <label>Content</label>
+                <textarea name="content" rows="8" required><%= post.content %></textarea>
+              </div>
+              <div class="field">
+                <label>Meta title</label>
+                <input type="text" name="metaTitle" value="<%= post.metaTitle || '' %>" />
+              </div>
+              <div class="field">
+                <label>Meta description</label>
+                <input type="text" name="metaDescription" value="<%= post.metaDescription || '' %>" />
+              </div>
+              <div class="field cms-checkbox-row">
+                <label class="checkbox">
+                  <input type="checkbox" name="featured" value="1" <%= post.featured ? 'checked' : '' %> />
+                  <span>Feature this post</span>
+                </label>
+              </div>
+              <div class="field field-full">
+                <button class="primary" type="submit">Save Post</button>
+              </div>
+            </form>
+
+            <form method="POST" action="/admin/cms/blog/posts/<%= post.id %>/delete" onsubmit="return confirm('Delete this insight post?');">
+              <button type="submit" class="danger">Delete Post</button>
+            </form>
+          </article>
+        <% }) %>
+      </div>
+    </section>
+
+    <section class="form-card stack-lg cms-section" id="careers">
+      <div>
+        <p class="page-eyebrow">Careers</p>
+        <h2>Careers Page Settings</h2>
+        <p class="muted">Use one item per line for simple lists. For structured items, use the exact pipe-separated format shown in each placeholder.</p>
+      </div>
+
+      <form class="form-grid" method="POST" action="/admin/cms/careers">
+        <div class="field">
+          <label for="careers-hero-eyebrow">Hero eyebrow</label>
+          <input id="careers-hero-eyebrow" type="text" name="heroEyebrow" value="<%= careers.hero.eyebrow %>" />
+        </div>
+        <div class="field">
+          <label for="careers-hero-title">Hero title</label>
+          <input id="careers-hero-title" type="text" name="heroTitle" value="<%= careers.hero.title %>" />
+        </div>
+        <div class="field field-full">
+          <label for="careers-hero-subtitle">Hero subtitle</label>
+          <textarea id="careers-hero-subtitle" name="heroSubtitle" rows="3"><%= careers.hero.subtitle %></textarea>
+        </div>
+        <div class="field field-full">
+          <label for="careers-metrics">Metrics</label>
+          <textarea id="careers-metrics" name="metrics" rows="4" placeholder="Remote | Flexible online teaching from anywhere"><%= careersFormState.metricsText %></textarea>
+        </div>
+        <div class="field field-full">
+          <label for="careers-highlights">Fallback highlights</label>
+          <textarea id="careers-highlights" name="highlights" rows="5" placeholder="Technology | Web development, AI, and more"><%= careersFormState.highlightsText %></textarea>
+        </div>
+        <div class="field field-full">
+          <label for="careers-openings">What you bring</label>
+          <textarea id="careers-openings" name="openings" rows="6" placeholder="Proven expertise | Minimum 3-5 years | You bring strong industry experience"><%= careersFormState.openingsText %></textarea>
+        </div>
+        <div class="field field-full">
+          <label for="careers-principles">What Bilge offers</label>
+          <textarea id="careers-principles" name="principles" rows="5" placeholder="One principle per line"><%= careersFormState.principlesText %></textarea>
+        </div>
+        <div class="field field-full">
+          <label for="careers-process">Hiring process</label>
+          <textarea id="careers-process" name="process" rows="6" placeholder="Send your CV | Share your CV highlighting your experience"><%= careersFormState.processText %></textarea>
+        </div>
+        <div class="field field-full">
+          <label for="careers-employment-types">Employment type options</label>
+          <textarea id="careers-employment-types" name="employmentTypeOptions" rows="4" placeholder="One option per line"><%= careersFormState.employmentTypeOptionsText %></textarea>
+        </div>
+        <div class="field field-full">
+          <label for="careers-experience-levels">Experience level options</label>
+          <textarea id="careers-experience-levels" name="experienceLevelOptions" rows="4" placeholder="One option per line"><%= careersFormState.experienceLevelOptionsText %></textarea>
+        </div>
+        <div class="field field-full">
+          <button class="primary" type="submit">Save Careers Page Settings</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="form-card stack-lg cms-section" id="careers-vacancies">
+      <div>
+        <p class="page-eyebrow">Careers</p>
+        <h2>Vacancies</h2>
+        <p class="muted">Only vacancies marked active and still before deadline are available in the public application form. You can stop a vacancy immediately by turning off Active.</p>
+      </div>
+
+      <form class="form-grid" method="POST" action="/admin/cms/careers/vacancies">
+        <div class="field">
+          <label for="vacancy-title">Vacancy title</label>
+          <input id="vacancy-title" type="text" name="title" required />
+        </div>
+        <div class="field">
+          <label for="vacancy-meta">Meta line</label>
+          <input id="vacancy-meta" type="text" name="meta" placeholder="Remote | Open" />
+        </div>
+        <div class="field">
+          <label for="vacancy-deadline">Deadline</label>
+          <input id="vacancy-deadline" type="date" name="deadlineDate" min="<%= today %>" />
+        </div>
+        <div class="field">
+          <label for="vacancy-order">Sort order</label>
+          <input id="vacancy-order" type="number" name="sortOrder" value="<%= careers.vacancies.length %>" />
+        </div>
+        <div class="field field-full">
+          <label for="vacancy-body">Description</label>
+          <textarea id="vacancy-body" name="body" rows="4" required></textarea>
+        </div>
+        <div class="field cms-checkbox-row">
+          <label class="checkbox">
+            <input type="checkbox" name="active" value="1" checked />
+            <span>Active vacancy</span>
+          </label>
+        </div>
+        <div class="field field-full">
+          <button class="primary" type="submit">Add Vacancy</button>
+        </div>
+      </form>
+
+      <div class="stack-lg">
+        <% careers.vacancies.forEach((vacancy) => { %>
+          <article class="card stack-md cms-entry-card">
+            <div class="split">
+              <div>
+                <strong><%= vacancy.title %></strong>
+                <div class="muted"><%= vacancy.meta || 'No meta line' %></div>
+              </div>
+              <div class="button-row">
+                <span class="badge <%= vacancy.isOpen ? 'success' : 'warning' %>"><%= vacancy.statusLabel %></span>
+                <% if (vacancy.deadlineLabel) { %>
+                  <span class="badge info">Deadline <%= vacancy.deadlineLabel %></span>
+                <% } %>
+              </div>
+            </div>
+
+            <form class="form-grid" method="POST" action="/admin/cms/careers/vacancies/<%= vacancy.id %>">
+              <div class="field">
+                <label>Vacancy title</label>
+                <input type="text" name="title" value="<%= vacancy.title %>" required />
+              </div>
+              <div class="field">
+                <label>Meta line</label>
+                <input type="text" name="meta" value="<%= vacancy.meta || '' %>" />
+              </div>
+              <div class="field">
+                <label>Deadline</label>
+                <input type="date" name="deadlineDate" value="<%= vacancy.deadlineDate || '' %>" />
+              </div>
+              <div class="field">
+                <label>Sort order</label>
+                <input type="number" name="sortOrder" value="<%= vacancy.sortOrder %>" />
+              </div>
+              <div class="field field-full">
+                <label>Description</label>
+                <textarea name="body" rows="4" required><%= vacancy.body %></textarea>
+              </div>
+              <div class="field cms-checkbox-row">
+                <label class="checkbox">
+                  <input type="checkbox" name="active" value="1" <%= vacancy.active ? 'checked' : '' %> />
+                  <span>Active vacancy</span>
+                </label>
+              </div>
+              <div class="field field-full">
+                <button class="primary" type="submit">Save Vacancy</button>
+              </div>
+            </form>
+
+            <form method="POST" action="/admin/cms/careers/vacancies/<%= vacancy.id %>/delete" onsubmit="return confirm('Delete this vacancy?');">
+              <button type="submit" class="danger">Delete Vacancy</button>
+            </form>
+          </article>
+        <% }) %>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

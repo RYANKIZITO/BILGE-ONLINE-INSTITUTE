@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= course.title %></title>
+</head>
+<body class="theme-<%= themePreference || "light" %>">
+  <% const clean = (s) => String(s || '').replace(/\n/g, ' ').replace(/\s+/g, ' ').trim(); %>
+  <% const totalLessons = course.lessons.length; %>
+  <% const completedLessons = course.lessons.filter(lesson => progressByLesson[lesson.id]?.completed).length; %>
+  <% const percent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0; %>
+
+  <div class="page stack-lg">
+    <div class="button-row">
+      <a class="back-link" href="/student/dashboard">Back to Dashboard</a>
+      <a class="back-link" href="/courses">Back to All Courses</a>
+    </div>
+
+    <% if (flash && flash.message) { %>
+      <div class="flash flash-<%= flash.type || "info" %>"><%= flash.message %></div>
+    <% } %>
+
+    <section class="hero-panel stack-md">
+      <header class="page-header">
+        <div>
+          <p class="page-eyebrow">Course Workspace</p>
+          <h1><%= clean(course.title) %></h1>
+          <p class="page-subtitle">
+            <%= revisionMode
+              ? "Revision mode is active. You can revisit lessons for lifetime reference without changing your achievements."
+              : "Track lesson progress, open assessments, and stay aligned with your learning milestones." %>
+          </p>
+        </div>
+        <div class="button-row">
+          <a class="button ghost" href="/courses/<%= course.slug %>?view=1">View Outline</a>
+          <% if (!revisionMode) { %>
+            <a class="button ghost" href="/courses/<%= course.slug %>/assessments">Assessments</a>
+          <% } %>
+          <a class="button ghost" href="/courses/<%= course.slug %>/gradebook">My Grades</a>
+        </div>
+      </header>
+
+      <div class="meta-grid">
+        <div class="meta-item">
+          <span class="meta-label">Progress</span>
+          <span class="meta-value"><%= completedLessons %> / <%= totalLessons %> lessons</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Completion</span>
+          <span class="meta-value"><%= percent %>%</span>
+        </div>
+        <% if (enrollment?.completed) { %>
+          <div class="meta-item">
+            <span class="meta-label">Status</span>
+            <span class="badge success">Completed</span>
+          </div>
+        <% } %>
+      </div>
+
+      <% if (totalLessons > 0) { %>
+        <div class="stack-sm">
+          <div class="progress">
+            <progress value="<%= completedLessons %>" max="<%= totalLessons %>"></progress>
+          </div>
+        </div>
+      <% } %>
+    </section>
+
+    <% if (revisionMode) { %>
+      <div class="flash flash-info">
+        <strong>Revision Mode:</strong> lesson access is open for review only. Assessments and progress updates are disabled so your certificate, transcript, and completed status stay unchanged.
+      </div>
+    <% } else if (activeAssessmentGate) { %>
+      <div class="flash flash-info">
+        <strong>Assessment checkpoint:</strong> <%= activeAssessmentGate.bannerMessage %>
+        <div class="button-row" style="margin-top: 0.75rem;">
+          <a class="button ghost" href="/courses/<%= course.slug %>/assessments/<%= activeAssessmentGate.assessmentId %>">Open Assessment</a>
+        </div>
+      </div>
+    <% } %>
+
+    <% if (!revisionMode && adaptiveLearningSummary) { %>
+      <section class="adaptive-box <%= adaptiveLearningSummary.status %> stack-md">
+        <div>
+          <h3><%= adaptiveLearningSummary.title %></h3>
+          <div><%= adaptiveLearningSummary.message %></div>
+        </div>
+
+        <% if (adaptiveLearningSummary.weakAssessments && adaptiveLearningSummary.weakAssessments.length > 0) { %>
+          <div class="stack-sm">
+            <strong>Assessments needing improvement</strong>
+            <ul>
+              <% adaptiveLearningSummary.weakAssessments.forEach((assessment) => { %>
+                <li><%= assessment.title %> - <%= assessment.score %> / <%= assessment.maxScore %> (<%= assessment.scorePercent %>%)</li>
+              <% }) %>
+            </ul>
+          </div>
+        <% } %>
+
+        <% if (adaptiveLearningSummary.recommendedLessons && adaptiveLearningSummary.recommendedLessons.length > 0) { %>
+          <div class="stack-sm">
+            <strong>Recommended lessons to review</strong>
+            <ul>
+              <% adaptiveLearningSummary.recommendedLessons.forEach((lesson) => { %>
+                <li>
+                  <a href="/courses/<%= course.slug %>/lessons/<%= lesson.id %>">
+                    Lesson <%= lesson.position %>: <%= clean(lesson.title) %>
+                  </a>
+                </li>
+              <% }) %>
+            </ul>
+          </div>
+        <% } %>
+
+        <% if (adaptiveLearningSummary.strongAssessments && adaptiveLearningSummary.strongAssessments.length > 0) { %>
+          <div class="stack-sm">
+            <strong>Strong performance</strong>
+            <ul>
+              <% adaptiveLearningSummary.strongAssessments.forEach((assessment) => { %>
+                <li><%= assessment.title %> - <%= assessment.score %> / <%= assessment.maxScore %> (<%= assessment.scorePercent %>%)</li>
+              <% }) %>
+            </ul>
+          </div>
+        <% } %>
+
+        <div class="muted">Completed lessons: <%= adaptiveLearningSummary.completedLessons %> / <%= adaptiveLearningSummary.totalLessons %></div>
+      </section>
+    <% } %>
+
+    <section class="card stack-md" id="engagement">
+      <div class="page-header" style="margin-bottom: 0;">
+        <div>
+          <p class="page-eyebrow">Course Community</p>
+          <h2>Questions, Discussions, Live Sessions</h2>
+          <p class="muted">Stay connected with your instructor through live sessions, direct questions, and course discussion threads.</p>
+        </div>
+      </div>
+
+      <% if (engagementData?.upcomingSessions && engagementData.upcomingSessions.length > 0) { %>
+        <div class="stack-sm">
+          <strong>Upcoming live sessions</strong>
+          <% engagementData.upcomingSessions.forEach((session) => { %>
+            <div class="card stack-sm">
+              <div><strong><%= session.sessionTypeLabel %></strong></div>
+              <div class="muted">
+                Starts:
+                <time data-local-datetime="<%= new Date(session.scheduledStartTime).toISOString() %>" data-local-format="session"><%= new Date(session.scheduledStartTime).toLocaleString() %></time>
+              </div>
+              <% if (session.meetingUrl) { %>
+                <div class="button-row">
+                  <% const courseJoinOpen = new Date(session.scheduledStartTime).getTime() <= Date.now(); %>
+                  <a
+                    class="button primary <%= courseJoinOpen ? "" : "is-disabled" %>"
+                    <% if (courseJoinOpen) { %>href="<%= session.meetingUrl %>"<% } %>
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-live-session-join
+                    data-live-session-url="<%= session.meetingUrl %>"
+                    data-session-start-time="<%= new Date(session.scheduledStartTime).toISOString() %>"
+                  >Join Google Meet</a>
+                </div>
+              <% } %>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+
+      <div class="content-grid">
+        <section class="card stack-md">
+          <div>
+            <h3>Ask Your Instructor</h3>
+            <p class="muted">Questions submitted here are tracked for response-speed compliance.</p>
+          </div>
+
+          <form method="POST" action="/courses/<%= course.slug %>/questions" class="stack-sm">
+            <label for="questionTitle">Question Title</label>
+            <input id="questionTitle" type="text" name="title" placeholder="Short summary of your question" />
+
+            <label for="questionContent">Question</label>
+            <textarea id="questionContent" name="content" rows="4" placeholder="Describe the challenge you need help with." required></textarea>
+
+            <div class="button-row">
+              <button class="primary" type="submit">Submit Question</button>
+            </div>
+          </form>
+
+          <div class="stack-sm">
+            <strong>My recent questions</strong>
+            <% if (!engagementData?.myQuestions || engagementData.myQuestions.length === 0) { %>
+              <div class="empty-state">You have not submitted any questions for this course yet.</div>
+            <% } else { %>
+              <% engagementData.myQuestions.forEach((question) => { %>
+                <article class="list-card stack-sm">
+                  <div class="split">
+                    <div>
+                      <strong><%= question.title || "Course Question" %></strong>
+                      <div class="muted"><%= new Date(question.createdAt).toLocaleString() %></div>
+                    </div>
+                    <span class="badge <%= question.status === "RESOLVED" ? "success" : question.status === "ANSWERED" ? "info" : "warning" %>"><%= question.status %></span>
+                  </div>
+                  <div><%= question.content %></div>
+                  <% if (question.answerContent) { %>
+                    <div class="card stack-sm">
+                      <strong>Instructor response</strong>
+                      <div><%= question.answerContent %></div>
+                      <div class="muted"><%= question.responder?.name || "Instructor" %> - <%= new Date(question.answeredAt || question.updatedAt).toLocaleString() %></div>
+                    </div>
+                  <% } %>
+                </article>
+              <% }) %>
+            <% } %>
+          </div>
+        </section>
+
+        <section class="card stack-md">
+          <div>
+            <h3>Discussion Board</h3>
+            <p class="muted">Share insights, questions, and peer support inside the course community.</p>
+          </div>
+
+          <form method="POST" action="/courses/<%= course.slug %>/discussions" class="stack-sm">
+            <label for="discussionContent">Start a discussion</label>
+            <textarea id="discussionContent" name="content" rows="4" placeholder="Post a discussion topic for this course community." required></textarea>
+            <div class="button-row">
+              <button type="submit">Post Discussion</button>
+            </div>
+          </form>
+
+          <% if (!engagementData?.discussionPosts || engagementData.discussionPosts.length === 0) { %>
+            <div class="empty-state">No discussion posts yet. Start the first conversation.</div>
+          <% } else { %>
+            <div class="stack-md">
+              <% engagementData.discussionPosts.forEach((post) => { %>
+                <article class="list-card stack-sm">
+                  <div class="split">
+                    <div>
+                      <strong><%= post.author?.name || "Community Member" %></strong>
+                      <div class="muted"><%= new Date(post.createdAt).toLocaleString() %></div>
+                    </div>
+                    <span class="badge info"><%= post.author?.role || "Member" %></span>
+                  </div>
+                  <div><%= post.content %></div>
+
+                  <% if (post.replies && post.replies.length > 0) { %>
+                    <div class="stack-sm">
+                      <% post.replies.forEach((reply) => { %>
+                        <div class="card stack-sm">
+                          <strong><%= reply.author?.name || "Community Member" %></strong>
+                          <div><%= reply.content %></div>
+                          <div class="muted"><%= new Date(reply.createdAt).toLocaleString() %></div>
+                        </div>
+                      <% }) %>
+                    </div>
+                  <% } %>
+                </article>
+              <% }) %>
+            </div>
+          <% } %>
+        </section>
+      </div>
+    </section>
+
+    <div class="content-grid content-grid-wide">
+      <section class="card stack-md">
+        <div>
+          <p class="page-eyebrow">Lessons</p>
+          <h2>Course Lessons</h2>
+        </div>
+
+        <% if (course.lessons.length === 0) { %>
+          <div class="empty-state">No lessons are available yet.</div>
+        <% } else { %>
+          <ul class="list-reset stack-md">
+            <% course.lessons.forEach(lesson => { %>
+              <% const lessonIndex = course.lessons.findIndex(item => item.id === lesson.id); %>
+              <% const prevLesson = lessonIndex > 0 ? course.lessons[lessonIndex - 1] : null; %>
+              <% const prevCompleted = prevLesson ? progressByLesson[prevLesson.id]?.completed : true; %>
+              <% const checkpointLocked = !revisionMode && activeAssessmentGate && lessonIndex >= activeAssessmentGate.threshold && !progressByLesson[lesson.id]?.completed; %>
+              <% const isLocked = (!enrollment?.completed && !prevCompleted) || checkpointLocked; %>
+
+              <li class="list-card stack-sm">
+                <div class="page-header" style="margin-bottom: 0;">
+                  <div>
+                    <p class="page-eyebrow">Lesson <%= lesson.position %></p>
+                    <% if (isLocked) { %>
+                      <h3><%= clean(lesson.title) %></h3>
+                    <% } else { %>
+                      <h3><a href="/courses/<%= course.slug %>/lessons/<%= lesson.id %>"><%= clean(lesson.title) %></a></h3>
+                    <% } %>
+                  </div>
+                  <div class="button-row">
+                    <% if (checkpointLocked) { %>
+                      <span class="badge info">Checkpoint Locked</span>
+                    <% } else if (isLocked) { %>
+                      <span class="badge warning">Locked</span>
+                    <% } else if (progressByLesson[lesson.id]?.completed) { %>
+                      <span class="badge success">Completed</span>
+                    <% } else { %>
+                      <span class="badge info">Available</span>
+                    <% } %>
+                  </div>
+                </div>
+
+                <% if (!isLocked) { %>
+                  <div class="button-row">
+                    <a class="button ghost" href="/courses/<%= course.slug %>/lessons/<%= lesson.id %>">
+                      <%= revisionMode
+                        ? "Open Lesson"
+                        : progressByLesson[lesson.id]?.completed
+                          ? "Review Lesson"
+                          : "Start Lesson" %>
+                    </a>
+
+                    <% if (!revisionMode && !progressByLesson[lesson.id]?.completed) { %>
+                      <form method="POST" action="/lessons/<%= lesson.id %>/complete">
+                        <button type="submit">Mark Complete</button>
+                      </form>
+                    <% } %>
+                  </div>
+                <% } else if (checkpointLocked) { %>
+                  <p class="muted"><%= activeAssessmentGate.lessonLockReason %></p>
+                <% } else if (revisionMode) { %>
+                  <p class="muted">Revision mode: open this lesson to review its content without affecting progress.</p>
+                <% } %>
+              </li>
+            <% }) %>
+          </ul>
+        <% } %>
+      </section>
+
+      <aside class="stack-md">
+        <% if (!revisionMode && publishedAssessments && publishedAssessments.length > 0) { %>
+          <section class="card stack-md">
+            <div>
+              <p class="page-eyebrow">Assessments</p>
+              <h2>Published Assessments</h2>
+            </div>
+
+            <ul class="list-reset stack-sm">
+              <% publishedAssessments.forEach((assessment) => { %>
+                <% const submission = submissionsByAssessmentId[assessment.id]; %>
+                <li class="list-card stack-sm">
+                  <a href="/courses/<%= course.slug %>/assessments/<%= assessment.id %>"><strong><%= assessment.title %></strong></a>
+                  <% if (submission) { %>
+                    <span class="badge success">Submitted - <%= submission.score %> / <%= assessment.maxScore %></span>
+                  <% } else { %>
+                    <span class="badge warning">Pending</span>
+                  <% } %>
+                </li>
+              <% }) %>
+            </ul>
+          </section>
+        <% } %>
+      </aside>
+    </div>
+  </div>
+</body>
+</html>

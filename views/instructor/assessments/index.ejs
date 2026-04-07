@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Assessments</title>
+
+    <link rel="stylesheet" href="/public/css/dashboards.css" />
+
+    <style>
+      .grading-preview {
+        margin: 20px 0;
+        padding: 16px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: #fafafa;
+      }
+
+      .grading-preview h3 {
+        margin-top: 0;
+      }
+
+      .grading-preview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        margin-top: 12px;
+      }
+
+      .grading-preview-item {
+        padding: 12px;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      .grading-preview-item strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .assessment-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .assessment-actions form {
+        margin: 0;
+      }
+    </style>
+  </head>
+
+  <body class="theme-<%= themePreference || "light" %>">
+    <div class="page">
+      <header class="page-header">
+        <div>
+          <h1>Assessments</h1>
+          <p class="muted"><%= course.title %></p>
+        </div>
+
+        <nav class="nav-links">
+          <a href="/instructor/courses/<%= course.id %>/manage">Back to Course</a>
+        </nav>
+      </header>
+
+      <% if (flash && flash.message) { %>
+        <div class="flash flash-<%= flash.type || "info" %>">
+          <%= flash.message %>
+        </div>
+      <% } %>
+
+      <% if (gradingPreview) { %>
+        <div class="grading-preview">
+          <h3>Grading Preview</h3>
+
+          <div class="grading-preview-grid">
+            <div class="grading-preview-item">
+              <strong>Continuous Percent</strong>
+              <%= gradingPreview.continuousPercent.toFixed(2) %>%
+            </div>
+
+            <div class="grading-preview-item">
+              <strong>Continuous Weighted</strong>
+              <%= gradingPreview.continuousWeighted.toFixed(2) %>
+            </div>
+
+            <div class="grading-preview-item">
+              <strong>Mid-Programme Percent</strong>
+              <%= gradingPreview.midPercent.toFixed(2) %>%
+            </div>
+
+            <div class="grading-preview-item">
+              <strong>Mid-Programme Weighted</strong>
+              <%= gradingPreview.midWeighted.toFixed(2) %>
+            </div>
+
+            <div class="grading-preview-item">
+              <strong>Final Capstone Percent</strong>
+              <%= gradingPreview.finalCapstonePercent.toFixed(2) %>%
+            </div>
+
+            <div class="grading-preview-item">
+              <strong>Final Capstone Weighted</strong>
+              <%= gradingPreview.finalCapstoneWeighted.toFixed(2) %>
+            </div>
+
+            <div class="grading-preview-item">
+              <strong>Final Course Mark</strong>
+              <%= gradingPreview.finalCourseMark.toFixed(2) %>%
+            </div>
+          </div>
+        </div>
+      <% } %>
+
+      <a class="button" href="/instructor/courses/<%= course.id %>/assessments/new">
+        Create Assessment
+      </a>
+
+      <% if (!assessments || assessments.length === 0) { %>
+        <p class="muted">No assessments yet.</p>
+      <% } else { %>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Type</th>
+              <th>Weight</th>
+              <th>Max Score</th>
+              <th>Published</th>
+              <th>Created</th>
+              <th>Questions</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <% assessments.forEach((assessment) => { %>
+              <tr>
+                <td><%= assessment.title %></td>
+                <td><%= assessment.type %></td>
+                <td><%= assessment.categoryWeight %>%</td>
+                <td><%= assessment.maxScore %></td>
+                <td><%= assessment.published ? "Yes" : "No" %></td>
+                <td><%= new Date(assessment.createdAt).toLocaleDateString() %></td>
+
+                <td>
+                  <a
+                    class="button"
+                    href="/instructor/courses/<%= course.id %>/assessments/<%= assessment.id %>"
+                  >
+                    Manage Questions
+                  </a>
+                </td>
+
+                <td>
+                  <div class="assessment-actions">
+                    <a
+                      class="button"
+                      href="/instructor/courses/<%= course.id %>/assessments/<%= assessment.id %>/edit"
+                    >
+                      Edit
+                    </a>
+
+                    <% if (assessment.published) { %>
+                      <form
+                        method="POST"
+                        action="/instructor/courses/<%= course.id %>/assessments/<%= assessment.id %>/unpublish"
+                      >
+                        <button type="submit" class="button">Unpublish</button>
+                      </form>
+                    <% } else { %>
+                      <form
+                        method="POST"
+                        action="/instructor/courses/<%= course.id %>/assessments/<%= assessment.id %>/publish"
+                      >
+                        <button type="submit" class="button">Publish</button>
+                      </form>
+                    <% } %>
+
+                    <form
+                      method="POST"
+                      action="/instructor/courses/<%= course.id %>/assessments/<%= assessment.id %>/delete"
+                      onsubmit="return confirm('Delete this assessment? This will also remove its questions and submissions.');"
+                    >
+                      <button type="submit" class="button">Delete</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  </body>
+</html>
+

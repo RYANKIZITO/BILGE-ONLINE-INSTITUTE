@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Assessment Questions</title>
+    <link rel="stylesheet" href="/public/css/dashboards.css" />
+
+    <style>
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px;
+        margin: 20px 0;
+      }
+
+      .summary-card {
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        padding: 14px;
+        background: #fff;
+      }
+
+      .summary-card strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .insight-section {
+        margin: 20px 0;
+      }
+
+      .insight-box {
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        padding: 14px;
+        background: #fafafa;
+        margin-bottom: 12px;
+      }
+
+      .difficulty-badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        border: 1px solid #ccc;
+      }
+
+      .difficulty-very-hard {
+        background: #f8d7da;
+        color: #842029;
+        border-color: #f5c2c7;
+      }
+
+      .difficulty-hard {
+        background: #fff3cd;
+        color: #664d03;
+        border-color: #ffe69c;
+      }
+
+      .difficulty-moderate {
+        background: #cff4fc;
+        color: #055160;
+        border-color: #b6effb;
+      }
+
+      .difficulty-easy {
+        background: #e7f6ec;
+        color: #146c43;
+        border-color: #b7e2c4;
+      }
+
+      .option-list,
+      .keyword-list {
+        margin: 8px 0 16px 18px;
+      }
+
+      .mini-muted {
+        color: #666;
+        font-size: 14px;
+      }
+
+      .analytics-panel {
+        margin-top: 8px;
+        padding: 10px 12px;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        background: #fafafa;
+      }
+
+      .analytics-panel p {
+        margin: 6px 0;
+      }
+    </style>
+  </head>
+
+  <body class="theme-<%= themePreference || "light" %>">
+    <div class="page">
+      <header class="page-header">
+        <div>
+          <h1>Questions</h1>
+          <p class="muted"><%= course.title %> — <%= assessment.title %></p>
+        </div>
+
+        <nav class="nav-links">
+          <a href="/instructor/courses/<%= course.id %>/assessments">Back to Assessments</a>
+        </nav>
+      </header>
+
+      <% if (flash && flash.message) { %>
+        <div class="flash flash-<%= flash.type || "info" %>">
+          <%= flash.message %>
+        </div>
+      <% } %>
+
+      <div class="summary-grid">
+        <div class="summary-card">
+          <strong>Total Questions</strong>
+          <%= questions ? questions.length : 0 %>
+        </div>
+
+        <div class="summary-card">
+          <strong>Total Submissions</strong>
+          <%= totalSubmissions || 0 %>
+        </div>
+
+        <div class="summary-card">
+          <strong>Published</strong>
+          <%= assessment.published ? "Yes" : "No" %>
+        </div>
+
+        <div class="summary-card">
+          <strong>Assessment Type</strong>
+          <%= assessment.type %>
+        </div>
+      </div>
+
+      <a
+        class="button"
+        href="/instructor/courses/<%= course.id %>/assessments/<%= assessment.id %>/questions/new"
+      >
+        Add Question
+      </a>
+
+      <% if (hardestQuestions && hardestQuestions.length > 0) { %>
+        <div class="insight-section">
+          <h2>Hardest Questions</h2>
+
+          <% hardestQuestions.forEach((question) => { %>
+            <% 
+              let difficultyClass = "difficulty-easy";
+              if (question.difficultyLabel === "Very Hard") difficultyClass = "difficulty-very-hard";
+              else if (question.difficultyLabel === "Hard") difficultyClass = "difficulty-hard";
+              else if (question.difficultyLabel === "Moderate") difficultyClass = "difficulty-moderate";
+            %>
+
+            <div class="insight-box">
+              <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+                <div>
+                  <strong>Question <%= questions.findIndex((item) => item.id === question.questionId) + 1 %></strong>
+                  <div><%= question.prompt %></div>
+                </div>
+
+                <span class="difficulty-badge <%= difficultyClass %>">
+                  <%= question.difficultyLabel %>
+                </span>
+              </div>
+
+              <p class="mini-muted">
+                Success rate: <strong><%= question.successPercent.toFixed(2) %>%</strong>
+                · Responses: <strong><%= question.totalResponses %></strong>
+              </p>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+
+      <% if (!questions || questions.length === 0) { %>
+        <p class="muted">No questions yet.</p>
+      <% } else { %>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Position</th>
+              <th>Prompt</th>
+              <th>Type</th>
+              <th>Difficulty</th>
+              <th>Success Rate</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <% questions.forEach((question) => { %>
+              <% const intelligence = questionIntelligence ? questionIntelligence.find((item) => item.questionId === question.id) : null; %>
+              <% 
+                let difficultyClass = "difficulty-easy";
+                if (intelligence?.difficultyLabel === "Very Hard") difficultyClass = "difficulty-very-hard";
+                else if (intelligence?.difficultyLabel === "Hard") difficultyClass = "difficulty-hard";
+                else if (intelligence?.difficultyLabel === "Moderate") difficultyClass = "difficulty-moderate";
+              %>
+
+              <tr>
+                <td><%= question.position %></td>
+                <td><%= question.prompt %></td>
+                <td><%= question.type %></td>
+                <td>
+                  <% if (intelligence && intelligence.totalResponses > 0) { %>
+                    <span class="difficulty-badge <%= difficultyClass %>">
+                      <%= intelligence.difficultyLabel %>
+                    </span>
+                  <% } else { %>
+                    <span class="mini-muted">No data yet</span>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (intelligence && intelligence.totalResponses > 0) { %>
+                    <%= intelligence.successPercent.toFixed(2) %>%
+                  <% } else { %>
+                    —
+                  <% } %>
+                </td>
+                <td>
+                  <form
+                    method="POST"
+                    action="/instructor/courses/<%= course.id %>/assessments/<%= assessment.id %>/questions/<%= question.id %>/delete"
+                    onsubmit="return confirm('Delete this question?');"
+                    style="display:inline;"
+                  >
+                    <button type="submit" class="button">Delete</button>
+                  </form>
+                </td>
+              </tr>
+
+              <% if (question.type === "MULTIPLE_CHOICE" && question.options && question.options.length) { %>
+                <tr>
+                  <td></td>
+                  <td colspan="5">
+                    <ul class="option-list">
+                      <% question.options.forEach((option, index) => { %>
+                        <% const optionStat = intelligence?.optionStats?.find((item) => item.optionIndex === index); %>
+                        <li>
+                          <%= option %>
+                          <% if (question.correctOptionIndex === index) { %>
+                            <strong>(Correct)</strong>
+                          <% } %>
+
+                          <% if (optionStat && intelligence.totalResponses > 0) { %>
+                            — selected by <strong><%= optionStat.selections %></strong> student(s)
+                          <% } %>
+                        </li>
+                      <% }) %>
+                    </ul>
+
+                    <% if (intelligence && intelligence.totalResponses > 0) { %>
+                      <div class="analytics-panel">
+                        <p><strong>Responses:</strong> <%= intelligence.totalResponses %></p>
+                        <p><strong>Correct:</strong> <%= intelligence.correctResponses %></p>
+                        <p><strong>Wrong:</strong> <%= intelligence.wrongResponses %></p>
+                      </div>
+                    <% } %>
+                  </td>
+                </tr>
+              <% } %>
+
+              <% if (question.type === "SHORT_TEXT") { %>
+                <tr>
+                  <td></td>
+                  <td colspan="5">
+                    <% if (question.gradingKeywords && question.gradingKeywords.length) { %>
+                      <div class="analytics-panel">
+                        <p><strong>Grading Keywords</strong></p>
+                        <ul class="keyword-list">
+                          <% question.gradingKeywords.forEach((keyword) => { %>
+                            <% const keywordStat = intelligence?.keywordStats?.find((item) => item.keyword === keyword); %>
+                            <li>
+                              <%= keyword %>
+                              <% if (keywordStat && intelligence.totalResponses > 0) { %>
+                                — matched by <strong><%= keywordStat.matchedCount %></strong> student(s)
+                                (<%= keywordStat.matchPercent.toFixed(2) %>%)
+                              <% } %>
+                            </li>
+                          <% }) %>
+                        </ul>
+
+                        <% if (intelligence && intelligence.totalResponses > 0) { %>
+                          <p><strong>Fully correct responses:</strong> <%= intelligence.correctResponses %></p>
+                          <p><strong>Partial / weak responses:</strong> <%= intelligence.wrongResponses %></p>
+                        <% } else { %>
+                          <p class="mini-muted">No keyword match data yet.</p>
+                        <% } %>
+                      </div>
+                    <% } else { %>
+                      <p class="mini-muted">No grading keywords configured.</p>
+                    <% } %>
+                  </td>
+                </tr>
+              <% } %>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  </body>
+</html>
+

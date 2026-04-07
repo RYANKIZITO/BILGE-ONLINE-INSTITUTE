@@ -1,0 +1,15 @@
+<article class="post-card <%= featured ? 'editorial-hero' : '' %>">
+  <span class="eyebrow"><%= post.category?.name || "Bilge Insight" %></span>
+  <% if (featured) { %>
+    <h2><a href="/insights/<%= post.slug %>"><%= post.title %></a></h2>
+  <% } else { %>
+    <h3><a href="/insights/<%= post.slug %>"><%= post.title %></a></h3>
+  <% } %>
+  <p class="post-meta">
+    <%= post.authorName %>
+    <% if (post.publishedAt) { %>
+      • <%= new Date(post.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) %>
+    <% } %>
+  </p>
+  <p><%= post.excerpt %></p>
+</article>

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include("partials/head") %>
+  <body>
+    <div class="site-shell">
+      <%- include("partials/header") %>
+      <main>
+        <section class="page-hero">
+          <div class="container page-hero-panel">
+            <%- include("components/breadcrumbs", { items: [{ label: "Team" }] }) %>
+            <span class="eyebrow">Bilge team</span>
+            <h1>Meet the people behind Bilge Online Institute.</h1>
+            <p>This page directs you to the faculty and institute information that support programme delivery and student guidance.</p>
+            <div class="hero-actions">
+              <a class="button button-cta-light" href="/faculty">Open faculty page</a>
+              <a class="button-secondary" href="/about">About Bilge</a>
+            </div>
+          </div>
+        </section>
+      </main>
+      <%- include("partials/footer") %>
+    </div>
+    <script src="/public/js/website-theme.js" defer></script>
+  </body>
+</html>

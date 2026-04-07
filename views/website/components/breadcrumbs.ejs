@@ -1,0 +1,11 @@
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <a href="/">Home</a>
+  <% items.forEach((item) => { %>
+    <span>/</span>
+    <% if (item.href) { %>
+      <a href="<%= item.href %>"><%= item.label %></a>
+    <% } else { %>
+      <strong><%= item.label %></strong>
+    <% } %>
+  <% }) %>
+</nav>

@@ -1,0 +1,9 @@
+<article class="quote-card">
+  <blockquote>"<%= testimonial.quote %>"</blockquote>
+  <cite>
+    <%= testimonial.name %>
+    <% if (testimonial.role || testimonial.organization) { %>
+      • <%= [testimonial.role, testimonial.organization].filter(Boolean).join(", ") %>
+    <% } %>
+  </cite>
+</article>

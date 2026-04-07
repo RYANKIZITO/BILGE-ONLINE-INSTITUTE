@@ -1,0 +1,167 @@
+<%
+  const socialIcon = (platform) => {
+    switch (platform) {
+      case "facebook":
+        return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 21v-7h2.4l.4-3h-2.8V9.1c0-.9.3-1.6 1.7-1.6H16V4.8c-.6-.1-1.4-.2-2.4-.2-2.4 0-4 1.5-4 4.2V11H7v3h2.2v7h4.3Z" fill="currentColor"/></svg>';
+      case "instagram":
+        return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.8 3h8.4A4.8 4.8 0 0 1 21 7.8v8.4a4.8 4.8 0 0 1-4.8 4.8H7.8A4.8 4.8 0 0 1 3 16.2V7.8A4.8 4.8 0 0 1 7.8 3Zm0 1.8A3 3 0 0 0 4.8 7.8v8.4a3 3 0 0 0 3 3h8.4a3 3 0 0 0 3-3V7.8a3 3 0 0 0-3-3H7.8Zm8.9 1.3a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2ZM12 7.3A4.7 4.7 0 1 1 7.3 12 4.7 4.7 0 0 1 12 7.3Zm0 1.8A2.9 2.9 0 1 0 14.9 12 2.9 2.9 0 0 0 12 9.1Z" fill="currentColor"/></svg>';
+      case "linkedin":
+        return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 8.1A1.8 1.8 0 1 1 6.4 4.5a1.8 1.8 0 0 1 0 3.6ZM4.7 9.8h3.4V20H4.7V9.8Zm5.4 0h3.2v1.4h.1c.5-.9 1.6-1.8 3.2-1.8 3.4 0 4 2.1 4 4.9V20h-3.4v-5c0-1.2 0-2.8-1.8-2.8s-2.1 1.3-2.1 2.7V20h-3.4V9.8Z" fill="currentColor"/></svg>';
+      case "youtube":
+        return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 7.2c-.2-.9-.9-1.6-1.8-1.8C17.2 5 12 5 12 5s-5.2 0-6.8.4c-.9.2-1.6.9-1.8 1.8C3 8.8 3 12 3 12s0 3.2.4 4.8c.2.9.9 1.6 1.8 1.8C6.8 19 12 19 12 19s5.2 0 6.8-.4c.9-.2 1.6-.9 1.8-1.8.4-1.6.4-4.8.4-4.8s0-3.2-.4-4.8ZM10.3 15.1V8.9l5.3 3.1-5.3 3.1Z" fill="currentColor"/></svg>';
+      case "x":
+        return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.2 4H20l-6.1 7 7.1 9h-5.5l-4.3-5.6L6.3 20H3.5l6.6-7.5L3.3 4h5.6l3.9 5.1L17.2 4Zm-1 14.2h1.6L7.9 5.7H6.2l10 12.5Z" fill="currentColor"/></svg>';
+      case "tiktok":
+        return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 4c.3 1.9 1.4 3.4 3.2 4.1v2.4a7.1 7.1 0 0 1-3.2-1.2v5.4a5.1 5.1 0 1 1-4.4-5.1v2.5a2.7 2.7 0 1 0 2 2.6V4h2.4Z" fill="currentColor"/></svg>';
+      default:
+        return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="currentColor"/></svg>';
+    }
+  };
+%>
+<footer class="site-footer">
+  <div class="container footer-panel">
+    <div class="footer-hero">
+      <div class="footer-main">
+        <a class="brand brand--footer" href="/" aria-label="Bilge Online Institute">
+          <span class="brand-logo-stack" aria-hidden="true">
+            <img
+              class="brand-logo brand-logo--dark"
+              src="/public/images/branding/logo-dark.jpg"
+              alt=""
+              width="720"
+              height="229"
+            />
+            <img
+              class="brand-logo brand-logo--light"
+              src="/public/images/branding/logo-light.jpg"
+              alt=""
+              width="684"
+              height="201"
+            />
+          </span>
+          <span class="sr-only">Bilge Online Institute</span>
+        </a>
+        <p>
+          Use this website to review programmes, admissions information, tuition details, contact
+          channels, and institute updates before enrolling.
+        </p>
+        <div class="footer-contact-strip">
+          <a class="footer-contact-pill" href="mailto:<%= shell?.contactDetails?.supportEmail || 'Bilgeonlineinstitute@gmail.com' %>">
+            <strong>Support</strong>
+            <span><%= shell?.contactDetails?.supportEmail || "Bilgeonlineinstitute@gmail.com" %></span>
+          </a>
+          <a class="footer-contact-pill" href="mailto:<%= shell?.contactDetails?.admissionsEmail || 'Bilgeonlineinstitute@gmail.com' %>">
+            <strong>Admissions</strong>
+            <span><%= shell?.contactDetails?.admissionsEmail || "Bilgeonlineinstitute@gmail.com" %></span>
+          </a>
+          <a class="footer-contact-pill" href="tel:<%= shell?.contactDetails?.phone || '+256753116500' %>">
+            <strong>Telephone</strong>
+            <span><%= shell?.contactDetails?.phoneDisplay || shell?.contactDetails?.phone || "+256753116500 / +905518954615" %></span>
+          </a>
+          <div class="footer-contact-pill">
+            <strong>Support Hours</strong>
+            <span><%= shell?.contactDetails?.supportHours || "Monday to Saturday, 8:00 AM - 6:00 PM" %></span>
+          </div>
+        </div>
+        <% if (shell?.contactDetails?.socialLinks?.length) { %>
+          <div class="footer-social-bar">
+            <span class="footer-social-bar__label">Follow Bilge</span>
+            <div class="footer-socials" aria-label="Bilge social media links">
+              <% shell.contactDetails.socialLinks.forEach((social) => { %>
+                <a
+                  class="footer-social-link"
+                  href="<%= social.href %>"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="<%= social.label %>"
+                  title="<%= social.label %>"
+                >
+                  <span class="footer-social-link__icon"><%- socialIcon(social.platform) %></span>
+                </a>
+              <% }) %>
+            </div>
+          </div>
+        <% } %>
+        <div class="footer-meta">
+          <span><%= shell?.contactDetails?.address || "Kampala, Uganda" %></span>
+          <span>Official public gateway for Bilge Online Institute</span>
+        </div>
+      </div>
+
+      <div class="footer-highlight">
+        <span class="kicker-label">Key public information</span>
+        <h3>Programme details, admissions steps, and contact channels before enrollment.</h3>
+        <p>
+          Programme pages show fees and course information, the admissions page explains the steps,
+          and the contact page lists support and enquiry channels.
+        </p>
+      </div>
+    </div>
+
+    <div class="footer-grid">
+      <section class="footer-column">
+        <h3>Explore Bilge</h3>
+        <div class="footer-links">
+          <a href="/">Home</a>
+          <a href="/about">About</a>
+          <a href="/programmes">Programmes</a>
+          <a href="/faculty">Faculty</a>
+          <a href="/careers">Careers</a>
+          <a href="/admissions">Admissions</a>
+        </div>
+      </section>
+
+      <section class="footer-column">
+        <h3>Student Pathways</h3>
+        <div class="footer-links">
+          <a href="/register">Sign Up for Free</a>
+          <a href="/login">Log In</a>
+          <a href="/faqs">FAQs</a>
+          <a href="/contact">Contact Bilge</a>
+          <a href="/testimonials">Success Stories</a>
+          <a href="/insights">Insights</a>
+        </div>
+      </section>
+
+      <section class="footer-column">
+        <h3>Important Notices</h3>
+        <div class="footer-stack">
+          <div>
+            <strong>Tuition Policy</strong>
+            <span>
+              Ugandan students pay the Ugandan student fee. Students outside Uganda pay the
+              international student fee shown on each programme.
+            </span>
+          </div>
+          <div>
+            <strong>Enrollment Flow</strong>
+            <span>
+              Registration begins on the public website and continues into the Bilge LMS for
+              learning access, records, transcripts, and certificates.
+            </span>
+          </div>
+          <div>
+            <strong>Website Status</strong>
+            <span>
+              This site provides public programme information, admissions guidance, and contact details.
+            </span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="footer-bottom">
+      <p>
+        <strong>Pricing clarity:</strong> Programme pages show both the Ugandan student fee and the
+        international student fee in USD. Final billing follows the student profile and enrollment
+        context used inside the Bilge system.
+      </p>
+      <span>
+        &copy; <%= new Date().getFullYear() %> <%= shell?.contactDetails?.instituteName || "Bilge Online Institute" %>.
+        All rights reserved.
+      </span>
+    </div>
+  </div>
+  <div id="google_translate_element" class="google-translate-anchor" aria-hidden="true"></div>
+  <script src="/public/js/website-header.js" defer></script>
+</footer>

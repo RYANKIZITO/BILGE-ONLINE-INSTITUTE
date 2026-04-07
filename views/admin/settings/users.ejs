@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <link rel="stylesheet" href="/public/css/dashboards.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Roles</title>
+</head>
+<body class="theme-<%= themePreference || "light" %>">
+  <div class="page stack-lg">
+    <div class="button-row">
+      <a class="back-link" href="/admin/dashboard">Back to Admin Dashboard</a>
+    </div>
+
+    <header class="page-header">
+      <div>
+        <p class="page-eyebrow">Admin Settings</p>
+        <h1>User Role Management</h1>
+        <p class="page-subtitle">Create administrative accounts, assign instructors, and keep access governance clean and consistent.</p>
+      </div>
+    </header>
+
+    <% if (flash && flash.message) { %>
+      <div class="flash flash-<%= flash.type || "info" %>"><%= flash.message %></div>
+    <% } %>
+
+    <div id="user-role-directory" class="stack-lg">
+    <section class="section-card stack-md">
+      <form
+        class="search-bar"
+        method="GET"
+        action="/admin/settings/users"
+        data-live-form
+        data-live-target="#user-role-directory"
+      >
+        <input
+          type="text"
+          name="q"
+          placeholder="Search name or email"
+          value="<%= q %>"
+        />
+        <button type="submit">Search</button>
+      </form>
+    </section>
+
+    <% if (currentUserRole === "SUPER_ADMIN" || currentUserRole === "ADMIN") { %>
+      <section class="form-card stack-md">
+        <div>
+          <p class="page-eyebrow">Provisioning</p>
+          <h2>Create Admin or Instructor</h2>
+        </div>
+
+        <form class="form-grid" method="POST" action="/admin/settings/users">
+          <div class="field">
+            <label for="name">Name</label>
+            <input id="name" type="text" name="name" placeholder="Name" required />
+          </div>
+
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" type="email" name="email" placeholder="Email" required />
+          </div>
+
+          <div class="field">
+            <label for="password">Temporary Password</label>
+            <input
+              id="password"
+              type="password"
+              name="password"
+              placeholder="Temporary password"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label for="role">Account Type</label>
+            <select id="role" name="role" required>
+              <% createRoleOptions.forEach((roleOption) => { %>
+                <option value="<%= roleOption %>"><%= roleOption %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="field field-full" id="course-assignment-block" style="display:none;">
+            <label for="courseIds">Assign Courses to Instructor</label>
+            <select
+              id="courseIds"
+              name="courseIds"
+              multiple
+              style="min-height: 220px;"
+            >
+              <% assignableCourses.forEach((course) => { %>
+                <option value="<%= course.id %>"><%= course.title %></option>
+              <% }) %>
+            </select>
+            <div class="help-text">Hold Ctrl or Command to select multiple courses.</div>
+          </div>
+
+          <div class="field field-full">
+            <button class="primary" type="submit">Create User</button>
+          </div>
+        </form>
+      </section>
+    <% } %>
+
+    <section class="card stack-md">
+      <div>
+        <p class="page-eyebrow">Access Directory</p>
+        <h2>Users</h2>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Assigned Courses</th>
+              <th>Created</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% users.forEach((user) => { %>
+              <tr>
+                <td><strong><%= user.name %></strong></td>
+                <td><%= user.email %></td>
+                <td>
+                  <span class="badge info"><%= user.role %></span>
+                  <% if (user.id === currentUserId) { %>
+                    <span class="muted">(You)</span>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (user.role === "INSTRUCTOR" && user.courses && user.courses.length > 0) { %>
+                    <% const primaryCourse = user.courses[0]; %>
+                    <% const remainingCourses = user.courses.slice(1); %>
+                    <div class="engagement-course-list">
+                      <div class="engagement-course-primary"><%= primaryCourse.title %></div>
+                      <% if (remainingCourses.length > 0) { %>
+                        <div class="muted">Showing 1 of <%= user.courses.length %> courses</div>
+                        <details class="engagement-course-details">
+                          <summary>Show <%= remainingCourses.length %> more course<%= remainingCourses.length === 1 ? "" : "s" %></summary>
+                          <div class="stack-sm engagement-course-extra">
+                            <% remainingCourses.forEach((course) => { %>
+                              <div><%= course.title %></div>
+                            <% }) %>
+                          </div>
+                        </details>
+                      <% } %>
+                    </div>
+                  <% } else if (user.role === "INSTRUCTOR") { %>
+                    <span class="muted">No assigned courses</span>
+                  <% } else { %>
+                    <span class="muted">N/A</span>
+                  <% } %>
+                </td>
+                <td><%= new Date(user.createdAt).toLocaleDateString() %></td>
+                <td>
+                  <% const hasProtectedPayments = user.payments && user.payments.length > 0; %>
+                  <% const hasAssignedCourses = user.role === "INSTRUCTOR" && user.courses && user.courses.length > 0; %>
+                  <% if (user.id === currentUserId) { %>
+                    <em>Role locked</em>
+                  <% } else { %>
+                    <div class="user-action-stack">
+                      <form class="search-bar user-role-form" method="POST" action="/admin/settings/users/<%= user.id %>/role<%= q ? `?q=${encodeURIComponent(q)}` : "" %>">
+                        <select name="role" style="min-width: 170px;">
+                          <% roleOptions.forEach((roleOption) => { %>
+                            <option
+                              value="<%= roleOption %>"
+                              <%= user.role === roleOption ? "selected" : "" %>
+                            >
+                              <%= roleOption %>
+                            </option>
+                          <% }) %>
+                        </select>
+                        <button type="submit">Update</button>
+                      </form>
+
+                      <% if (!hasProtectedPayments && !hasAssignedCourses) { %>
+                        <form
+                          method="POST"
+                          action="/admin/settings/users/<%= user.id %>/delete<%= q ? `?q=${encodeURIComponent(q)}` : "" %>"
+                          class="user-delete-form"
+                          onsubmit="return confirm('Delete this user account? This action cannot be undone.');"
+                        >
+                          <button type="submit" class="danger">Delete User</button>
+                        </form>
+                      <% } else { %>
+                        <div class="muted user-action-note">
+                          <%= hasAssignedCourses
+                            ? "Reassign instructor courses before deleting."
+                            : "Users with successful payments are protected from deletion." %>
+                        </div>
+                      <% } %>
+                    </div>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    </div>
+  </div>
+
+  <script>
+    const roleSelect = document.getElementById("role");
+    const courseAssignmentBlock = document.getElementById("course-assignment-block");
+
+    function syncCreateUserForm() {
+      if (!roleSelect || !courseAssignmentBlock) return;
+      const isInstructor = roleSelect.value === "INSTRUCTOR";
+      courseAssignmentBlock.style.display = isInstructor ? "block" : "none";
+    }
+
+    if (roleSelect) {
+      roleSelect.addEventListener("change", syncCreateUserForm);
+      syncCreateUserForm();
+    }
+  </script>
+</body>
+</html>

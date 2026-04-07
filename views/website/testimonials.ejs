@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include("partials/head") %>
+  <body>
+    <div class="site-shell">
+      <%- include("partials/header") %>
+      <main>
+        <section class="page-hero">
+          <div class="container page-hero-panel">
+            <%- include("components/breadcrumbs", { items: [{ label: "Testimonials" }] }) %>
+            <span class="eyebrow">Testimonials</span>
+            <h1>Read learner and stakeholder feedback about Bilge Online Institute.</h1>
+            <p>Testimonials on this page describe how learners and reviewers experienced the programmes, support, and study process.</p>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container quote-grid">
+            <% testimonials.forEach((testimonial) => { %>
+              <%- include("components/testimonial-card", { testimonial }) %>
+            <% }) %>
+          </div>
+        </section>
+      </main>
+      <%- include("partials/footer") %>
+    </div>
+    <script src="/public/js/website-theme.js" defer></script>
+  </body>
+</html>

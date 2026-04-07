@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include("partials/head") %>
+  <body>
+    <div class="site-shell">
+      <%- include("partials/header") %>
+      <main>
+        <section class="page-hero">
+          <div class="container page-hero-panel">
+            <%- include("components/breadcrumbs", { items: [{ label: "Contact" }] }) %>
+            <span class="eyebrow">Contact Bilge</span>
+            <h1>Get in touch with Bilge Online Institute.</h1>
+            <p>Use this page for admissions, partnerships, support, and general institute enquiries.</p>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container contact-grid">
+            <article class="contact-panel">
+              <span class="eyebrow">Institution details</span>
+              <h3>Public contact details and support information.</h3>
+              <div class="link-list">
+                <span class="contact-line"><%= contactDetails.instituteName %></span>
+                <span class="contact-line"><%= contactDetails.supportEmail %></span>
+                <span class="contact-line"><%= contactDetails.admissionsEmail %></span>
+                <span class="contact-line"><%= contactDetails.phoneDisplay || contactDetails.phone %></span>
+                <span class="contact-line"><%= contactDetails.address %></span>
+                <span class="contact-line"><%= contactDetails.supportHours %></span>
+              </div>
+            </article>
+            <article class="form-card">
+              <span class="eyebrow">Enquiry form</span>
+              <h3>Start a conversation with Bilge.</h3>
+              <% if (formErrors?.length) { %>
+                <div class="flash-banner flash-error">
+                  <strong>Please fix the following</strong>
+                  <span><%= formErrors.join(" ") %></span>
+                </div>
+              <% } %>
+              <%- include("components/contact-form", { values: formValues }) %>
+            </article>
+          </div>
+        </section>
+      </main>
+      <%- include("partials/footer") %>
+    </div>
+    <script src="/public/js/website-theme.js" defer></script>
+  </body>
+</html>

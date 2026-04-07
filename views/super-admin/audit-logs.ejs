@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Audit Logs</title>
+    <link rel="stylesheet" href="/public/css/dashboards.css" />
+  </head>
+  <body class="theme-<%= themePreference || "light" %>">
+    <div class="page">
+      <header class="page-header">
+        <div>
+          <h1>Audit Logs</h1>
+          <p class="muted">Latest 100 activity records</p>
+        </div>
+        <nav class="nav-links">
+          <a href="/super-admin/dashboard">Back to Dashboard</a>
+        </nav>
+      </header>
+
+      <div class="card">
+        <% if (logs.length === 0) { %>
+          <p class="muted">No audit logs yet.</p>
+        <% } else { %>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Action</th>
+                <th>Actor</th>
+                <th>Target</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% logs.forEach(log => { %>
+                <tr>
+                  <td><%= new Date(log.createdAt).toLocaleString() %></td>
+                  <td><span class="badge"><%= log.action %></span></td>
+                  <td>
+                    <%= actorMap[log.actorUserId]?.name || log.actorUserId %>
+                    <span class="muted">(<%= actorMap[log.actorUserId]?.email || "" %>)</span>
+                  </td>
+                  <td><%= log.targetType || "-" %> <%= log.targetId || "" %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        <% } %>
+      </div>
+    </div>
+  </body>
+</html>
+
+

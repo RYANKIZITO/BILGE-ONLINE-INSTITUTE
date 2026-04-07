@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include("partials/head") %>
+  <body>
+    <div class="site-shell">
+      <%- include("partials/header") %>
+
+      <main>
+        <section class="page-hero">
+          <div class="container page-hero-panel">
+            <img
+              class="programme-hero-cover"
+              src="<%= course.heroCoverImageUrl || course.coverImageUrl %>"
+              alt="<%= course.title %> programme cover"
+            />
+            <%- include("components/breadcrumbs", { items: [{ href: '/programmes', label: 'Programmes' }, { label: course.title }] }) %>
+            <span class="eyebrow"><%= course.categoryName %></span>
+            <h1><%= course.title %></h1>
+            <p><%= course.description %></p>
+            <div class="stats-row">
+              <span class="metric-chip"><%= course.level %></span>
+              <span class="metric-chip"><%= course.estimatedDuration %></span>
+              <span class="metric-chip"><%= course.assessmentCount %> assessments</span>
+            </div>
+            <div class="hero-actions">
+              <a class="button button-cta-light" href="/register">Enroll now</a>
+              <a class="button-secondary" href="/login">Log in to continue</a>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container content-grid">
+            <article class="narrative-card">
+              <span class="kicker-label">Learning outcomes</span>
+              <h3>What you will move toward in this programme.</h3>
+              <div class="tick-list">
+                <% courseBody.learningOutcomes.forEach((outcome) => { %>
+                  <div><%= outcome %></div>
+                <% }) %>
+              </div>
+            </article>
+            <article class="narrative-card">
+              <span class="kicker-label">Requirements</span>
+              <h3>What to be ready for before starting.</h3>
+              <div class="meta-list">
+                <% courseBody.requirements.forEach((item) => { %>
+                  <div><%= item %></div>
+                <% }) %>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container split-section">
+            <article class="contact-panel">
+              <span class="eyebrow">Programme overview</span>
+              <h3>Public lesson and module visibility.</h3>
+              <p>
+                Visitors can see the published lesson structure before enrollment, helping the
+                programme feel more substantial and trustworthy.
+              </p>
+              <div class="meta-list">
+                <% courseBody.lessons.slice(0, 8).forEach((lesson) => { %>
+                  <div>Lesson <%= lesson.position %>: <%= lesson.title %></div>
+                <% }) %>
+              </div>
+            </article>
+            <article class="form-card">
+              <span class="eyebrow">Pricing and trust indicators</span>
+              <h3>Clear tuition guidance before the visitor enrolls.</h3>
+              <div class="meta-list">
+                <div>Instructor: <%= course.instructorName %></div>
+                <div>
+                  Ugandan student fee:
+                  <%= course.priceUgandanUsd > 0 ? `${Math.round(course.priceUgandanUsd)} ${course.currency}` : "Contact Bilge" %>
+                </div>
+                <div>
+                  International student fee:
+                  <%= course.priceForeignUsd > 0 ? `${Math.round(course.priceForeignUsd)} ${course.currency}` : "Contact Bilge" %>
+                </div>
+                <div>Category: <%= course.categoryName %></div>
+                <div>Assessments included: <%= course.assessmentCount %></div>
+              </div>
+              <div class="pricing-policy-card">
+                <strong>How Bilge applies these two programme fees</strong>
+                <p>
+                  Bilge maintains separate tuition for Ugandan students and for students outside
+                  Uganda. The Ugandan student fee applies to learners studying from Uganda. The
+                  international student fee applies to learners outside Uganda. This gives visitors
+                  immediate pricing clarity before they move into registration and enrollment.
+                </p>
+              </div>
+              <div class="hero-actions" style="margin-top: 1.4rem;">
+                <a class="button button-cta-light" href="/register">Apply and enroll</a>
+                <a class="button-ghost" href="/contact">Ask a question</a>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <% if (relatedCourses.length) { %>
+          <section class="section">
+            <div class="container">
+              <div class="section-copy">
+                <span class="eyebrow">Related programmes</span>
+                <h2>Other Bilge programmes in a similar field.</h2>
+              </div>
+              <div class="course-grid">
+                <% relatedCourses.forEach((item) => { %>
+                  <%- include("components/course-card", { course: item }) %>
+                <% }) %>
+              </div>
+            </div>
+          </section>
+        <% } %>
+      </main>
+
+      <%- include("partials/footer") %>
+    </div>
+    <script src="/public/js/website-theme.js" defer></script>
+  </body>
+</html>

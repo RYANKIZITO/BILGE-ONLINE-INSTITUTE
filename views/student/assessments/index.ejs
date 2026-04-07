@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= course.title %> Assessments</title>
+</head>
+<body class="theme-<%= themePreference || "light" %>">
+  <div class="page stack-lg">
+    <div>
+      <a class="back-link" href="/courses/<%= course.slug %>">Back to Course</a>
+      <header class="page-header">
+        <div>
+          <p class="page-eyebrow">Assessment Center</p>
+          <h1><%= course.title %> Assessments</h1>
+          <p class="page-subtitle">Track pass marks, attempts, and assessment readiness from a single academic overview.</p>
+        </div>
+      </header>
+    </div>
+
+    <% if (flash && flash.message) { %>
+      <div class="flash flash-<%= flash.type || "info" %>"><%= flash.message %></div>
+    <% } %>
+
+    <% if (!assessments || assessments.length === 0) { %>
+      <div class="empty-state">No assessments are available yet.</div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Assessment</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Attempts</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% assessments.forEach((assessment) => { %>
+              <% const summary = submissionSummaryByAssessmentId[assessment.id]; %>
+              <% const state = assessmentStates[assessment.id]; %>
+              <tr>
+                <td>
+                  <strong><%= assessment.title %></strong>
+                  <div class="muted">Pass mark: <%= summary.passMarkScore %> / <%= assessment.maxScore %></div>
+                </td>
+                <td><%= assessment.type.replaceAll("_", " ") %></td>
+                <td>
+                  <% if (!state?.unlocked) { %>
+                    <span class="badge info">Locked</span>
+                  <% } else if (summary.hasPassed) { %>
+                    <span class="badge success">Passed - Best <%= summary.bestSubmission?.score ?? 0 %> / <%= assessment.maxScore %></span>
+                  <% } else if (summary.attemptsUsed > 0) { %>
+                    <span class="badge danger">Not Yet Passed - Latest <%= summary.latestSubmission?.score ?? 0 %> / <%= assessment.maxScore %></span>
+                  <% } else { %>
+                    <span class="badge warning">Not Submitted</span>
+                  <% } %>
+                </td>
+                <td>
+                  <strong><%= summary.attemptsUsed %> / <%= summary.maxAttempts %></strong>
+                  <div class="muted">Remaining: <%= summary.attemptsRemaining %></div>
+                </td>
+                <td>
+                  <a class="button ghost" href="/courses/<%= course.slug %>/assessments/<%= assessment.id %>">Open</a>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</body>
+</html>

@@ -1,0 +1,14 @@
+<article class="programme-compact-card">
+  <a class="programme-compact-card__link" href="/programmes/<%= course.slug %>">
+    <img
+      class="programme-compact-card__image"
+      src="<%= course.coverImageUrl %>"
+      alt="<%= course.title %> programme cover"
+      loading="lazy"
+    />
+    <div class="programme-compact-card__body">
+      <span class="programme-compact-card__eyebrow"><%= course.categoryName %></span>
+      <h3><%= course.title %></h3>
+    </div>
+  </a>
+</article>

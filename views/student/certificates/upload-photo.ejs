@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Upload Certificate Photo</title>
+    <link rel="stylesheet" href="/public/css/dashboards.css" />
+  </head>
+  <body class="theme-<%= themePreference || "light" %>">
+    <div class="page">
+      <header class="page-header">
+        <div>
+          <h1>Upload Certificate Photo</h1>
+          <p class="muted"><%= course.title %></p>
+        </div>
+        <nav class="nav-links">
+          <a href="/student/dashboard">Back to Dashboard</a>
+        </nav>
+      </header>
+
+      <% if (flash && flash.message) { %>
+        <div class="flash flash-<%= flash.type || "info" %>">
+          <%= flash.message %>
+        </div>
+      <% } %>
+
+      <div class="card" style="max-width: 640px;">
+        <p>
+          You qualify for a certificate. Please upload a recent passport-style
+          photo so your certificate can be generated professionally.
+        </p>
+
+        <p>
+          <strong>Final Mark:</strong>
+          <%= gradeSummary.finalCourseMark.toFixed(2) %>%
+        </p>
+
+        <form
+          method="POST"
+          action="/courses/<%= course.slug %>/certificate/photo"
+          enctype="multipart/form-data"
+        >
+          <label for="photo"><strong>Select Photo</strong></label>
+          <input
+            id="photo"
+            type="file"
+            name="photo"
+            accept=".jpg,.jpeg,.png,.webp"
+            required
+            style="display:block; margin-top:10px; margin-bottom:16px;"
+          />
+
+          <button type="submit" class="button primary">
+            Upload and Generate Certificate
+          </button>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
+

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include("partials/head") %>
+  <body>
+    <div class="site-shell">
+      <%- include("partials/header") %>
+      <main>
+        <section class="page-hero">
+          <div class="container page-hero-panel">
+            <%- include("components/breadcrumbs", { items: [{ label: "Admissions" }] }) %>
+            <span class="eyebrow">Admissions</span>
+            <h1><%= page?.heroTitle || page?.title || "Admissions and enrollment" %></h1>
+            <p><%= page?.heroSubtitle || page?.excerpt || page?.content %></p>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container content-grid">
+            <article class="narrative-card">
+              <span class="kicker-label">Admissions overview</span>
+              <h3><%= page?.title || "Admissions and enrollment" %></h3>
+              <p><%= page?.content %></p>
+            </article>
+            <article class="narrative-card">
+              <span class="kicker-label">Enrollment path</span>
+              <div class="tick-list">
+                <% (page?.sections?.steps || []).forEach((step) => { %>
+                  <div><%= step %></div>
+                <% }) %>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container cta-panel">
+            <span class="eyebrow">Ready to enroll?</span>
+            <h3>Start from the public site and move directly into the real Bilge platform.</h3>
+            <div class="hero-actions">
+              <a class="button button-cta-light" href="/register">Create account</a>
+              <a class="button-secondary" href="/programmes">Browse programmes</a>
+              <a class="button-ghost" href="/contact">Contact admissions</a>
+            </div>
+          </div>
+        </section>
+      </main>
+      <%- include("partials/footer") %>
+    </div>
+    <script src="/public/js/website-theme.js" defer></script>
+  </body>
+</html>

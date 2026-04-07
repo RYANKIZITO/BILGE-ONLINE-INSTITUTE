@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Assessment</title>
+    <link rel="stylesheet" href="/public/css/dashboards.css" />
+
+    <style>
+      form {
+        max-width: 800px;
+      }
+
+      label {
+        display: block;
+        margin-top: 12px;
+        font-weight: 600;
+      }
+
+      input[type="text"],
+      input[type="number"],
+      textarea,
+      select {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        margin-top: 6px;
+      }
+
+      textarea {
+        min-height: 140px;
+      }
+
+      .weight-info {
+        margin-top: 8px;
+        font-size: 14px;
+        color: #777;
+      }
+    </style>
+  </head>
+
+  <body class="theme-<%= themePreference || "light" %>">
+    <div class="page">
+      <header class="page-header">
+        <div>
+          <h1>Edit Assessment</h1>
+          <p class="muted"><%= course.title %></p>
+        </div>
+
+        <nav class="nav-links">
+          <a href="/instructor/courses/<%= course.id %>/assessments">
+            Back to Assessments
+          </a>
+        </nav>
+      </header>
+
+      <% if (flash && flash.message) { %>
+        <div class="flash flash-<%= flash.type || "info" %>">
+          <%= flash.message %>
+        </div>
+      <% } %>
+
+      <form
+        method="POST"
+        action="/instructor/courses/<%= course.id %>/assessments/<%= assessment.id %>"
+      >
+        <label for="title">Title</label>
+        <input
+          id="title"
+          name="title"
+          type="text"
+          value="<%= assessment.title %>"
+          required
+        />
+
+        <label for="type">Assessment Type</label>
+        <select id="type" name="type" required>
+          <option
+            value="CONTINUOUS"
+            <%= assessment.type === "CONTINUOUS" ? "selected" : "" %>
+          >
+            Continuous Assessment
+          </option>
+          <option
+            value="MID_PROGRAMME"
+            <%= assessment.type === "MID_PROGRAMME" ? "selected" : "" %>
+          >
+            Mid-Programme Assessment
+          </option>
+          <option
+            value="FINAL_CAPSTONE"
+            <%= assessment.type === "FINAL_CAPSTONE" ? "selected" : "" %>
+          >
+            Final Capstone Assessment
+          </option>
+        </select>
+
+        <div class="weight-info" id="weightInfo"></div>
+
+        <label for="maxScore">Maximum Score</label>
+        <input
+          id="maxScore"
+          name="maxScore"
+          type="number"
+          min="1"
+          value="<%= assessment.maxScore %>"
+          required
+        />
+
+        <label for="description">Description (optional)</label>
+        <textarea id="description" name="description"><%= assessment.description || "" %></textarea>
+
+        <br /><br />
+
+        <button type="submit">Save Changes</button>
+      </form>
+    </div>
+
+    <script>
+      const typeSelect = document.getElementById("type");
+      const weightInfo = document.getElementById("weightInfo");
+
+      const weights = {
+        CONTINUOUS: 30,
+        MID_PROGRAMME: 20,
+        FINAL_CAPSTONE: 50,
+      };
+
+      function updateWeight() {
+        const type = typeSelect.value;
+        weightInfo.innerText = "Weight: " + weights[type] + "%";
+      }
+
+      typeSelect.addEventListener("change", updateWeight);
+      updateWeight();
+    </script>
+  </body>
+</html>
+

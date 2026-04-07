@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Academic Transcript</title>
+  <link rel="stylesheet" href="/public/css/dashboards.css" />
+  <style>
+    .transcript-identity {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .transcript-photo {
+      width: 96px;
+      height: 96px;
+      border-radius: 22px;
+      object-fit: cover;
+      border: 1px solid #d9e2ec;
+      background: #f4f7fb;
+    }
+
+    .transcript-photo-fallback {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #486581;
+    }
+  </style>
+</head>
+<body class="theme-<%= themePreference || "light" %>">
+  <div class="page stack-lg">
+    <section class="hero-panel">
+      <header class="page-header">
+        <div>
+          <a class="back-link" href="/student/dashboard">Back to Dashboard</a>
+          <p class="page-eyebrow">Academic Records</p>
+          <h1>Academic Transcript</h1>
+          <p class="page-subtitle">A polished summary of assessment performance, grading, and final weighted standing.</p>
+        </div>
+        <nav class="nav-links">
+          <a href="/student/dashboard">Dashboard</a>
+          <a href="/my-courses">My Courses</a>
+        </nav>
+      </header>
+    </section>
+
+    <section class="card stack-md">
+      <div>
+        <p class="page-eyebrow">Transcript Summary</p>
+        <h2>Academic Overview</h2>
+      </div>
+      <div class="transcript-identity">
+        <% if (student?.profilePhotoUrl) { %>
+          <img class="transcript-photo" src="<%= student.profilePhotoUrl %>" alt="<%= student?.fullName || student?.name || 'Student' %>" />
+        <% } else { %>
+          <div class="transcript-photo transcript-photo-fallback">
+            <%= ((student?.fullName || student?.name || "S").trim().charAt(0) || "S").toUpperCase() %>
+          </div>
+        <% } %>
+        <div class="stack-xs">
+          <strong style="font-size:1.1rem;"><%= student?.fullName || student?.name || "Student" %></strong>
+          <div class="muted">Student ID: <%= student?.studentCode || user?.studentCode || "Pending" %></div>
+        </div>
+      </div>
+      <div class="meta-grid">
+        <div class="meta-item">
+          <span class="meta-label">Student</span>
+          <span class="meta-value"><%= student?.fullName || student?.name || "Student" %></span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Student ID</span>
+          <span class="meta-value"><%= student?.studentCode || user?.studentCode || "Pending" %></span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Course</span>
+          <span class="meta-value"><%= course?.title || "Course" %></span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Instructor</span>
+          <span class="meta-value"><%= course?.instructor?.name || "Bilge Online Institute" %></span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Final Weighted Mark</span>
+          <span class="meta-value"><%= finalCourseMark !== null ? `${finalCourseMark}%` : "-" %></span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">CGPA</span>
+          <span class="meta-value"><%= cgpaValue !== null ? cgpaValue.toFixed(1) : "-" %></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card stack-md">
+      <div>
+        <p class="page-eyebrow">Assessment History</p>
+        <h2>Transcript Rows</h2>
+      </div>
+
+      <% if (!transcriptRows || transcriptRows.length === 0) { %>
+        <div class="empty-state">No transcript records were found.</div>
+      <% } else { %>
+        <%
+        function getGrade(score) {
+          if (score >= 80) return { grade: "A", gpa: 4.0 };
+          if (score >= 75) return { grade: "B+", gpa: 3.5 };
+          if (score >= 70) return { grade: "B", gpa: 3.0 };
+          if (score >= 65) return { grade: "C+", gpa: 2.5 };
+          if (score >= 60) return { grade: "C", gpa: 2.0 };
+          if (score >= 55) return { grade: "D+", gpa: 1.5 };
+          if (score >= 50) return { grade: "D", gpa: 1.0 };
+          return { grade: "F", gpa: 0.0 };
+        }
+        %>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Assessment</th>
+                <th>Type</th>
+                <th>Grade</th>
+                <th>GPA</th>
+                <th>Attempt</th>
+                <th>Submitted</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% transcriptRows.forEach((row) => { %>
+                <% const result = getGrade(row.score || 0); %>
+                <tr>
+                  <td><strong><%= row.title %></strong></td>
+                  <td><%= row.type %></td>
+                  <td><span class="badge info"><%= result.grade %></span></td>
+                  <td><%= result.gpa.toFixed(1) %></td>
+                  <td><%= row.attempt ?? "-" %></td>
+                  <td>
+                    <%= row.submittedAt
+                      ? new Date(row.submittedAt).toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "-" %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
+  </div>
+</body>
+</html>

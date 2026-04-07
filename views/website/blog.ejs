@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include("partials/head") %>
+  <body>
+    <div class="site-shell">
+      <%- include("partials/header") %>
+      <main>
+        <section class="page-hero">
+          <div class="container page-hero-panel">
+            <%- include("components/breadcrumbs", { items: [{ label: "Insights" }] }) %>
+            <span class="eyebrow">Insights and news</span>
+            <h1>Insights, announcements, and educational updates from Bilge Online Institute.</h1>
+            <p>Use this page to read articles, updates, and institute news.</p>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container form-card">
+            <form class="site-form" method="get" action="/insights">
+              <div class="form-row">
+                <label class="form-field">
+                  <span class="field-label">Search articles</span>
+                  <input type="text" name="search" value="<%= filters.search %>" placeholder="Search insights" />
+                </label>
+                <label class="form-field">
+                  <span class="field-label">Category</span>
+                  <select name="category">
+                    <option value="">All categories</option>
+                    <% categories.forEach((category) => { %>
+                      <option value="<%= category.slug %>" <%= filters.category === category.slug ? 'selected' : '' %>><%= category.name %></option>
+                    <% }) %>
+                  </select>
+                </label>
+              </div>
+              <div class="hero-actions">
+                <button class="button button-cta-light" type="submit">Apply filters</button>
+                <a class="button-ghost" href="/insights">Reset</a>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container resource-grid">
+            <% posts.forEach((post, index) => { %>
+              <%- include("components/blog-card", { post, featured: index === 0 && pagination.currentPage === 1 && !filters.search && !filters.category }) %>
+            <% }) %>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container">
+            <%- include("components/pagination", { pagination, basePath: '/insights', query: { search: filters.search, category: filters.category }, buildQuery }) %>
+          </div>
+        </section>
+      </main>
+      <%- include("partials/footer") %>
+    </div>
+    <script src="/public/js/website-theme.js" defer></script>
+  </body>
+</html>

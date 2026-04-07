@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Course</title>
+  <link rel="stylesheet" href="/public/css/dashboards.css" />
+
+  <style>
+    .catalog-link {
+      text-decoration: none;
+      padding: 6px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      background: #f9f9f9;
+      display: inline-block;
+      margin-right: 8px;
+      margin-bottom: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      border: 1px solid #e5e5e5;
+      padding: 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    form.inline {
+      display: inline-block;
+      margin-right: 6px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 12px;
+      border: 1px solid #ccc;
+      margin-left: 6px;
+    }
+
+    .badge.published {
+      background: #e7f6ec;
+      color: #146c43;
+      border-color: #b7e2c4;
+    }
+
+    .badge.video {
+      background: #e6f0ff;
+      color: #1d4ed8;
+      border-color: #bfd3ff;
+    }
+
+    .badge.docx {
+      background: #fff3e6;
+      color: #b45309;
+      border-color: #ffd8b5;
+    }
+
+    .resource-links {
+      margin-top: 8px;
+    }
+
+    .resource-links a {
+      margin-right: 8px;
+    }
+
+    .resolve-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      width: fit-content;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .resolve-toggle input[type="checkbox"] {
+      margin: 0;
+    }
+  </style>
+</head>
+
+<body class="theme-<%= themePreference || "light" %>">
+  <div class="page">
+      <header class="page-header">
+        <div>
+        <h1><%= course.title %></h1>
+        <p class="muted">Manage lessons and content</p>
+      </div>
+
+      <nav class="nav-links">
+        <a href="/instructor/courses">Back to Courses</a>
+      </nav>
+    </header>
+
+    <% if (flash && flash.message) { %>
+      <div class="flash flash-<%= flash.type || "info" %>"><%= flash.message %></div>
+    <% } %>
+
+    <a class="catalog-link" href="/instructor/courses/<%= course.id %>/lessons/new">
+      Add Lesson
+    </a>
+
+    <a class="catalog-link" href="/instructor/courses/<%= course.id %>/assessments">
+      Assessments
+    </a>
+
+    <a class="catalog-link" href="/instructor/courses/<%= course.id %>/gradebook">
+      Gradebook
+    </a>
+
+    <a class="catalog-link" href="/instructor/courses/<%= course.id %>/analytics">
+      Analytics
+    </a>
+
+    <section class="card stack-md" id="engagement" style="margin-bottom: 1.5rem;">
+      <div class="page-header" style="margin-bottom: 0;">
+        <div>
+          <p class="page-eyebrow">ActiveState</p>
+          <h2>Engagement Workspace</h2>
+          <p class="muted">Track your live-session compliance, clear student questions, and stay active in the course community.</p>
+        </div>
+        <% const activeStateTone = engagementSnapshot?.activeState === "Active" ? "success" : engagementSnapshot?.activeState === "At-Risk" ? "warning" : "info"; %>
+        <div>
+          <span class="badge <%= activeStateTone %>"><%= engagementSnapshot?.activeState || "Inactive" %></span>
+        </div>
+      </div>
+
+      <div class="meta-grid">
+        <div class="meta-item">
+          <span class="meta-label">Attendance Rate</span>
+          <span class="meta-value"><%= Number(engagementSnapshot?.attendanceRate || 0).toFixed(1) %>%</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Response Speed</span>
+          <span class="meta-value"><%= engagementSnapshot && engagementSnapshot.averageResponseHours !== null ? `${Number(engagementSnapshot.averageResponseHours).toFixed(1)} hrs` : "No answered questions yet" %></span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Pending Over SLA</span>
+          <span class="meta-value"><%= engagementSnapshot?.pendingQuestionsOverSla || 0 %></span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Performance Score</span>
+          <span class="meta-value"><%= Number(engagementSnapshot?.performanceScore || 0).toFixed(1) %></span>
+        </div>
+      </div>
+
+      <div class="card stack-md">
+        <div>
+          <h3>Schedule Live Session</h3>
+          <p class="muted">Create the next mid-week or end-week live session for this course.</p>
+          <p class="muted">
+            <% if (engagementWorkspace?.googleMeetAutomationAvailable) { %>
+              Google Meet links can be generated here and later checked against Google conference records.
+            <% } else { %>
+              Automatic Google Meet verification is not set up for this institution yet. Paste your existing Meet link below and the session will stay on manual verification.
+            <% } %>
+          </p>
+        </div>
+
+        <form
+          method="POST"
+          action="/instructor/courses/<%= course.id %>/live-sessions"
+          class="stack-sm"
+          data-live-session-scheduler
+        >
+          <label for="sessionType">Session Type</label>
+          <select id="sessionType" name="sessionType" required>
+            <% sessionTypeOptions.forEach((option) => { %>
+              <option value="<%= option.value %>"><%= option.label %></option>
+            <% }) %>
+          </select>
+
+          <label for="scheduledStartTime">Scheduled Start Time</label>
+          <input
+            id="scheduledStartTime"
+            type="datetime-local"
+            name="scheduledStartTime"
+            data-scheduled-start-local
+            required
+          />
+          <p class="muted">This time is saved from your current local timezone, then shown to each viewer in their own local time.</p>
+          <input type="hidden" name="scheduledStartTimeUtc" value="" />
+          <input type="hidden" name="schedulerTimeZone" value="" />
+
+          <label for="meetingUrl">Google Meet Link <span class="muted">(paste your existing link here if you already created one)</span></label>
+          <input
+            id="meetingUrl"
+            type="url"
+            name="meetingUrl"
+            placeholder="https://meet.google.com/abc-mnop-xyz"
+          />
+
+          <div class="button-row">
+            <button class="primary" type="submit">Schedule Session</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card stack-md">
+        <div>
+          <h3>Live Session Log</h3>
+          <p class="muted">Record whether sessions were hosted and capture start, end, and duration details.</p>
+        </div>
+
+        <% if (!engagementWorkspace?.liveSessions || engagementWorkspace.liveSessions.length === 0) { %>
+          <div class="empty-state">No live sessions have been scheduled for this course yet.</div>
+        <% } else { %>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Scheduled</th>
+                  <th>Meeting</th>
+                  <th>Status</th>
+                  <th>Verification</th>
+                  <th>Host Log</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% engagementWorkspace.liveSessions.forEach((session) => { %>
+                  <tr>
+                    <td><strong><%= session.sessionTypeLabel %></strong></td>
+                    <td>
+                      <time data-local-datetime="<%= new Date(session.scheduledStartTime).toISOString() %>" data-local-format="session"><%= new Date(session.scheduledStartTime).toLocaleString() %></time>
+                    </td>
+                    <td>
+                      <% if (session.meetingUrl) { %>
+                        <% const manageJoinOpen = new Date(session.scheduledStartTime).getTime() <= Date.now(); %>
+                        <a
+                          class="<%= manageJoinOpen ? "" : "is-disabled" %>"
+                          <% if (manageJoinOpen) { %>href="<%= session.meetingUrl %>"<% } %>
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          data-live-session-join
+                          data-live-session-url="<%= session.meetingUrl %>"
+                          data-session-start-time="<%= new Date(session.scheduledStartTime).toISOString() %>"
+                        >Join Google Meet</a>
+                        <% if (session.meetingCode) { %>
+                          <div class="muted"><%= session.meetingCode %></div>
+                        <% } %>
+                      <% } else { %>
+                        <span class="muted">No meeting link yet</span>
+                      <% } %>
+                    </td>
+                    <td><span class="badge <%= session.status === "HOSTED" ? "success" : session.status === "MISSED" ? "warning" : "info" %>"><%= session.status %></span></td>
+                    <td>
+                      <span class="badge <%= session.verificationStatus === "VERIFIED" ? "success" : session.verificationStatus === "UNVERIFIED" ? "warning" : "info" %>"><%= session.verificationLabel %></span>
+                      <% if (session.providerParticipantCount !== null && session.providerParticipantCount !== undefined) { %>
+                        <div class="muted"><%= session.providerParticipantCount %> participant(s)</div>
+                      <% } %>
+                    </td>
+                    <td>
+                      <form method="POST" action="/instructor/live-sessions/<%= session.id %>" class="stack-sm">
+                        <select name="status">
+                          <option value="SCHEDULED" <%= session.status === "SCHEDULED" ? "selected" : "" %>>Scheduled</option>
+                          <option value="HOSTED" <%= session.status === "HOSTED" ? "selected" : "" %>>Hosted</option>
+                          <option value="MISSED" <%= session.status === "MISSED" ? "selected" : "" %>>Missed</option>
+                          <option value="CANCELLED" <%= session.status === "CANCELLED" ? "selected" : "" %>>Cancelled</option>
+                        </select>
+                        <input type="datetime-local" name="actualStartTime" value="<%= session.actualStartTime ? new Date(new Date(session.actualStartTime).getTime() - new Date(session.actualStartTime).getTimezoneOffset() * 60000).toISOString().slice(0,16) : "" %>" />
+                        <input type="datetime-local" name="endedAt" value="<%= session.endedAt ? new Date(new Date(session.endedAt).getTime() - new Date(session.endedAt).getTimezoneOffset() * 60000).toISOString().slice(0,16) : "" %>" />
+                        <input type="number" min="0" name="durationMinutes" placeholder="Duration (minutes)" value="<%= session.durationMinutes ?? "" %>" />
+                        <button type="submit">Save Log</button>
+                      </form>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </div>
+
+      <div class="card stack-md">
+        <div>
+          <h3>Student Questions</h3>
+          <p class="muted">Answer learner questions promptly to keep your ActiveState healthy.</p>
+        </div>
+
+        <% if (!engagementWorkspace?.courseQuestions || engagementWorkspace.courseQuestions.length === 0) { %>
+          <div class="empty-state">No student questions have been submitted for this course yet.</div>
+        <% } else { %>
+          <div class="stack-md">
+            <% engagementWorkspace.courseQuestions.forEach((question) => { %>
+              <article class="list-card stack-sm">
+                <div class="split">
+                  <div>
+                    <strong><%= question.title || "Course Question" %></strong>
+                    <div class="muted">From <%= question.author?.name || "Student" %> on <%= new Date(question.createdAt).toLocaleString() %></div>
+                  </div>
+                  <span class="badge <%= question.status === "RESOLVED" ? "success" : question.status === "ANSWERED" ? "info" : "warning" %>"><%= question.status %></span>
+                </div>
+                <div><%= question.content %></div>
+                <% if (question.answerContent) { %>
+                  <div class="card stack-sm">
+                    <strong>Current answer</strong>
+                    <div><%= question.answerContent %></div>
+                    <div class="muted"><%= question.responder?.name || "Instructor" %> - <%= new Date(question.answeredAt || question.updatedAt).toLocaleString() %></div>
+                  </div>
+                <% } %>
+                <form method="POST" action="/instructor/questions/<%= question.id %>/respond" class="stack-sm">
+                  <textarea name="answerContent" rows="4" placeholder="Write your answer to this student question." required><%= question.answerContent || "" %></textarea>
+                  <label class="resolve-toggle">
+                    <input type="checkbox" name="resolveNow" <%= question.status === "RESOLVED" ? "checked" : "" %> />
+                    Mark as resolved
+                  </label>
+                  <div class="button-row">
+                    <button type="submit">Save Response</button>
+                  </div>
+                </form>
+              </article>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+
+      <div class="card stack-md">
+        <div>
+          <h3>Course Community</h3>
+          <p class="muted">Reply inside the course discussion to keep students engaged between live sessions.</p>
+        </div>
+
+        <% if (!engagementWorkspace?.discussionPosts || engagementWorkspace.discussionPosts.length === 0) { %>
+          <div class="empty-state">No discussion posts have been started for this course yet.</div>
+        <% } else { %>
+          <div class="stack-md">
+            <% engagementWorkspace.discussionPosts.forEach((post) => { %>
+              <article class="list-card stack-sm">
+                <div class="split">
+                  <div>
+                    <strong><%= post.author?.name || "Community Member" %></strong>
+                    <div class="muted"><%= new Date(post.createdAt).toLocaleString() %></div>
+                  </div>
+                  <span class="badge info"><%= post.type %></span>
+                </div>
+                <div><%= post.content %></div>
+
+                <% if (post.replies && post.replies.length > 0) { %>
+                  <div class="stack-sm">
+                    <% post.replies.forEach((reply) => { %>
+                      <div class="card stack-sm">
+                        <strong><%= reply.author?.name || "Community Member" %></strong>
+                        <div><%= reply.content %></div>
+                        <div class="muted"><%= new Date(reply.createdAt).toLocaleString() %></div>
+                      </div>
+                    <% }) %>
+                  </div>
+                <% } %>
+
+                <form method="POST" action="/courses/<%= course.slug %>/discussions" class="stack-sm">
+                  <input type="hidden" name="parentId" value="<%= post.id %>" />
+                  <textarea name="content" rows="3" placeholder="Add an instructor reply to this discussion thread." required></textarea>
+                  <div class="button-row">
+                    <button type="submit">Post Reply</button>
+                  </div>
+                </form>
+              </article>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+    <% if (!course.lessons || course.lessons.length === 0) { %>
+      <p class="muted">No lessons yet.</p>
+    <% } else { %>
+      <table>
+        <thead>
+          <tr>
+            <th>Lesson</th>
+            <th>Position</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% course.lessons.forEach((lesson) => { %>
+            <tr>
+              <td>
+                <strong><%= lesson.title %></strong>
+
+                <% if (lesson.published) { %>
+                  <span class="badge published">Published</span>
+                <% } %>
+
+                <% if (lesson.videoUrl) { %>
+                  <span class="badge video">Video</span>
+                <% } %>
+
+                <% if (lesson.docxUrl) { %>
+                  <span class="badge docx">DOCX</span>
+                <% } %>
+
+                <% if (lesson.docxUrl || lesson.videoUrl) { %>
+                  <div class="resource-links">
+                    <% if (lesson.docxUrl) { %>
+                      <a
+                        class="catalog-link"
+                        href="<%= lesson.docxUrl %>"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        View DOCX
+                      </a>
+                    <% } %>
+
+                    <% if (lesson.videoUrl) { %>
+                      <a
+                        class="catalog-link"
+                        href="<%= lesson.videoUrl %>"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Open Video
+                      </a>
+                    <% } %>
+                  </div>
+                <% } %>
+              </td>
+
+              <td><%= lesson.position %></td>
+
+              <td>
+                <a class="catalog-link" href="/instructor/lessons/<%= lesson.id %>/edit">
+                  Edit
+                </a>
+
+                <form class="inline" method="POST" action="/instructor/lessons/<%= lesson.id %>/move">
+                  <input type="hidden" name="direction" value="up" />
+                  <button type="submit">Move Up</button>
+                </form>
+
+                <form class="inline" method="POST" action="/instructor/lessons/<%= lesson.id %>/move">
+                  <input type="hidden" name="direction" value="down" />
+                  <button type="submit">Move Down</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+</body>
+</html>
+

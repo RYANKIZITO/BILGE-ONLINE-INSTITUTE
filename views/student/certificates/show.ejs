@@ -1,0 +1,878 @@
+<%
+  var pdfMode = (typeof isPdf !== "undefined" && isPdf);
+  var rawParentNames = String(certificate?.user?.parentNames || "").trim();
+  var parsedParentNames = rawParentNames
+    ? rawParentNames.split(/\s*(?:,|\/|;|&|\band\b)\s*/i).map((value) => value.trim()).filter(Boolean)
+    : [];
+  var fatherName = parsedParentNames[0] || rawParentNames || "Not provided";
+  var motherName = parsedParentNames[1] || "Not provided";
+  var verificationLinkLabel = String(verifyUrl || "").replace(/^https?:\/\//, "");
+  var studentBirthDate = certificate?.user?.dateOfBirth
+    ? new Date(certificate.user.dateOfBirth).toDateString()
+    : "Not provided";
+  var awardedOnDate = certificate?.issuedAt
+    ? new Date(certificate.issuedAt).toDateString()
+    : "Not provided";
+%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Certificate</title>
+
+  <style>
+    :root {
+      --ink: #2f2a25;
+      --ink-soft: #5f584f;
+      --gold: #c6a24a;
+      --gold-dark: #8f6a2a;
+      --paper: #fffdf8;
+      --paper-edge: #f6efe2;
+      --display-font: "Baskerville Old Face", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+      --body-font: "Aptos", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: #efe7dc;
+      color: var(--ink);
+      font-family: var(--body-font);
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .page {
+      width: 100%;
+      min-height: calc(100vh - 68px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px 12px 16px;
+      overflow: auto;
+    }
+
+    .certificate-stage {
+      width: 1120px;
+      height: 720px;
+      flex: 0 0 auto;
+      transform: scale(var(--certificate-scale, 1));
+      transform-origin: center center;
+      margin: 6px auto 16px;
+    }
+
+    .certificate {
+      position: relative;
+      width: 1120px;
+      min-height: 720px;
+      height: 720px;
+      background: linear-gradient(180deg, var(--paper) 0%, var(--paper-edge) 100%);
+      border: 10px solid var(--gold-dark);
+      box-shadow: 0 18px 60px rgba(20, 18, 12, 0.16);
+      padding: 30px 38px 28px;
+      overflow: hidden;
+    }
+
+    .certificate-bg-mark {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.05;
+    }
+
+    .certificate-bg-mark img {
+      width: 310px;
+      height: 310px;
+      object-fit: contain;
+      filter: sepia(1) saturate(0.7);
+    }
+
+    .certificate::before {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      border: 2px solid var(--gold);
+      pointer-events: none;
+    }
+
+    .certificate::after {
+      content: "";
+      position: absolute;
+      inset: 22px;
+      border: 1px solid rgba(198, 162, 74, 0.45);
+      pointer-events: none;
+    }
+
+    .qr {
+      position: absolute;
+      top: 24px;
+      right: 26px;
+      text-align: center;
+      z-index: 2;
+    }
+
+    .qr img {
+      width: 96px;
+      height: 96px;
+      object-fit: contain;
+      background: #fff;
+      padding: 5px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .qr small {
+      display: block;
+      margin-top: 5px;
+      font-size: 9px;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      font-family: var(--body-font);
+      font-weight: 700;
+    }
+
+    .brand-head {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 180px minmax(0, 1fr) 110px;
+      align-items: center;
+      gap: 16px;
+      padding-bottom: 12px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid rgba(198, 162, 74, 0.45);
+    }
+
+    .brand-lockup img {
+      width: 100%;
+      max-height: 58px;
+      object-fit: contain;
+    }
+
+    .brand-lockup {
+      display: flex;
+      align-items: center;
+      min-height: 58px;
+    }
+
+    .institution,
+    .main-title,
+    .course-title,
+    .student-name,
+    .value {
+      font-family: var(--display-font);
+    }
+
+    .intro,
+    .programme,
+    .label,
+    .brand-copy,
+    .certificate-footer,
+    .recipient-kicker,
+    .course-prefix {
+      font-family: var(--body-font);
+    }
+
+    .brand-copy {
+      display: grid;
+      gap: 4px;
+      text-align: center;
+      padding-inline: 72px;
+    }
+
+    .brand-kicker {
+      display: inline-block;
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--gold-dark);
+      margin-bottom: 2px;
+      font-weight: 700;
+    }
+
+    .brand-copy strong {
+      display: block;
+      font-size: 17px;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      font-family: var(--display-font);
+    }
+
+    .brand-copy span {
+      display: block;
+      font-size: 12px;
+      color: var(--ink-soft);
+      line-height: 1.35;
+    }
+
+    .brand-mark {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 58px;
+    }
+
+    .brand-mark img {
+      width: 62px;
+      height: 62px;
+      object-fit: contain;
+      filter: sepia(1) saturate(0.9);
+      opacity: 0.95;
+    }
+
+    .institution {
+      text-align: center;
+      font-size: 15px;
+      letter-spacing: 2.2px;
+      text-transform: uppercase;
+      margin-top: 0;
+      color: var(--ink-soft);
+    }
+
+    .main-title {
+      text-align: center;
+      font-size: clamp(30px, 3.2vw, 42px);
+      font-weight: 700;
+      line-height: 1.02;
+      margin-top: 4px;
+      margin-bottom: 6px;
+      color: var(--ink);
+      position: relative;
+      z-index: 1;
+    }
+
+    .intro {
+      text-align: center;
+      margin-top: 0;
+      color: var(--ink-soft);
+      font-size: 14px;
+      line-height: 1.45;
+      max-width: 560px;
+      margin-inline: auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .programme {
+      text-align: center;
+      color: var(--ink-soft);
+      font-size: 12px;
+      margin-top: 6px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      position: relative;
+      z-index: 1;
+    }
+
+    .recipient-kicker {
+      text-align: center;
+      margin-top: 18px;
+      color: var(--ink-soft);
+      font-size: 11px;
+      letter-spacing: 0.26em;
+      text-transform: uppercase;
+      font-weight: 700;
+      position: relative;
+      z-index: 1;
+    }
+
+    .student-name--hero {
+      text-align: center;
+      font-size: clamp(34px, 3vw, 46px);
+      line-height: 1.08;
+      font-weight: 700;
+      margin-top: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .center-divider {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      margin: 12px auto 10px;
+      width: min(100%, 220px);
+      color: color-mix(in srgb, var(--gold-dark) 72%, var(--paper));
+    }
+
+    .center-divider::before,
+    .center-divider::after {
+      content: "";
+      flex: 1 1 auto;
+      height: 1px;
+      background: color-mix(in srgb, var(--gold) 56%, transparent);
+    }
+
+    .center-divider span {
+      display: inline-flex;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      border: 1px solid currentColor;
+      background: rgba(255, 255, 255, 0.7);
+      flex: 0 0 auto;
+    }
+
+    .course-prefix {
+      text-align: center;
+      color: var(--ink-soft);
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 700;
+      position: relative;
+      z-index: 1;
+    }
+
+    .course-title {
+      text-align: center;
+      font-size: clamp(24px, 2.4vw, 34px);
+      line-height: 1.18;
+      font-weight: 700;
+      margin: 10px auto 0;
+      max-width: 760px;
+      padding: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .detail-band {
+      display: grid;
+      grid-template-columns: 1.02fr 0.92fr 1.12fr;
+      gap: 24px;
+      align-items: start;
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(198, 162, 74, 0.26);
+      position: relative;
+      z-index: 1;
+    }
+
+    .detail-column {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .detail-column--left {
+      padding-right: 18px;
+      border-right: 1px solid rgba(198, 162, 74, 0.2);
+    }
+
+    .detail-column--center {
+      padding-inline: 6px 16px;
+    }
+
+    .detail-column--right {
+      padding-left: 26px;
+      border-left: 1px solid rgba(198, 162, 74, 0.24);
+    }
+
+    .authority-card {
+      display: grid;
+      gap: 12px;
+      min-height: 108px;
+      padding: 14px 16px;
+      border: 1px solid rgba(198, 162, 74, 0.26);
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.86), rgba(246, 239, 226, 0.7)),
+        radial-gradient(circle at top right, rgba(198, 162, 74, 0.12), transparent 56%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
+    }
+
+    .authority-card--compact {
+      min-height: 0;
+    }
+
+    .authority-title {
+      font-size: 18px;
+      line-height: 1.15;
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .authority-line {
+      width: 100%;
+      border-top: 1px solid rgba(47, 42, 37, 0.72);
+      margin-top: 2px;
+    }
+
+    .authority-meta {
+      display: grid;
+      gap: 2px;
+    }
+
+    .authority-name {
+      font-size: 13px;
+      line-height: 1.35;
+      color: var(--ink-soft);
+      font-weight: 700;
+      font-family: var(--body-font);
+    }
+
+    .authority-note {
+      font-size: 11px;
+      line-height: 1.45;
+      color: var(--ink-soft);
+      font-family: var(--body-font);
+    }
+
+    .label {
+      display: block;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 2.1px;
+      color: var(--ink-soft);
+      margin-bottom: 4px;
+      font-weight: 700;
+    }
+
+    .value {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .value--wrap {
+      display: block;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      line-height: 1.35;
+    }
+
+    .detail-column .meta-item {
+      margin: 0;
+    }
+
+    .bottom {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr 1.55fr 0.9fr;
+      gap: 14px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(198, 162, 74, 0.2);
+      font-size: 13px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .bottom__item {
+      min-width: 0;
+    }
+
+    .verification-link {
+      color: var(--ink);
+      text-decoration: none;
+    }
+
+    .verification-link--compact {
+      font-size: 13px;
+      line-height: 1.3;
+    }
+
+    .certificate-footer {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(198, 162, 74, 0.3);
+      color: var(--ink-soft);
+      font-size: 11px;
+      letter-spacing: 0.06em;
+    }
+
+    .certificate-footer strong {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .certificate-footer__link {
+      max-width: 54%;
+      text-align: right;
+      line-height: 1.45;
+    }
+
+    .certificate-action-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-block: 10px;
+      flex-wrap: wrap;
+    }
+
+    .certificate-action-bar .actions {
+      gap: 10px;
+    }
+
+    .certificate-view-tools {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .certificate-view-tools__label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      font-family: var(--body-font);
+    }
+
+    .certificate-view-tools button {
+      min-height: 38px;
+      padding: 0.55rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid rgba(143, 106, 42, 0.28);
+      background: #fff;
+      color: var(--ink);
+      font-weight: 700;
+      font-family: var(--body-font);
+      cursor: pointer;
+    }
+
+    .certificate-view-tools button:hover {
+      background: #fbf6ea;
+    }
+
+    .pdf-mode {
+      background: #fff;
+    }
+
+    .pdf-mode .page {
+      width: 297mm;
+      height: 210mm;
+      min-height: 210mm;
+      padding: 0;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .pdf-mode .certificate-stage {
+      width: 1120px;
+      height: 720px;
+      margin: 0;
+      transform: none !important;
+    }
+
+    .pdf-mode .certificate {
+      width: 1120px;
+      height: 720px;
+      min-height: 720px;
+      box-shadow: none;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    @page {
+      size: A4 landscape;
+      margin: 0;
+    }
+
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 0;
+      }
+
+      body {
+        background: #fff;
+      }
+
+      html,
+      body {
+        width: 297mm;
+        height: 210mm;
+        overflow: hidden;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      .page {
+        width: 297mm;
+        height: 210mm;
+        min-height: 210mm;
+        padding: 0;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .certificate-stage {
+        width: 1120px;
+        height: 720px;
+        margin: 0;
+        transform: none !important;
+      }
+
+      .certificate {
+        width: 1120px;
+        height: 720px;
+        min-height: 720px;
+        box-shadow: none;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .detail-band {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
+      .detail-column--left,
+      .detail-column--center,
+      .detail-column--right {
+        padding: 0;
+        border-left: 0;
+        border-right: 0;
+      }
+
+      .bottom {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .certificate-footer {
+        flex-direction: column;
+      }
+
+      .certificate-footer__link {
+        max-width: none;
+        text-align: left;
+      }
+    }
+  </style>
+
+  <script>
+    let currentCertificateScale = 1;
+
+    const applyCertificateScale = (value) => {
+      currentCertificateScale = value;
+      document.documentElement.style.setProperty(
+        "--certificate-scale",
+        String(value)
+      );
+    };
+
+    const getReadableFloor = () => {
+      if (window.innerWidth >= 1360 && window.innerHeight >= 820) {
+        return 0.95;
+      }
+
+      if (window.innerWidth >= 1180 && window.innerHeight >= 760) {
+        return 0.88;
+      }
+
+      if (window.innerWidth >= 1024 && window.innerHeight >= 680) {
+        return 0.8;
+      }
+
+      return 0.72;
+    };
+
+    const getFitScale = () => {
+      const actionBar = document.querySelector(".certificate-action-bar");
+      const availableWidth = window.innerWidth - 28;
+      const availableHeight =
+        window.innerHeight - (actionBar ? actionBar.offsetHeight : 0) - 32;
+      const widthScale = availableWidth / 1120;
+      const heightScale = availableHeight / 720;
+
+      return Math.min(1, widthScale, heightScale);
+    };
+
+    const fitCertificateToViewport = () => {
+      const isPdfMode = <%= pdfMode ? "true" : "false" %>;
+      if (isPdfMode) {
+        applyCertificateScale(1);
+        return;
+      }
+
+      const fitScale = getFitScale();
+      applyCertificateScale(Math.max(fitScale, getReadableFloor()));
+    };
+
+    const setCertificateFitView = () => {
+      applyCertificateScale(getFitScale());
+    };
+
+    const setCertificateReadableView = () => {
+      applyCertificateScale(Math.max(getFitScale(), getReadableFloor()));
+    };
+
+    const setCertificateActualSize = () => {
+      applyCertificateScale(1);
+    };
+
+    window.addEventListener("resize", fitCertificateToViewport);
+    window.addEventListener("load", fitCertificateToViewport);
+  </script>
+
+  <% if (pdfMode) { %>
+    <script>
+      window.onload = () => {
+        if (window.location.search.includes("print=1") || window.location.search.includes("download=1")) {
+          window.print();
+        }
+      };
+    </script>
+  <% } %>
+</head>
+<body class="theme-<%= themePreference || "light" %> <%= pdfMode ? "pdf-mode" : "screen-mode" %>">
+  <% if (!pdfMode) { %>
+    <div class="certificate-action-bar surface no-print">
+      <div class="actions">
+        <a class="button ghost" href="/dashboard">Back to Dashboard</a>
+        <a class="button primary" href="/certificates/<%= certificate.verificationCode %>/pdf">Download PDF</a>
+        <a class="button secondary" href="/certificates/<%= certificate.verificationCode %>?pdf=1&print=1" target="_blank" rel="noopener">Print Certificate</a>
+      </div>
+      <div class="certificate-view-tools">
+        <span class="certificate-view-tools__label">View</span>
+        <button type="button" onclick="setCertificateFitView()">Fit</button>
+        <button type="button" onclick="setCertificateReadableView()">Readable</button>
+        <button type="button" onclick="setCertificateActualSize()">100%</button>
+      </div>
+    </div>
+  <% } %>
+
+  <div class="page">
+    <div class="certificate-stage">
+      <div class="certificate">
+      <div class="certificate-bg-mark" aria-hidden="true">
+        <img src="/public/images/branding/final-pack/bilge-online-institute-monogram.svg" alt="" />
+      </div>
+
+      <div class="qr">
+        <img src="<%= qrCodeUrl %>" alt="QR Code" />
+        <small>Scan to verify</small>
+      </div>
+
+      <div class="brand-head">
+        <div class="brand-lockup">
+          <img src="/public/images/branding/logo-cream.jpg" alt="Bilge Online Institute" />
+        </div>
+
+        <div class="brand-copy">
+          <span class="brand-kicker">Official Credential</span>
+          <strong>Bilge Online Institute</strong>
+          <span>Structured digital learning, verified completion, and certificate-backed achievement.</span>
+        </div>
+
+        <div class="brand-mark" aria-hidden="true">
+          <img src="/public/images/branding/final-pack/bilge-online-institute-monogram.svg" alt="" />
+        </div>
+      </div>
+
+      <div class="institution">Bilge Online Institute</div>
+
+      <div class="main-title">Certificate of Completion</div>
+
+      <div class="intro">
+        Having successfully fulfilled the requirements, this certificate is awarded in
+      </div>
+      <div class="programme">Accredited Digital Skills Programme</div>
+
+      <div class="recipient-kicker">Presented To</div>
+
+      <div class="student-name student-name--hero"><%= certificate.user.name %></div>
+
+      <div class="center-divider" aria-hidden="true"><span></span></div>
+
+      <div class="course-prefix">For successful completion of</div>
+
+      <div class="course-title">
+        <%= certificate.course.title %>
+      </div>
+
+      <div class="detail-band">
+        <div class="detail-column detail-column--left">
+          <div class="authority-card">
+            <span class="authority-title value">Programme Director</span>
+            <div class="authority-line"></div>
+          </div>
+        </div>
+
+        <div class="detail-column detail-column--center">
+          <div class="authority-card">
+            <span class="authority-title value">Registrar</span>
+            <div class="authority-line"></div>
+          </div>
+        </div>
+
+        <div class="detail-column detail-column--right">
+          <div class="meta-item">
+            <span class="label">Date of Birth</span>
+            <span class="value"><%= studentBirthDate %></span>
+          </div>
+
+          <div class="meta-item">
+            <span class="label">Parents Name</span>
+            <span class="value value--wrap">Father: <%= fatherName %></span>
+            <span class="value value--wrap">Mother: <%= motherName %></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom">
+        <div>
+          <span class="label">Certificate No</span>
+          <span class="value value--wrap"><%= certificate.certificateNumber || "Pending" %></span>
+        </div>
+
+        <div class="bottom__item">
+          <span class="label">Verification Code</span>
+          <span class="value"><%= certificate.verificationCode %></span>
+        </div>
+
+        <div class="bottom__item">
+          <span class="label">Verification Page</span>
+          <span class="value value--wrap">
+            <a class="verification-link verification-link--compact" href="<%= verifyUrl %>"><%= verificationLinkLabel %></a>
+          </span>
+        </div>
+
+        <div class="bottom__item">
+          <span class="label">Awarded On</span>
+          <span class="value"><%= awardedOnDate %></span>
+        </div>
+      </div>
+
+      <div class="certificate-footer">
+        <span><strong>Verification:</strong> Scan the QR code or visit the verification page.</span>
+        <span class="certificate-footer__link">
+          <strong>Visit:</strong>
+          <a class="verification-link" href="<%= verifyUrl %>"><%= verificationLinkLabel %></a>
+        </span>
+      </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+

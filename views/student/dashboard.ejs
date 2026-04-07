@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Dashboard</title>
+  <link rel="stylesheet" href="/public/css/dashboards.css" />
+</head>
+<body class="theme-<%= themePreference || "light" %>">
+  <div class="page dashboard-shell">
+    <section class="hero-panel dashboard-hero">
+      <header class="page-header">
+        <div>
+          <p class="page-eyebrow">Student Dashboard</p>
+          <h1>Welcome, <%= user?.name || "Student" %></h1>
+          <p class="page-subtitle">Resume your coursework, review academic progress, and manage your learning path with confidence.</p>
+        </div>
+        <nav class="nav-links">
+          <a href="/courses">Browse Courses</a>
+          <a href="/my-courses">My Courses</a>
+          <% if (user?.profileCompleted) { %>
+            <a href="/settings">Settings</a>
+          <% } %>
+        </nav>
+      </header>
+    </section>
+
+    <% if (flash && flash.message) { %>
+      <div class="flash flash-<%= flash.type || "info" %>"><%= flash.message %></div>
+    <% } %>
+
+    <% if (pendingSwitchTopUps && pendingSwitchTopUps.length > 0) { %>
+      <section class="card dashboard-panel">
+        <div class="dashboard-panel-header">
+          <div>
+            <p class="page-eyebrow">Programme Switch</p>
+            <h2>Complete Your Approved Top-Up</h2>
+            <p class="muted">Your approved switch will unlock automatically as soon as this top-up is completed.</p>
+          </div>
+          <div class="button-row">
+            <a class="button ghost" href="/my-courses">Open My Courses</a>
+          </div>
+        </div>
+
+        <div class="stack-md">
+          <% pendingSwitchTopUps.forEach((request) => { %>
+            <article class="list-card stack-sm">
+              <div class="split">
+                <div>
+                  <strong><%= request.requestedTargetCourse?.title || "Target course" %></strong>
+                  <div class="muted">From <%= request.course?.title || "your previous course" %></div>
+                </div>
+                <span class="badge warning">Top-Up Required</span>
+              </div>
+              <div class="muted">Amount due: <strong><%= request.switchBalanceAmount %> <%= request.switchPricingCurrency %></strong></div>
+              <div class="button-row">
+                <a class="button primary" href="/payments/switch-top-up/<%= request.id %>">Complete Top-Up</a>
+              </div>
+            </article>
+          <% }) %>
+        </div>
+      </section>
+    <% } %>
+
+    <section class="dashboard-kpis">
+      <article class="card dashboard-kpi">
+        <h3>Continue Learning</h3>
+        <% if (!progressAvailable) { %>
+          <p class="muted">Progress tools are being prepared.</p>
+        <% } else if (!continueLesson) { %>
+          <p class="muted">
+            <%= enrollmentsAvailable && enrollments.length > 0
+              ? "You have course access, but no published lesson is ready to open right now."
+              : "No lesson in progress yet. Enroll in a course to start building momentum." %>
+          </p>
+          <div class="button-row">
+            <a class="button primary" href="<%= enrollmentsAvailable && enrollments.length > 0 ? "/my-courses" : "/courses" %>">
+              <%= enrollmentsAvailable && enrollments.length > 0 ? "Open My Courses" : "Discover Courses" %>
+            </a>
+          </div>
+        <% } else { %>
+          <div class="metric-label"><%= continueLesson.accessMode === "revision" ? "Revision access" : "Current focus" %></div>
+          <p class="big"><%= continueLesson.courseTitle %></p>
+          <p class="muted">Lesson <%= continueLesson.lessonPosition %>: <%= continueLesson.lessonTitle %></p>
+          <div class="button-row">
+            <a
+              class="button primary"
+              href="/courses/<%= continueLesson.courseSlug %>/lessons/<%= continueLesson.lessonId %>"
+            >
+              <%= continueLesson.accessMode === "revision" ? "Revisit Lesson" : "Resume Lesson" %>
+            </a>
+            <% if (continueLesson.accessMode === "revision") { %>
+              <a class="button ghost" href="/courses/<%= continueLesson.courseSlug %>?view=1">Open Course</a>
+            <% } %>
+          </div>
+          <% if (continueLessonQueue && continueLessonQueue.length > 0) { %>
+            <div class="continue-learning-list">
+              <div class="metric-label">Also available</div>
+              <% continueLessonQueue.forEach((item) => { %>
+                <a class="continue-learning-item" href="/courses/<%= item.courseSlug %>/lessons/<%= item.lessonId %>">
+                  <strong><%= item.courseTitle %></strong>
+                  <span class="muted">Lesson <%= item.lessonPosition %>: <%= item.lessonTitle %></span>
+                  <span class="muted"><%= item.accessMode === "revision" ? "Revision access" : "Continue learning" %></span>
+                </a>
+              <% }) %>
+            </div>
+          <% } %>
+        <% } %>
+      </article>
+
+      <article class="card dashboard-kpi">
+        <h3>Learning Status</h3>
+        <% if (!enrollmentsAvailable) { %>
+          <p class="muted">Enrollment insights are coming soon.</p>
+        <% } else { %>
+          <div class="metric-label">Active enrollments</div>
+          <p class="big"><%= enrollments.length %></p>
+          <div class="split">
+            <span>Completed: <%= enrollments.filter((item) => item.completed).length %></span>
+            <span>In progress: <%= enrollments.filter((item) => !item.completed).length %></span>
+          </div>
+        <% } %>
+      </article>
+    </section>
+
+    <section class="card dashboard-panel">
+      <div class="dashboard-panel-header">
+        <div>
+          <p class="page-eyebrow">Live Session Tomorrow</p>
+          <h2>Next-Day Reminder</h2>
+          <p class="muted">These reminders are shown in your local time so you can join from your region without guessing the conversion.</p>
+        </div>
+      </div>
+
+      <div data-live-tomorrow-section>
+        <% if (!nextDayLiveSessionAlerts || nextDayLiveSessionAlerts.length === 0) { %>
+          <div class="empty-state" data-live-tomorrow-empty>No live sessions are currently lined up for tomorrow in your enrolled courses.</div>
+        <% } else { %>
+          <div class="stack-md" data-live-tomorrow-list>
+            <% nextDayLiveSessionAlerts.forEach((alert) => { %>
+              <article class="list-card stack-sm" data-live-tomorrow-item data-session-start-time="<%= new Date(alert.startTime).toISOString() %>">
+                <div class="split">
+                  <div>
+                    <strong><%= alert.courseTitle %></strong>
+                    <div class="muted"><%= alert.sessionTypeLabel %> with <%= alert.instructor %></div>
+                  </div>
+                  <span class="badge info">Tomorrow</span>
+                </div>
+                <div class="muted">
+                  Starts
+                  <time data-local-datetime="<%= new Date(alert.startTime).toISOString() %>" data-local-format="session"><%= new Date(alert.startTime).toLocaleString() %></time>
+                </div>
+                <% if (alert.meetingUrl) { %>
+                  <div class="button-row">
+                    <% const nextDayJoinOpen = new Date(alert.startTime).getTime() <= Date.now(); %>
+                    <a
+                      class="button ghost <%= nextDayJoinOpen ? "" : "is-disabled" %>"
+                      <% if (nextDayJoinOpen) { %>href="<%= alert.meetingUrl %>"<% } %>
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-live-session-join
+                      data-live-session-url="<%= alert.meetingUrl %>"
+                      data-session-start-time="<%= new Date(alert.startTime).toISOString() %>"
+                    >Open Google Meet</a>
+                  </div>
+                <% } %>
+              </article>
+            <% }) %>
+          </div>
+          <div class="empty-state" data-live-tomorrow-empty hidden>No live sessions are currently lined up for tomorrow in your local time.</div>
+        <% } %>
+      </div>
+    </section>
+
+    <section class="card dashboard-panel">
+      <div class="dashboard-panel-header">
+        <div>
+          <p class="page-eyebrow">Live Session Soon</p>
+          <h2>Upcoming Live Session Alerts</h2>
+          <p class="muted">Starts-at times below are shown in your local time.</p>
+        </div>
+      </div>
+
+      <% if (!upcomingLiveSessionAlerts || upcomingLiveSessionAlerts.length === 0) { %>
+        <div class="empty-state">No live sessions are scheduled to start for your courses in the next 15 to 30 minutes.</div>
+      <% } else { %>
+        <div class="stack-md">
+          <% upcomingLiveSessionAlerts.forEach((alert) => { %>
+            <article class="list-card stack-sm">
+              <div class="split">
+                <div>
+                  <strong><%= alert.courseTitle %></strong>
+                  <div class="muted"><%= alert.sessionTypeLabel %> with <%= alert.instructor %></div>
+                </div>
+                <span class="badge warning"><%= alert.minutesRemaining %> min</span>
+              </div>
+              <div class="muted">
+                Starts at
+                <time data-local-datetime="<%= new Date(alert.startTime).toISOString() %>" data-local-format="session"><%= new Date(alert.startTime).toLocaleString() %></time>
+              </div>
+              <% if (alert.meetingUrl) { %>
+                <div class="button-row">
+                  <% const upcomingJoinOpen = new Date(alert.startTime).getTime() <= Date.now(); %>
+                  <a
+                    class="button primary <%= upcomingJoinOpen ? "" : "is-disabled" %>"
+                    <% if (upcomingJoinOpen) { %>href="<%= alert.meetingUrl %>"<% } %>
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-live-session-join
+                    data-live-session-url="<%= alert.meetingUrl %>"
+                    data-session-start-time="<%= new Date(alert.startTime).toISOString() %>"
+                  >Join Google Meet</a>
+                </div>
+              <% } %>
+            </article>
+          <% }) %>
+        </div>
+      <% } %>
+    </section>
+
+    <section class="card dashboard-panel">
+      <div class="dashboard-panel-header">
+        <div>
+          <p class="page-eyebrow">Academic Overview</p>
+          <h2>My Courses</h2>
+        </div>
+        <div class="button-row">
+          <a class="button ghost" href="/my-courses">Open Course Library</a>
+        </div>
+      </div>
+
+      <% if (!enrollmentsAvailable) { %>
+        <div class="empty-state">Course records are being prepared.</div>
+      <% } else if (enrollments.length === 0) { %>
+        <div class="empty-state">You are not enrolled in any courses yet. Start with the course catalog to unlock your dashboard.</div>
+      <% } else { %>
+        <div class="table-wrap dashboard-table">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Course</th>
+                <th>Status</th>
+                <th>Certificate</th>
+                <th>Transcript</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% enrollments.forEach((enrollment) => { %>
+                <tr>
+                  <td>
+                    <a href="/courses/<%= enrollment.course.slug %>">
+                      <strong><%= enrollment.course.title %></strong>
+                    </a>
+                  </td>
+                  <td>
+                    <span class="badge <%= enrollment.completed ? "success" : "info" %>">
+                      <%= enrollment.completed ? "Completed" : "In Progress" %>
+                    </span>
+                  </td>
+                  <td>
+                    <% if (enrollment.completed) { %>
+                      <a class="button primary" href="/courses/<%= enrollment.course.slug %>/certificate">
+                        View Certificate
+                      </a>
+                    <% } else { %>
+                      <span class="muted">Available after completion</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <a class="button ghost" href="/student/transcript/<%= enrollment.course.id %>">
+                      View Transcript
+                    </a>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
+  </div>
+</body>
+</html>

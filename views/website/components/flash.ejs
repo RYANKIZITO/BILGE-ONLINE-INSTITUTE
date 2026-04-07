@@ -1,0 +1,6 @@
+<% if (flash?.message) { %>
+  <div class="flash-banner flash-<%= flash.type || 'info' %>">
+    <strong><%= flash.type === 'success' ? 'Success' : flash.type === 'error' ? 'Notice' : 'Update' %></strong>
+    <span><%= flash.message %></span>
+  </div>
+<% } %>

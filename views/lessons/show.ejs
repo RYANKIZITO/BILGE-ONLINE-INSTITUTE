@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <% const clean = (s) => String(s || "").replace(/\\n/g, " ").replace(/\s+/g, " ").trim(); %>
+    <%
+      const rawVideoUrl = String(lesson.videoUrl || "").trim();
+      const windowsPath = /^[a-zA-Z]:\\/.test(rawVideoUrl) || rawVideoUrl.startsWith("\\\\");
+      const uploadsMatch =
+        rawVideoUrl.match(/[\\/]+uploads[\\/]+(.+)$/i) ||
+        rawVideoUrl.match(/^uploads[\\/]+(.+)$/i);
+      const normalizedUploadsPath = uploadsMatch
+        ? `/uploads/${uploadsMatch[1].replace(/\\/g, "/")}`
+        : null;
+      const normalizedRelativeUploads = !normalizedUploadsPath && rawVideoUrl.startsWith("uploads/")
+        ? `/${rawVideoUrl}`
+        : null;
+      const videoUrl = normalizedUploadsPath || normalizedRelativeUploads || rawVideoUrl;
+      const isHttp = /^https?:\/\//i.test(videoUrl);
+      const isWebPath = videoUrl.startsWith("/") || isHttp;
+      const cloudflareStreamMatch = videoUrl.match(
+        /^https?:\/\/([^/]+\.(?:cloudflarestream\.com|videodelivery\.net))\/([a-z0-9]{32,})(?:\/[^?#]*)?(?:[?#].*)?$/i
+      );
+      const cloudflareOrigin = cloudflareStreamMatch
+        ? videoUrl.match(/^https?:\/\/[^/]+/i)?.[0]
+        : null;
+      const cloudflareUid = cloudflareStreamMatch ? cloudflareStreamMatch[2] : null;
+      const cloudflareEmbedUrl =
+        cloudflareOrigin && cloudflareUid
+          ? `${cloudflareOrigin}/${cloudflareUid}/iframe`
+          : null;
+      const cloudflareWatchUrl =
+        cloudflareOrigin && cloudflareUid
+          ? `${cloudflareOrigin}/${cloudflareUid}/watch`
+          : null;
+      const directVideoMatch = videoUrl.match(/\.([a-z0-9]+)(?:\?|#|$)/i);
+      const directVideoExt = directVideoMatch ? directVideoMatch[1].toLowerCase() : "";
+      const isDirectVideo = !cloudflareEmbedUrl && /^(mp4|webm|ogg|mov)$/.test(directVideoExt);
+      const ytMatch = videoUrl.match(
+        /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([A-Za-z0-9_-]{6,})/i
+      );
+      const youtubeId = ytMatch ? ytMatch[1] : null;
+      const vimeoMatch = videoUrl.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
+      const vimeoId = vimeoMatch ? vimeoMatch[1] : null;
+      const embedUrl = youtubeId
+        ? `https://www.youtube.com/embed/${youtubeId}`
+        : vimeoId
+        ? `https://player.vimeo.com/video/${vimeoId}`
+        : null;
+      const iframeUrl = cloudflareEmbedUrl || embedUrl;
+      const useVideoTag = Boolean(videoUrl) && isDirectVideo && isWebPath;
+      const useIframe = Boolean(iframeUrl);
+      const showVideo = useVideoTag || useIframe;
+      const videoTrackingEnabled = useVideoTag || Boolean(cloudflareEmbedUrl);
+      const videoUnavailable = Boolean(videoUrl) && !showVideo;
+      const videoBlockedByPath = windowsPath && !normalizedUploadsPath;
+      const openVideoUrl = cloudflareWatchUrl || videoUrl;
+    %>
+    <title><%= clean(lesson.title) %></title>
+    <style>
+      body {
+        margin: 0;
+        background: #f8f9fb;
+      }
+      .page {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      .lesson-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+      .button {
+        text-decoration: none;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: #fff;
+        color: #111;
+        font-size: 14px;
+      }
+      .button.disabled {
+        color: #888;
+        background: #f2f2f2;
+        border-color: #e0e0e0;
+        cursor: not-allowed;
+      }
+      .lesson-layout {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+      }
+      .lesson-main {
+        flex: 2;
+        min-width: 0;
+      }
+      .lesson-sidebar {
+        flex: 1;
+        min-width: 260px;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      .lesson-content {
+        white-space: pre-wrap;
+        line-height: 1.6;
+      }
+      .badge {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-size: 12px;
+        border: 1px solid #ccc;
+        margin-left: 6px;
+      }
+      .badge.completed {
+        background: #e7f6ec;
+        color: #146c43;
+        border-color: #b7e2c4;
+      }
+      .badge.locked {
+        background: #f8f0ff;
+        color: #6b21a8;
+        border-color: #e9d5ff;
+      }
+      .flash {
+        padding: 10px 12px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        border: 1px solid #ddd;
+        background: #fff;
+      }
+      .flash-success {
+        border-color: #b7e2c4;
+        background: #e7f6ec;
+        color: #146c43;
+      }
+      .flash-error {
+        border-color: #f5c2c7;
+        background: #f8d7da;
+        color: #842029;
+      }
+      .flash-info {
+        border-color: #c7dcff;
+        background: #f0f7ff;
+        color: #1d4ed8;
+      }
+      .lesson-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .lesson-item {
+        padding: 8px 10px;
+        border-radius: 8px;
+        margin-bottom: 6px;
+      }
+      .lesson-item.current {
+        background: #f0f7ff;
+        border: 1px solid #c7dcff;
+      }
+      .lesson-link {
+        text-decoration: none;
+        color: #111;
+      }
+      .lesson-link.locked {
+        color: #999;
+      }
+      video {
+        width: 100%;
+        max-height: 480px;
+        border-radius: 10px;
+        background: #000;
+      }
+      .video-embed {
+        width: 100%;
+        height: 360px;
+        border: 0;
+        border-radius: 10px;
+        background: #000;
+      }
+      @media (max-width: 900px) {
+        .lesson-layout {
+          flex-direction: column;
+        }
+        .lesson-sidebar {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body class="theme-<%= themePreference || "light" %>">
+    <div class="page">
+      <div class="lesson-controls">
+        <a class="button" href="/courses/<%= course.slug %>?view=1">Back to course</a>
+        <% const prevUnlockedForNav = enrollmentCompleted || !prevLesson || progressByLesson[prevLesson.id]?.completed; %>
+        <% const nextUnlockedForNav = enrollmentCompleted || isCompleted; %>
+        <% if (prevLesson && prevUnlockedForNav) { %>
+          <a class="button" href="/courses/<%= course.slug %>/lessons/<%= prevLesson.id %>">&larr; Previous</a>
+        <% } else { %>
+          <span class="button disabled">&larr; Previous</span>
+        <% } %>
+        <% if (nextLesson && nextUnlockedForNav) { %>
+          <a class="button" href="/courses/<%= course.slug %>/lessons/<%= nextLesson.id %>">Next &rarr;</a>
+        <% } else { %>
+          <span class="button disabled">Next &rarr;</span>
+        <% } %>
+      </div>
+
+      <% if (flash && flash.message) { %>
+        <div class="flash flash-<%= flash.type || "info" %>"><%= flash.message %></div>
+      <% } %>
+
+      <% if (revisionMode) { %>
+        <div class="flash flash-info">
+          <strong>Revision Mode:</strong> you can watch and read this lesson for reference, but assessments and progress changes are disabled to preserve your completed status and certificate.
+        </div>
+      <% } %>
+
+      <div class="lesson-layout">
+        <main class="lesson-main">
+          <div class="card">
+            <p><a href="/courses/<%= course.slug %>"><%= clean(course.title) %></a></p>
+            <h1><%= clean(lesson.title) %></h1>
+            <% const showInlineError = error && !(flash && flash.message); %>
+            <% if (showInlineError) { %>
+              <p>Complete the lesson requirements first.</p>
+            <% } %>
+          </div>
+
+          <% if (showVideo) { %>
+            <div class="card">
+              <% if (useVideoTag) { %>
+                <video id="lesson-video" controls preload="auto" playsinline src="<%= videoUrl %>"></video>
+                <% if (directVideoExt === "mov") { %>
+                  <p class="muted" style="margin-top:8px;">
+                    This lesson uses a QuickTime/MOV upload. Some browsers only play the audio track for MOV files. Re-uploading this lesson as MP4 usually resolves it.
+                  </p>
+                <% } %>
+              <% } else { %>
+                <iframe
+                  id="lesson-video"
+                  class="video-embed"
+                  src="<%= iframeUrl %>"
+                  title="<%= clean(lesson.title) %>"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen
+                ></iframe>
+              <% } %>
+              <p id="video-error" class="muted" style="display:none; margin-top:8px;">
+                Video failed to load. Please try again.
+              </p>
+              <% if (cloudflareEmbedUrl) { %>
+                <p id="video-processing" class="muted" style="display:none; margin-top:8px;">
+                  This video is still being prepared on Cloudflare. Please refresh and try again shortly.
+                </p>
+              <% } %>
+              <% if (!useVideoTag) { %>
+                <p class="muted" style="margin-top:8px;">
+                  If the video doesn't load, open it in a new tab:
+                  <a href="<%= openVideoUrl %>" target="_blank" rel="noreferrer">Open video</a>
+                </p>
+              <% } %>
+            </div>
+          <% } else if (videoBlockedByPath) { %>
+            <div class="card">
+              <p class="muted">Video path must be a web URL (for example /uploads/... or https://...)</p>
+            </div>
+          <% } else if (videoUnavailable) { %>
+            <div class="card">
+              <p class="muted">Video link could not be rendered. Please check the video URL.</p>
+            </div>
+          <% } %>
+          <% if (!showVideo) { %>
+            <div id="lesson-video" style="display:none;"></div>
+            <div id="lesson-video-placeholder" style="display:none;"></div>
+          <% } %>
+
+          <div class="card" id="lesson-content">
+            <% if (lesson.content) { %>
+              <div class="lesson-content"><%= lesson.content %></div>
+            <% } else { %>
+              <p>Lesson content coming soon.</p>
+            <% } %>
+          </div>
+
+          <div class="card">
+            <% if (revisionMode) { %>
+              <p>Revision mode is active for this completed course.</p>
+            <% } else if (isCompleted) { %>
+              <p>Completed</p>
+            <% } %>
+            <p id="completion-hint" style="margin-top:8px; <%= isCompleted || revisionMode ? "display:none;" : "" %>">
+              Complete the lesson to unlock "Mark Complete".
+            </p>
+            <p id="completion-ready" style="display:none; margin-top:8px;">
+              You can now mark this lesson complete.
+            </p>
+            <form
+              method="POST"
+              action="/lessons/<%= lesson.id %>/complete"
+              style="<%= isCompleted || revisionMode ? "display:none;" : "" %>"
+            >
+              <input type="hidden" name="timeOnPageMs" id="timeOnPageMs" value="0" />
+              <input type="hidden" name="scrolledToBottom" id="scrolledToBottom" value="false" />
+              <input type="hidden" name="videoMaxTimeSec" id="videoMaxTimeSec" value="0" />
+              <button type="submit" id="mark-complete" disabled>Mark Complete</button>
+            </form>
+          </div>
+        </main>
+
+        <aside class="lesson-sidebar">
+          <div class="card">
+            <h3>Lessons</h3>
+            <ul class="lesson-list">
+              <% lessons.forEach((item, index) => { %>
+                <% const prevItem = index > 0 ? lessons[index - 1] : null; %>
+                <% const prevDone = prevItem ? progressByLesson[prevItem.id]?.completed : true; %>
+                <% const isLocked = !revisionMode && !enrollmentCompleted && !prevDone; %>
+                <% const isCurrent = item.id === currentLessonId; %>
+                <li class="lesson-item <%= isCurrent ? 'current' : '' %>">
+                  <% if (isLocked) { %>
+                    <span class="lesson-link locked"><%= clean(item.title) %></span>
+                    <span class="badge locked">Locked</span>
+                  <% } else { %>
+                    <a class="lesson-link" href="/courses/<%= course.slug %>/lessons/<%= item.id %>"><%= clean(item.title) %></a>
+                  <% } %>
+                  <% if (progressByLesson[item.id]?.completed) { %>
+                    <span class="badge completed">Completed</span>
+                  <% } %>
+                </li>
+              <% }) %>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </div>
+    <% if (cloudflareEmbedUrl) { %>
+      <script src="https://embed.cloudflarestream.com/embed/sdk.latest.js"></script>
+    <% } %>
+    <script>
+      (function () {
+        var isCompleted = <%= isCompleted ? "true" : "false" %>;
+        var revisionMode = <%= revisionMode ? "true" : "false" %>;
+        if (isCompleted || revisionMode) {
+          return;
+        }
+        try {
+          var startTime = Date.now();
+          var hasScrolledToBottom = false;
+          var readyEl = document.getElementById("completion-ready");
+          var hintEl = document.getElementById("completion-hint");
+          var markBtn = document.getElementById("mark-complete");
+          var timeInput = document.getElementById("timeOnPageMs");
+          var scrollInput = document.getElementById("scrolledToBottom");
+          var videoInput = document.getElementById("videoMaxTimeSec");
+          var playerEl = document.getElementById("lesson-video");
+          var videoErrorEl = document.getElementById("video-error");
+          var videoProcessingEl = document.getElementById("video-processing");
+          var form = document.querySelector('form[action^="/lessons/"][method="POST"]');
+          if (!markBtn || !timeInput || !scrollInput || !videoInput || !form) {
+            return;
+          }
+          var cloudflarePlayerEnabled = <%= cloudflareEmbedUrl ? "true" : "false" %>;
+          var videoTrackingEnabled = <%= videoTrackingEnabled ? "true" : "false" %>;
+          var requiredVideoSec = videoTrackingEnabled
+            ? Number("<%= lesson.videoDurationSec || 0 %>")
+            : 0;
+          var videoEl =
+            !cloudflarePlayerEnabled && playerEl && playerEl.tagName === "VIDEO"
+              ? playerEl
+              : null;
+          var cloudflarePlayer = null;
+          if (videoEl && videoErrorEl) {
+            videoEl.addEventListener("error", function () {
+              videoErrorEl.style.display = "block";
+            });
+          }
+
+          if (cloudflarePlayerEnabled && playerEl && typeof Stream === "function") {
+            cloudflarePlayer = Stream(playerEl);
+            cloudflarePlayer.addEventListener("error", function () {
+              if (videoErrorEl) {
+                videoErrorEl.textContent =
+                  "This Cloudflare video is still processing or failed to load. Please try again shortly.";
+                videoErrorEl.style.display = "block";
+              }
+              if (videoProcessingEl) {
+                videoProcessingEl.style.display = "block";
+              }
+            });
+            cloudflarePlayer.addEventListener("timeupdate", function () {
+              var currentTime = Number(cloudflarePlayer.currentTime || 0);
+              if (!isNaN(currentTime)) {
+                maxTimeSec = Math.max(maxTimeSec, currentTime);
+              }
+            });
+          }
+
+          var maxTimeSec = 0;
+          var requiredMs = 30000;
+          var ready = false;
+
+          function updateStatus() {
+            var elapsed = Date.now() - startTime;
+            var baseReady = elapsed >= requiredMs && hasScrolledToBottom;
+            var videoReady = true;
+            if ((videoEl || cloudflarePlayer) && requiredVideoSec > 0) {
+              videoReady = maxTimeSec >= requiredVideoSec * 0.9;
+            }
+            ready = baseReady && videoReady;
+            markBtn.disabled = !ready;
+            if (readyEl) {
+              readyEl.style.display = ready ? "block" : "none";
+            }
+            if (hintEl) {
+              hintEl.style.display = ready ? "none" : "block";
+            }
+          }
+
+          function checkScroll() {
+            if (hasScrolledToBottom) {
+              return;
+            }
+            var content = document.getElementById("lesson-content");
+            var bottomReached = content
+              ? (content.getBoundingClientRect().bottom <= window.innerHeight + 2)
+              : (window.innerHeight + window.scrollY >= document.body.offsetHeight - 2);
+            if (bottomReached) {
+              hasScrolledToBottom = true;
+              scrollInput.value = "true";
+            }
+          }
+
+          if (videoEl) {
+            videoEl.addEventListener("timeupdate", function () {
+              if (!isNaN(videoEl.currentTime)) {
+                maxTimeSec = Math.max(maxTimeSec, videoEl.currentTime);
+              }
+            });
+          } else if (cloudflarePlayerEnabled && playerEl && typeof Stream !== "function") {
+            if (videoErrorEl) {
+              videoErrorEl.textContent =
+                "Cloudflare player could not start. Reload the page and try again.";
+              videoErrorEl.style.display = "block";
+            }
+          }
+
+          window.addEventListener("resize", function () {
+            checkScroll();
+            updateStatus();
+          });
+
+          window.addEventListener("scroll", function () {
+            checkScroll();
+            updateStatus();
+          });
+
+          setInterval(function () {
+            checkScroll();
+            updateStatus();
+          }, 500);
+
+          form.addEventListener("submit", function (event) {
+            timeInput.value = String(Date.now() - startTime);
+            scrollInput.value = hasScrolledToBottom ? "true" : "false";
+            videoInput.value = String(maxTimeSec);
+            if (!ready) {
+              event.preventDefault();
+              updateStatus();
+            }
+          });
+
+          checkScroll();
+          updateStatus();
+        } catch (err) {
+          // Fail open to avoid blocking submits if client JS errors
+          console.error("Lesson completion tracking error", err);
+        }
+      })();
+    </script>
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+

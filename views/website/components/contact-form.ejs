@@ -1,0 +1,42 @@
+<form class="site-form" method="post" action="/contact">
+  <input class="honeypot-field" type="text" name="website" value="" tabindex="-1" autocomplete="off" />
+  <div class="form-row">
+    <label class="form-field">
+      <span class="field-label">Full name</span>
+      <input type="text" name="name" value="<%= values?.name || '' %>" placeholder="Your full name" />
+    </label>
+    <label class="form-field">
+      <span class="field-label">Email address</span>
+      <input type="email" name="email" value="<%= values?.email || '' %>" placeholder="you@example.com" />
+    </label>
+  </div>
+  <div class="form-row">
+    <label class="form-field">
+      <span class="field-label">Phone number</span>
+      <input type="tel" name="phone" value="<%= values?.phone || '' %>" placeholder="+256..." />
+    </label>
+    <label class="form-field">
+      <span class="field-label">Interest area</span>
+      <select name="interestArea">
+        <option value="">Select an option</option>
+        <option value="Programme guidance" <%= values?.interestArea === 'Programme guidance' ? 'selected' : '' %>>Programme guidance</option>
+        <option value="Admissions & enrollment" <%= values?.interestArea === 'Admissions & enrollment' ? 'selected' : '' %>>Admissions & enrollment</option>
+        <option value="Fees & payment" <%= values?.interestArea === 'Fees & payment' ? 'selected' : '' %>>Fees & payment</option>
+        <option value="Institutional partnership" <%= values?.interestArea === 'Institutional partnership' ? 'selected' : '' %>>Institutional partnership</option>
+        <option value="General support" <%= values?.interestArea === 'General support' ? 'selected' : '' %>>General support</option>
+      </select>
+    </label>
+  </div>
+  <label class="form-field">
+    <span class="field-label">Subject</span>
+    <input type="text" name="subject" value="<%= values?.subject || '' %>" placeholder="What is this about?" />
+  </label>
+  <label class="form-field">
+    <span class="field-label">Message</span>
+    <textarea name="message" placeholder="Tell Bilge how we can help."><%= values?.message || '' %></textarea>
+  </label>
+  <div class="hero-actions">
+    <button class="button button-cta-light" type="submit">Send enquiry</button>
+    <a class="button-ghost" href="/register">Create account</a>
+  </div>
+</form>

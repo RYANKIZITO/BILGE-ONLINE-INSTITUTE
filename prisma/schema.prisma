@@ -1,0 +1,628 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  INSTRUCTOR
+  STUDENT
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum CourseStatus {
+  DRAFT
+  READY
+  COMING_SOON
+}
+
+enum AssessmentType {
+  CONTINUOUS
+  MID_PROGRAMME
+  FINAL_CAPSTONE
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  SHORT_TEXT
+}
+
+enum LiveSessionType {
+  MID_WEEK
+  END_WEEK
+}
+
+enum LiveSessionStatus {
+  SCHEDULED
+  HOSTED
+  MISSED
+  CANCELLED
+}
+
+enum LiveSessionVerificationStatus {
+  MANUAL_ONLY
+  PENDING
+  VERIFIED
+  UNVERIFIED
+}
+
+enum CourseQuestionStatus {
+  PENDING
+  ANSWERED
+  RESOLVED
+}
+
+enum CommunityContributionType {
+  POST
+  COMMENT
+}
+
+enum EnrollmentCancellationReasonOption {
+  SCHEDULE_CONFLICT
+  FINANCIAL_CONSTRAINTS
+  COURSE_NOT_RIGHT
+  NO_LONGER_INTERESTED
+  TECHNICAL_DIFFICULTIES
+  DUPLICATE_ENROLLMENT
+  WANTS_TO_SWITCH_PROGRAM
+  OTHER
+}
+
+enum EnrollmentRefundReviewStatus {
+  NOT_APPLICABLE
+  PENDING_REVIEW
+  APPROVED
+  SWITCH_APPROVED
+  SWITCH_TOP_UP_REQUIRED
+  DECLINED
+}
+
+enum EnrollmentSwitchFinancialDirection {
+  NOT_APPLICABLE
+  EVEN_TRANSFER
+  TOP_UP_REQUIRED
+  CREDIT_DUE
+  MANUAL_REVIEW
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum ContactMessageStatus {
+  NEW
+  READ
+  ARCHIVED
+}
+
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  fullName  String?
+  studentCode String? @unique
+  email     String   @unique
+  password  String
+  googleId  String?  @unique
+  appleId   String?  @unique
+  role      Role     @default(STUDENT)
+  createdAt DateTime @default(now())
+  countryCode String?
+  nationality String?
+  nationalIdNumber String?
+  phoneNumber String?
+  profileCompleted Boolean @default(false)
+  themePreference String? @default("light")
+  languagePreference String? @default("en")
+
+  profilePhotoUrl String?
+
+  dateOfBirth DateTime?
+  parentNames String?
+  instructorProfile InstructorProfile?
+
+  courses               Course[]               @relation("InstructorCourses")
+  enrollments           Enrollment[]
+  payments              Payment[]
+  progress              Progress[]
+  enrollmentCancellations EnrollmentCancellation[]
+  reviewedEnrollmentCancellations EnrollmentCancellation[] @relation("EnrollmentCancellationReviewer")
+  certificates          Certificate[]
+  assessmentSubmissions AssessmentSubmission[]
+  liveSessionsHosted    LiveSession[]             @relation("InstructorLiveSessions")
+  courseQuestionsAsked  CourseQuestion[]          @relation("CourseQuestionAuthor")
+  courseQuestionsHandled CourseQuestion[]         @relation("CourseQuestionResponder")
+  communityContributions DiscussionContribution[] @relation("DiscussionContributionAuthor")
+}
+
+model Category {
+  id      String   @id @default(cuid())
+  name    String   @unique
+  courses Course[]
+}
+
+model Course {
+  id          String       @id @default(uuid())
+  title       String       @unique
+  slug        String       @unique
+  description String
+  shortDescription String?
+  status      CourseStatus @default(READY)
+  categoryId  String
+  pricingTitle String?
+  level       String?
+  estimatedDuration String?
+  priceUgandanUsd Float     @default(0)
+  priceForeignUsd Float     @default(0)
+  currency    String       @default("USD")
+  published   Boolean      @default(false)
+  featuredOnWebsite Boolean @default(false)
+  seoTitle    String?
+  seoDescription String?
+  publishedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  category     Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  instructor   User     @relation("InstructorCourses", fields: [instructorId], references: [id])
+  instructorId String
+
+  lessons      Lesson[]
+  enrollments  Enrollment[]
+  enrollmentCancellations EnrollmentCancellation[]
+  enrollmentCancellationTargets EnrollmentCancellation[] @relation("EnrollmentCancellationTargetCourse")
+  payments     Payment[]
+  certificates Certificate[]
+  assessments  Assessment[]
+  liveSessions LiveSession[]
+  courseQuestions CourseQuestion[]
+  discussionContributions DiscussionContribution[]
+}
+
+model Lesson {
+  id               String    @id @default(uuid())
+  title            String
+  content          String
+  position         Int       @map("order")
+  videoUrl         String?
+  docxUrl          String?
+  videoDurationSec Int?
+  published        Boolean   @default(false)
+  publishedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  course   Course @relation(fields: [courseId], references: [id])
+  courseId String
+
+  progress Progress[]
+
+  @@unique([courseId, position])
+}
+
+model Enrollment {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  course    Course   @relation(fields: [courseId], references: [id])
+  courseId  String
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, courseId])
+}
+
+model EnrollmentCancellation {
+  id                   String                             @id @default(cuid())
+  previousEnrollmentId String?
+  userId               String
+  courseId             String
+  paymentId            String?
+  requestedTargetCourseId String?
+  topUpPaymentId         String?
+  reasonOption         EnrollmentCancellationReasonOption
+  reasonText           String?
+  refundReviewStatus   EnrollmentRefundReviewStatus      @default(NOT_APPLICABLE)
+  refundRecommended    Boolean                            @default(false)
+  refundAmount         Float?
+  refundCurrency       String?
+  switchFinancialDirection EnrollmentSwitchFinancialDirection @default(NOT_APPLICABLE)
+  switchPricingTier    String?
+  sourceCourseFee      Float?
+  targetCourseFee      Float?
+  switchTransferAmount Float?
+  switchBalanceAmount  Float?
+  switchPricingCurrency String?
+  providerAdjustmentReference String?
+  providerAdjustmentStatus String?
+  providerAdjustmentProcessedAt DateTime?
+  refundDecisionNote   String?
+  reviewedByUserId     String?
+  reviewedAt           DateTime?
+  createdAt            DateTime                           @default(now())
+
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course     Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  payment    Payment? @relation("EnrollmentCancellationRefundPayment", fields: [paymentId], references: [id], onDelete: SetNull)
+  topUpPayment Payment? @relation("EnrollmentCancellationTopUpPayment", fields: [topUpPaymentId], references: [id], onDelete: SetNull)
+  reviewedBy User? @relation("EnrollmentCancellationReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  requestedTargetCourse Course? @relation("EnrollmentCancellationTargetCourse", fields: [requestedTargetCourseId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([courseId, createdAt])
+  @@index([createdAt])
+  @@index([refundReviewStatus, createdAt])
+  @@index([reviewedByUserId])
+  @@index([requestedTargetCourseId])
+}
+
+model Progress {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  lesson    Lesson   @relation(fields: [lessonId], references: [id])
+  lessonId  String
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, lessonId])
+}
+
+model Payment {
+  id               String   @id @default(uuid())
+  user             User     @relation(fields: [userId], references: [id])
+  userId           String
+  course           Course?  @relation(fields: [courseId], references: [id])
+  courseId         String?
+  amount           Float
+  currency         String
+  provider         String
+  paymentMethodType String
+  reference        String   @unique
+  providerRef      String?
+  status           String
+  verifiedAt       DateTime?
+  metadata         Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  refundEnrollmentCancellations EnrollmentCancellation[] @relation("EnrollmentCancellationRefundPayment")
+  topUpEnrollmentCancellations EnrollmentCancellation[] @relation("EnrollmentCancellationTopUpPayment")
+
+  @@index([userId])
+  @@index([courseId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Certificate {
+  id                String   @id @default(uuid())
+  user              User     @relation(fields: [userId], references: [id])
+  userId            String
+  course            Course   @relation(fields: [courseId], references: [id])
+  courseId          String
+  verificationCode  String   @unique
+  certificateNumber String?
+  issuedAt          DateTime @default(now())
+
+  @@unique([userId, courseId])
+}
+
+model LiveSession {
+  id                       String                        @id @default(cuid())
+  courseId                 String
+  instructorId             String
+  sessionType              LiveSessionType
+  status                   LiveSessionStatus             @default(SCHEDULED)
+  scheduledStartTime       DateTime
+  actualStartTime          DateTime?
+  endedAt                  DateTime?
+  durationMinutes          Int?
+  hostConfirmed            Boolean                       @default(false)
+  meetingProvider          String?
+  meetingUrl               String?
+  meetingCode              String?
+  googleMeetSpaceName      String?
+  googleMeetOrganizerEmail String?
+  providerConferenceName   String?
+  verificationStatus       LiveSessionVerificationStatus @default(MANUAL_ONLY)
+  verificationCheckedAt    DateTime?
+  providerVerifiedAt       DateTime?
+  providerParticipantCount Int?
+  providerEvidence         Json?
+  createdAt                DateTime                      @default(now())
+  updatedAt                DateTime                      @updatedAt
+
+  course      Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  instructor  User   @relation("InstructorLiveSessions", fields: [instructorId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, sessionType, scheduledStartTime])
+  @@index([instructorId, scheduledStartTime])
+  @@index([courseId, scheduledStartTime])
+  @@index([status, scheduledStartTime])
+  @@index([verificationStatus, scheduledStartTime])
+  @@index([googleMeetSpaceName])
+}
+
+model CourseQuestion {
+  id            String               @id @default(cuid())
+  courseId       String
+  authorId       String
+  responderId    String?
+  title          String?
+  content        String
+  status         CourseQuestionStatus @default(PENDING)
+  answerContent  String?
+  answeredAt     DateTime?
+  resolvedAt     DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  course     Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  author     User   @relation("CourseQuestionAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  responder  User?  @relation("CourseQuestionResponder", fields: [responderId], references: [id], onDelete: SetNull)
+
+  @@index([courseId, status, createdAt])
+  @@index([authorId, createdAt])
+  @@index([responderId, answeredAt])
+}
+
+model DiscussionContribution {
+  id         String                    @id @default(cuid())
+  courseId    String
+  authorId    String
+  parentId    String?
+  type        CommunityContributionType
+  content     String
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+
+  course   Course                  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  author   User                    @relation("DiscussionContributionAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  parent   DiscussionContribution? @relation("DiscussionContributionThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  DiscussionContribution[] @relation("DiscussionContributionThread")
+
+  @@index([courseId, createdAt])
+  @@index([authorId, createdAt])
+  @@index([parentId])
+}
+
+model Page {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  title     String
+  content   String
+  excerpt   String?
+  heroTitle String?
+  heroSubtitle String?
+  metaTitle String?
+  metaDescription String?
+  published Boolean @default(true)
+  sections  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SiteSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model InstructorProfile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  slug           String   @unique
+  headline       String?
+  shortBio       String?
+  longBio        String?
+  expertise      Json?
+  featured       Boolean  @default(false)
+  visible        Boolean  @default(true)
+  linkedinUrl    String?
+  twitterUrl     String?
+  websiteUrl     String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([visible, featured])
+}
+
+model Testimonial {
+  id             String        @id @default(cuid())
+  slug           String        @unique
+  quote          String
+  name           String
+  role           String?
+  organization   String?
+  profilePhotoUrl String?
+  resultHighlight String?
+  featured       Boolean       @default(false)
+  status         ContentStatus @default(PUBLISHED)
+  sortOrder      Int           @default(0)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([status, featured, sortOrder])
+}
+
+model FAQ {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  category    String?
+  question    String
+  answer      String
+  featured    Boolean       @default(false)
+  status      ContentStatus @default(PUBLISHED)
+  sortOrder   Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status, featured, sortOrder])
+  @@index([category, status, sortOrder])
+}
+
+model BlogCategory {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  posts BlogPost[]
+
+  @@unique([name])
+}
+
+model BlogPost {
+  id              String        @id @default(cuid())
+  title           String
+  slug            String        @unique
+  excerpt         String
+  content         String
+  featuredImageUrl String?
+  authorName      String
+  metaTitle       String?
+  metaDescription String?
+  featured        Boolean       @default(false)
+  status          ContentStatus @default(PUBLISHED)
+  publishedAt     DateTime?
+  categoryId      String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  category BlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([status, featured, publishedAt])
+  @@index([categoryId, status, publishedAt])
+}
+
+model ContactMessage {
+  id           String               @id @default(cuid())
+  name         String
+  email        String
+  phone        String?
+  subject      String?
+  interestArea String?
+  message      String
+  website      String?
+  status       ContactMessageStatus @default(NEW)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@index([status, createdAt])
+  @@index([email, createdAt])
+}
+
+model SessionStore {
+  sid    String   @id @db.VarChar(255)
+  sess   Json
+  expire DateTime
+
+  @@index([expire])
+  @@map("session")
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String
+  action      String
+  targetType  String?
+  targetId    String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([actorUserId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model Assessment {
+  id             String         @id @default(cuid())
+  courseId       String
+  title          String
+  description    String?
+  type           AssessmentType @default(CONTINUOUS)
+  categoryWeight Int            @default(30)
+  maxScore       Int            @default(100)
+  published      Boolean        @default(false)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  course      Course                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  questions   AssessmentQuestion[]
+  submissions AssessmentSubmission[]
+
+  @@index([courseId])
+}
+
+model AssessmentQuestion {
+  id                 String       @id @default(cuid())
+  assessmentId       String
+  prompt             String
+  type               QuestionType
+  options            Json?
+  correctOptionIndex Int?
+  gradingKeywords    Json?
+  position           Int
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  assessment        Assessment         @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  submissionAnswers SubmissionAnswer[]
+
+  @@unique([assessmentId, position])
+  @@index([assessmentId])
+}
+
+model AssessmentSubmission {
+  id           String @id @default(cuid())
+  assessmentId String
+  studentId    String
+
+  attempt     Int       @default(1)
+  score       Int?
+  submittedAt DateTime?
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  student    User       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  answers SubmissionAnswer[]
+
+  @@unique([assessmentId, studentId, attempt])
+  @@index([assessmentId])
+  @@index([studentId])
+}
+
+model SubmissionAnswer {
+  id                  String   @id @default(cuid())
+  submissionId        String
+  questionId          String
+  answerText          String?
+  selectedOptionIndex Int?
+  isCorrect           Boolean?
+
+  submission AssessmentSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  question   AssessmentQuestion   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([submissionId])
+  @@index([questionId])
+}

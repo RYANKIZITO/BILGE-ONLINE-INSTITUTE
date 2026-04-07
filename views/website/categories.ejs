@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include("partials/head") %>
+  <body>
+    <div class="site-shell">
+      <%- include("partials/header") %>
+      <main>
+        <section class="page-hero">
+          <div class="container page-hero-panel">
+            <%- include("components/breadcrumbs", { items: [{ label: "Categories" }] }) %>
+            <span class="eyebrow">Fields of study</span>
+            <h1>Explore Bilge through categories and programme areas.</h1>
+            <p>Review each category together with the exact programmes currently mapped under it.</p>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container">
+            <div class="catalogue-index">
+              <% categories.forEach((category) => { %>
+                <a class="catalogue-index__link" href="#category-<%= category.slug %>">
+                  <%= category.name %> (<%= category.courseCount %>)
+                </a>
+              <% }) %>
+            </div>
+
+            <div class="catalogue-section-list">
+              <% categories.forEach((category) => { %>
+                <section class="catalogue-section" id="category-<%= category.slug %>">
+                  <div class="catalogue-section__header">
+                    <div>
+                      <span class="eyebrow">Category</span>
+                      <h2><a href="/categories/<%= category.slug %>"><%= category.name %></a></h2>
+                    </div>
+                    <span class="catalogue-section__count"><%= category.courseCount %> course(s)</span>
+                  </div>
+
+                  <div class="course-grid">
+                    <% category.courses.forEach((course) => { %>
+                      <%- include("components/course-card", { course }) %>
+                    <% }) %>
+                  </div>
+                </section>
+              <% }) %>
+            </div>
+          </div>
+        </section>
+      </main>
+      <%- include("partials/footer") %>
+    </div>
+    <script src="/public/js/website-theme.js" defer></script>
+  </body>
+</html>

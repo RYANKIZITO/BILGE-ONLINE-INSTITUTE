@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="/public/css/theme.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Complete Profile</title>
+</head>
+<body class="theme-<%= themePreference || "light" %>">
+  <div class="auth-shell">
+    <section class="auth-card">
+      <aside class="auth-aside">
+        <div class="stack-lg">
+          <div class="auth-mark">Profile Setup</div>
+          <div class="stack-md">
+            <div>
+              <h1>Complete your academic identity.</h1>
+              <p class="auth-copy">
+                We use your profile details for enrollment, transcripts, certificates, and regional student records.
+              </p>
+            </div>
+            <div class="auth-points">
+              <div class="auth-point">
+                <strong>Verified student profile</strong>
+                <span>Academic documents and dashboard views stay accurate once these details are complete.</span>
+              </div>
+              <div class="auth-point">
+                <strong>Built for continuity</strong>
+                <span>These details power payments, certificates, and transcript-ready records across the platform.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="auth-main">
+        <div class="stack-md">
+          <header>
+            <p class="page-eyebrow">Student Onboarding</p>
+            <h2 class="page-title">Finish your profile</h2>
+            <p class="page-subtitle">Complete your account details to unlock the LMS.</p>
+          </header>
+
+          <% if (error) { %>
+            <div class="flash flash-error"><%= error %></div>
+          <% } %>
+
+          <form class="form-grid" method="POST" action="/complete-profile" enctype="multipart/form-data">
+            <div class="field field-full">
+              <label for="profilePhoto">Profile Picture</label>
+              <% if (formData.profilePhotoUrl) { %>
+                <div style="margin-bottom:12px;">
+                  <img
+                    src="<%= formData.profilePhotoUrl %>"
+                    alt="Current profile picture"
+                    style="width:88px; height:88px; border-radius:18px; object-fit:cover; border:1px solid #d9e2ec;"
+                  />
+                </div>
+              <% } %>
+              <input
+                id="profilePhoto"
+                name="profilePhoto"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                <%= !formData.profilePhotoUrl ? "required" : "" %>
+              />
+              <p class="muted">Upload a clear headshot for your account, student records, and transcript.</p>
+            </div>
+
+            <div class="field field-full">
+              <label for="fullName">Full Name</label>
+              <input id="fullName" name="fullName" type="text" value="<%= formData.fullName %>" required />
+            </div>
+
+            <div class="field">
+              <label for="dateOfBirth">Date of Birth</label>
+              <input id="dateOfBirth" name="dateOfBirth" type="date" value="<%= formData.dateOfBirth %>" required />
+            </div>
+
+            <div class="field">
+              <label for="countryCode">Country of Origin</label>
+              <select id="countryCode" name="countryCode" required>
+                <option value="">Select your country</option>
+                <% countries.forEach((country) => { %>
+                  <option value="<%= country.code %>" <%= formData.countryCode === country.code ? "selected" : "" %>>
+                    <%= country.name %>
+                  </option>
+                <% }) %>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="nationality">Nationality</label>
+              <input id="nationality" name="nationality" type="text" value="<%= formData.nationality %>" required />
+            </div>
+
+            <div class="field">
+              <label for="nationalIdNumber">National ID / Passport</label>
+              <input id="nationalIdNumber" name="nationalIdNumber" type="text" value="<%= formData.nationalIdNumber %>" required />
+            </div>
+
+            <div class="field field-full">
+              <label for="parentNames">Parent / Guardian Names</label>
+              <input id="parentNames" name="parentNames" type="text" value="<%= formData.parentNames %>" required />
+            </div>
+
+            <div class="field field-full">
+              <label for="phoneNumber">Phone Number</label>
+              <input id="phoneNumber" name="phoneNumber" type="tel" value="<%= formData.phoneNumber %>" required />
+            </div>
+
+            <div class="field field-full">
+              <button class="primary" type="submit">Save Profile</button>
+            </div>
+          </form>
+        </div>
+      </main>
+    </section>
+  </div>
+</body>
+</html>
