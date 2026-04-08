@@ -9,6 +9,7 @@ import sessionMiddleware from "./config/session.js";
 import { DEFAULT_LANGUAGE_PREFERENCE } from "./utils/language.js";
 
 const app = express();
+app.set("trust proxy")
 const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_DIR = path.join(process.cwd(), "public");
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
