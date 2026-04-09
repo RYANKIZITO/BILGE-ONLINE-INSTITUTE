@@ -15,6 +15,7 @@ const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_DIR = path.join(process.cwd(), "public");
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 const FAVICON_PATH = path.join(PUBLIC_DIR, "images", "branding", "favicon.png");
+const ROBOTS_PATH = path.join(PUBLIC_DIR, "robots.txt");
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
 const BOT_SCAN_PATTERNS = [
   /^\/wp-admin(?:\/|$)/i,
@@ -62,6 +63,10 @@ app.use(
 
 app.get("/favicon.ico", (req, res) => {
   res.sendFile(FAVICON_PATH);
+});
+
+app.get("/robots.txt", (req, res) => {
+  res.type("text/plain").sendFile(ROBOTS_PATH);
 });
 
 // Basic production-safe security headers
@@ -287,6 +292,15 @@ app.use("/", authRouter);
 
 // App routes
 app.use("/", appRouter);
+
+// Return a minimal response for common hostile scans instead of the full website 404 page.
+app.use((req, res, next) => {
+  if (isLikelyBotScan(req.originalUrl)) {
+    return res.status(404).type("text/plain").send("Not Found");
+  }
+
+  return next();
+});
 
 // 404 handler
 app.use((req, res) => {
