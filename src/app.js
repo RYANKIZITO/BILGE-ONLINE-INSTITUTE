@@ -13,6 +13,7 @@ app.set("trust proxy", 1);
 const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_DIR = path.join(process.cwd(), "public");
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
+const FAVICON_PATH = path.join(PUBLIC_DIR, "images", "branding", "favicon.png");
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
 const BOT_SCAN_PATTERNS = [
   /^\/wp-admin(?:\/|$)/i,
@@ -57,6 +58,10 @@ app.use(
     },
   })
 );
+
+app.get("/favicon.ico", (req, res) => {
+  res.sendFile(FAVICON_PATH);
+});
 
 // Basic production-safe security headers
 app.use((req, res, next) => {
