@@ -1,14 +1,16 @@
 <div class="utility-bar">
   <div class="container">
-    <span>
+    <span class="utility-copy">
       <%= shell?.contactDetails?.instituteName || "Bilge Online Institute" %>:
       programmes, admissions guidance, faculty information, and contact details.
     </span>
     <div class="utility-actions">
-      <a href="/admissions">Admissions</a>
-      <a href="/careers">Careers</a>
-      <a href="/contact">Contact</a>
-      <a href="/insights">Insights</a>
+      <nav class="utility-links" aria-label="Utility">
+        <a href="/admissions">Admissions</a>
+        <a href="/careers">Careers</a>
+        <a href="/contact">Contact</a>
+        <a href="/insights">Insights</a>
+      </nav>
       <label class="site-language-control" for="website-language">
         <span>Language</span>
         <select id="website-language" data-language-select aria-label="Select website language">
