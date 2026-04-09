@@ -21,7 +21,7 @@ import {
 import { promises as fs } from "fs";
 import { parseWebsiteListParams, validateCareerApplication, validateContactMessage } from "./website.validation.js";
 import { renderProgrammeCoverSvg } from "./website.cover.js";
-import { sendContactNotifications } from "./contact-mail.service.js";
+import { getPrimaryContactEmail, sendContactNotifications } from "./contact-mail.service.js";
 import { sendCareerApplicationNotifications } from "./career-mail.service.js";
 
 const renderWebsitePage = async (req, res, view, pageData = {}) => {
@@ -64,10 +64,11 @@ const buildSubmissionRedirectUrl = (basePath, values = {}) => {
   return query ? `${basePath}?${query}` : basePath;
 };
 
-const buildSubmissionStatusPage = ({ form, state, statusData }) => {
+const buildSubmissionStatusPage = ({ form, state, statusData, contactEmail }) => {
   const isSuccess = state === "success";
   const name = statusData?.name || "";
   const personalizedName = name ? `, ${name}` : "";
+  const resolvedContactEmail = contactEmail || "Bilgeonlineinstitute@gmail.com";
 
   if (form === "careers") {
     return isSuccess
@@ -87,7 +88,7 @@ const buildSubmissionStatusPage = ({ form, state, statusData }) => {
           detailBody:
             "The Bilge team can now review your application package and contact you for the next step if your profile is a strong fit.",
           highlights: [
-            "Your submission was delivered to Bilgeonlineinstitute@gmail.com.",
+            `Your submission was delivered to ${resolvedContactEmail}.`,
             "No document copy is kept on the website after delivery.",
             "If shortlisted, the team may contact you using the email or phone number you submitted.",
           ],
@@ -112,11 +113,11 @@ const buildSubmissionStatusPage = ({ form, state, statusData }) => {
           highlights: [
             "Please return to the careers page and submit again.",
             "You will need to upload your resume and supporting documents again.",
-            "You can also email Bilgeonlineinstitute@gmail.com directly.",
+            `You can also email ${resolvedContactEmail} directly.`,
           ],
           primaryAction: { href: "/careers", label: "Try again" },
           secondaryAction: {
-            href: "mailto:Bilgeonlineinstitute@gmail.com",
+            href: `mailto:${resolvedContactEmail}`,
             label: "Email Bilge directly",
           },
         };
@@ -163,12 +164,12 @@ const buildSubmissionStatusPage = ({ form, state, statusData }) => {
           "A temporary delivery issue prevented the form from completing successfully.",
         highlights: [
           "Please return to the contact page and try again.",
-          "If the issue continues, email Bilgeonlineinstitute@gmail.com directly.",
+          `If the issue continues, email ${resolvedContactEmail} directly.`,
           "You can also use the phone contacts listed on the website.",
         ],
         primaryAction: { href: "/contact", label: "Try again" },
         secondaryAction: {
-          href: "mailto:Bilgeonlineinstitute@gmail.com",
+          href: `mailto:${resolvedContactEmail}`,
           label: "Email Bilge directly",
         },
       };
@@ -253,11 +254,13 @@ export const showWebsiteCareers = async (req, res, next) => {
 
 export const showWebsiteContactSubmitted = async (req, res, next) => {
   try {
+    const shell = await getWebsiteShellData();
     return renderWebsitePage(req, res, "submission-status", {
       submission: buildSubmissionStatusPage({
         form: "contact",
         state: "success",
         statusData: req.query,
+        contactEmail: getPrimaryContactEmail(shell.contactDetails),
       }),
     });
   } catch (err) {
@@ -267,11 +270,13 @@ export const showWebsiteContactSubmitted = async (req, res, next) => {
 
 export const showWebsiteContactFailed = async (req, res, next) => {
   try {
+    const shell = await getWebsiteShellData();
     return renderWebsitePage(req, res, "submission-status", {
       submission: buildSubmissionStatusPage({
         form: "contact",
         state: "failed",
         statusData: req.query,
+        contactEmail: getPrimaryContactEmail(shell.contactDetails),
       }),
     });
   } catch (err) {
@@ -281,11 +286,13 @@ export const showWebsiteContactFailed = async (req, res, next) => {
 
 export const showWebsiteCareersSubmitted = async (req, res, next) => {
   try {
+    const shell = await getWebsiteShellData();
     return renderWebsitePage(req, res, "submission-status", {
       submission: buildSubmissionStatusPage({
         form: "careers",
         state: "success",
         statusData: req.query,
+        contactEmail: getPrimaryContactEmail(shell.contactDetails),
       }),
     });
   } catch (err) {
@@ -295,11 +302,13 @@ export const showWebsiteCareersSubmitted = async (req, res, next) => {
 
 export const showWebsiteCareersFailed = async (req, res, next) => {
   try {
+    const shell = await getWebsiteShellData();
     return renderWebsitePage(req, res, "submission-status", {
       submission: buildSubmissionStatusPage({
         form: "careers",
         state: "failed",
         statusData: req.query,
+        contactEmail: getPrimaryContactEmail(shell.contactDetails),
       }),
     });
   } catch (err) {

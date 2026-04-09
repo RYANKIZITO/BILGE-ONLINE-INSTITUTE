@@ -3,11 +3,11 @@
   <div class="form-row">
     <label class="form-field">
       <span class="field-label">Full name</span>
-      <input type="text" name="name" value="<%= values?.name || '' %>" placeholder="Your full name" />
+      <input type="text" name="name" value="<%= values?.name || '' %>" placeholder="Your full name" autocomplete="name" required />
     </label>
     <label class="form-field">
       <span class="field-label">Email address</span>
-      <input type="email" name="email" value="<%= values?.email || '' %>" placeholder="you@example.com" />
+      <input type="email" name="email" value="<%= values?.email || '' %>" placeholder="you@example.com" autocomplete="email" required />
     </label>
   </div>
   <div class="form-row">
@@ -33,7 +33,7 @@
   </label>
   <label class="form-field">
     <span class="field-label">Message</span>
-    <textarea name="message" placeholder="Tell Bilge how we can help."><%= values?.message || '' %></textarea>
+    <textarea name="message" placeholder="Tell Bilge how we can help." minlength="12" required><%= values?.message || '' %></textarea>
   </label>
   <div class="hero-actions">
     <button class="button button-cta-light" type="submit">Send enquiry</button>

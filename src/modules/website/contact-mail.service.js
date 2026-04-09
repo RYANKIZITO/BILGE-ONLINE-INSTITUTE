@@ -2,6 +2,7 @@ import { promises as fs } from "fs";
 
 const MAIL_LOG_PREFIX = "[website-contact-mail]";
 const BREVO_ENDPOINT = "https://api.brevo.com/v3/smtp/email";
+const DEFAULT_CONTACT_EMAIL = "Bilgeonlineinstitute@gmail.com";
 
 const normalizeString = (value) => String(value || "").trim();
 
@@ -18,11 +19,10 @@ const getMailConfig = () => {
   const replyTo =
     normalizeString(process.env.CONTACT_MAIL_REPLY_TO) ||
     normalizeString(process.env.BREVO_REPLY_TO) ||
-    "Bilgeonlineinstitute@gmail.com";
+    DEFAULT_CONTACT_EMAIL;
   const overrideRecipient =
     normalizeString(process.env.CONTACT_MAIL_TO) ||
-    normalizeString(process.env.BREVO_TO) ||
-    "Bilgeonlineinstitute@gmail.com";
+    normalizeString(process.env.BREVO_TO);
 
   return {
     apiKey,
@@ -33,6 +33,14 @@ const getMailConfig = () => {
     isConfigured: Boolean(apiKey && fromEmail),
   };
 };
+
+const getPrimaryContactEmail = (contactDetails) =>
+  (
+    normalizeString(contactDetails?.supportEmail) ||
+    normalizeString(contactDetails?.admissionsEmail) ||
+    normalizeString(getMailConfig().overrideRecipient) ||
+    DEFAULT_CONTACT_EMAIL
+  ).toLowerCase();
 
 const escapeHtml = (value) =>
   String(value || "")
@@ -62,7 +70,6 @@ const buildRecipientList = (payload, contactDetails) => {
   const config = getMailConfig();
   if (config.overrideRecipient) {
     pushUnique(config.overrideRecipient);
-    return recipients;
   }
 
   if (admissionsInterests.has(payload.interestArea)) {
@@ -71,6 +78,7 @@ const buildRecipientList = (payload, contactDetails) => {
 
   pushUnique(contactDetails?.supportEmail);
   pushUnique(contactDetails?.admissionsEmail);
+  pushUnique(getPrimaryContactEmail(contactDetails));
 
   return recipients;
 };
@@ -249,4 +257,4 @@ export const sendContactNotifications = async ({ payload, contactDetails }) => {
   };
 };
 
-export { buildBrevoAttachments, getMailConfig, sendBrevoEmail };
+export { buildBrevoAttachments, getMailConfig, getPrimaryContactEmail, sendBrevoEmail };

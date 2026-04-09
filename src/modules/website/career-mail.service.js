@@ -1,7 +1,11 @@
-import { buildBrevoAttachments, getMailConfig, sendBrevoEmail } from "./contact-mail.service.js";
+import {
+  buildBrevoAttachments,
+  getMailConfig,
+  getPrimaryContactEmail,
+  sendBrevoEmail,
+} from "./contact-mail.service.js";
 
 const MAIL_LOG_PREFIX = "[website-careers-mail]";
-const DEFAULT_RECIPIENT = "Bilgeonlineinstitute@gmail.com";
 
 const normalizeString = (value) => String(value || "").trim();
 
@@ -97,14 +101,23 @@ export const sendCareerApplicationNotifications = async ({
   contactDetails,
 }) => {
   const config = getMailConfig();
-  const recipient =
-    normalizeString(process.env.CAREER_MAIL_TO) ||
-    normalizeString(process.env.CONTACT_MAIL_TO) ||
-    DEFAULT_RECIPIENT;
+  const recipients = Array.from(
+    new Set(
+      [
+        normalizeString(process.env.CAREER_MAIL_TO).toLowerCase(),
+        getPrimaryContactEmail(contactDetails),
+      ].filter(Boolean)
+    )
+  );
 
   if (!config.isConfigured) {
     console.warn(`${MAIL_LOG_PREFIX} Brevo API key is not configured. Skipping email delivery.`);
     return { configured: false, delivered: false };
+  }
+
+  if (!recipients.length) {
+    console.warn(`${MAIL_LOG_PREFIX} No destination email address is available. Skipping email delivery.`);
+    return { configured: true, delivered: false };
   }
 
   const message = buildInternalMessage({
@@ -122,7 +135,7 @@ export const sendCareerApplicationNotifications = async ({
   ]);
 
   await sendBrevoEmail({
-    to: [recipient],
+    to: recipients,
     replyTo: payload.email || config.replyTo,
     attachments,
     ...message,
@@ -131,6 +144,6 @@ export const sendCareerApplicationNotifications = async ({
   return {
     configured: true,
     delivered: true,
-    recipient,
+    recipients,
   };
 };

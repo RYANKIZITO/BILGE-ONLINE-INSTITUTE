@@ -6,6 +6,7 @@
       <%- include("partials/header") %>
       <main>
         <% const activeVacancies = (page.vacancies || []).filter((item) => item.isOpen); %>
+        <% const recruitmentEmail = shell?.contactDetails?.supportEmail || shell?.contactDetails?.admissionsEmail || "Bilgeonlineinstitute@gmail.com"; %>
         <section class="page-hero">
           <div class="container careers-hero-grid">
             <article class="page-hero-panel">
@@ -16,7 +17,7 @@
               <p><%= page.hero.subtitle %></p>
               <div class="hero-actions">
                 <a class="button button-cta-light" href="#career-application-form">Apply now</a>
-                <a class="button-secondary" href="mailto:Bilgeonlineinstitute@gmail.com">Talk to recruitment</a>
+                <a class="button-secondary" href="mailto:<%= recruitmentEmail %>">Talk to recruitment</a>
               </div>
             </article>
 
@@ -119,7 +120,7 @@
               <% if (activeVacancies.length) { %>
                 <p class="career-form-intro">
                   Your submission is emailed directly to
-                  <strong>Bilgeonlineinstitute@gmail.com</strong> with your uploaded files.
+                  <strong><%= recruitmentEmail %></strong> with your uploaded files.
                 </p>
                 <div class="soft-banner career-form-note">
                   <strong>Required for this intake</strong>
