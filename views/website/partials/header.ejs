@@ -43,26 +43,28 @@
       <span class="sr-only">Bilge Online Institute</span>
     </a>
 
-    <label class="site-language-control site-language-control--mobile" for="website-language-mobile">
-      <span class="sr-only">Language</span>
-      <select id="website-language-mobile" data-language-select aria-label="Select website language">
-        <%- include("language-options") %>
-      </select>
-    </label>
+    <div class="site-nav-controls">
+      <label class="site-language-control site-language-control--mobile" for="website-language-mobile">
+        <span class="sr-only">Language</span>
+        <select id="website-language-mobile" data-language-select aria-label="Select website language">
+          <%- include("language-options") %>
+        </select>
+      </label>
 
-    <button
-      class="nav-toggle"
-      type="button"
-      data-nav-toggle
-      aria-expanded="false"
-      aria-controls="site-nav-panel"
-      aria-label="Open navigation"
-    >
-      <span class="nav-toggle__line"></span>
-      <span class="nav-toggle__line"></span>
-      <span class="nav-toggle__line"></span>
-      <span class="sr-only">Toggle navigation</span>
-    </button>
+      <button
+        class="nav-toggle"
+        type="button"
+        data-nav-toggle
+        aria-expanded="false"
+        aria-controls="site-nav-panel"
+        aria-label="Open navigation"
+      >
+        <span class="nav-toggle__line"></span>
+        <span class="nav-toggle__line"></span>
+        <span class="nav-toggle__line"></span>
+        <span class="sr-only">Toggle navigation</span>
+      </button>
+    </div>
 
     <div class="site-nav-panel" id="site-nav-panel" data-nav-panel>
       <nav class="nav-links" aria-label="Primary">
