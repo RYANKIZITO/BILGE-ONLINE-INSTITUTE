@@ -326,6 +326,14 @@ button {
   background: var(--bg-card);
 }
 
+.site-language-control--mobile {
+  display: none;
+}
+
+.site-language-control--mobile select {
+  border-left: 0;
+}
+
 .site-header {
   position: sticky;
   top: 0;
@@ -2579,74 +2587,8 @@ body.profile-modal-open {
 }
 
 @media (max-width: 980px) {
-  .utility-bar .container {
-    display: grid;
-    grid-template-columns: 1fr;
-    justify-items: stretch;
-    padding: 1rem 0 1.05rem;
-    gap: 0.9rem;
-  }
-
-  .utility-copy {
-    max-width: none;
-    text-align: center;
-  }
-
-  .utility-actions {
-    width: 100%;
-    display: grid;
-    gap: 0.8rem;
-    margin-left: 0;
-  }
-
-  .utility-links {
-    display: grid;
-    grid-template-columns: 1fr;
-    justify-items: center;
-    gap: 0.45rem;
-  }
-
-  .utility-links a {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 0;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: none;
-    color: var(--text-muted);
-    font-weight: 500;
-    box-shadow: none;
-  }
-
-  .utility-links a:hover,
-  .utility-links a:focus-visible {
-    color: var(--text-main);
-  }
-
-  .site-language-control {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.55rem;
-    padding: 0.9rem 1rem;
-    border-radius: 20px;
-  }
-
-  .site-language-control span {
-    font-size: 0.72rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-
-  .site-language-control select {
-    width: 100%;
-    min-width: 0;
-    min-height: 44px;
-    padding: 0.72rem 0.95rem;
-    border: 1px solid var(--line-soft);
-    border-radius: 14px;
-    background: color-mix(in srgb, var(--bg-card) 92%, var(--bg-soft));
+  .utility-bar {
+    display: none;
   }
 
   .site-nav {
@@ -2660,9 +2602,33 @@ body.profile-modal-open {
     width: clamp(146px, 22vw, 174px);
   }
 
+  .site-language-control--mobile {
+    display: inline-flex;
+    width: auto;
+    justify-content: flex-start;
+    margin-left: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+
+  .site-language-control--mobile select {
+    width: auto;
+    min-width: 6.75rem;
+    min-height: 48px;
+    padding: 0 2rem 0 0.85rem;
+    border: 1px solid var(--line-soft);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--bg-card) 92%, var(--bg-soft));
+    color: var(--text-main);
+    font-size: 0.84rem;
+    font-weight: 600;
+    box-shadow: 0 16px 30px -26px rgba(17, 24, 39, 0.28);
+  }
+
   .nav-toggle {
     display: inline-flex;
-    margin-left: auto;
+    margin-left: 0;
   }
 
   .site-nav-panel {
