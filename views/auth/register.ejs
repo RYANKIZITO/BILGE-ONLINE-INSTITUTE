@@ -78,12 +78,26 @@
           <form class="auth-form" method="POST" action="/register" enctype="multipart/form-data">
             <div class="field">
               <label for="name">Name</label>
-              <input id="name" name="name" type="text" autocomplete="name" required />
+              <input
+                id="name"
+                name="name"
+                type="text"
+                autocomplete="name"
+                value="<%= formData?.name || '' %>"
+                required
+              />
             </div>
 
             <div class="field">
               <label for="email">Email</label>
-              <input id="email" name="email" type="email" autocomplete="email" required />
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autocomplete="email"
+                value="<%= formData?.email || '' %>"
+                required
+              />
             </div>
 
             <div class="field">
@@ -97,10 +111,10 @@
                 id="profilePhoto"
                 name="profilePhoto"
                 type="file"
-                accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.heic,.heif"
                 required
               />
-              <p class="muted">Required for your academic profile, student records, and transcript.</p>
+              <p class="muted">Required for your academic profile. JPG, PNG, WebP, HEIC, and HEIF are supported up to 5MB.</p>
             </div>
 
             <button class="primary" type="submit">Create Account</button>

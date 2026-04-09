@@ -1,10 +1,12 @@
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
+import { spawn } from "child_process";
 import multer from "multer";
 
 const uploadDir = path.join(process.cwd(), "uploads");
 const lessonVideoTempDir = path.join(process.cwd(), "tmp", "lesson-videos");
+const PROFILE_PHOTO_MAX_BYTES = 5 * 1024 * 1024;
 
 const allowedVideoExts = new Set([".mp4", ".webm", ".mov", ".m4v", ".avi", ".mkv"]);
 const allowedVideoMimes = new Set([
@@ -48,11 +50,19 @@ const allowedCareerVideoMimes = new Set([
   "video/quicktime",
   "video/x-m4v",
 ]);
-const allowedImageExts = new Set([".jpg", ".jpeg", ".png", ".webp"]);
-const allowedImageMimes = new Set([
+const allowedStandardImageExts = new Set([".jpg", ".jpeg", ".png", ".webp"]);
+const allowedStandardImageMimes = new Set([
   "image/jpeg",
   "image/png",
   "image/webp",
+]);
+const allowedHeicImageExts = new Set([".heic", ".heif"]);
+const allowedHeicImageMimes = new Set([
+  "image/heic",
+  "image/heif",
+  "image/heic-sequence",
+  "image/heif-sequence",
+  "application/octet-stream",
 ]);
 
 const storage = multer.diskStorage({
@@ -79,6 +89,8 @@ const storage = multer.diskStorage({
         ? "docx"
         : file.fieldname === "resumeFile"
           ? "resume"
+          : file.fieldname === "profilePhoto"
+            ? "profile-photo"
           : file.fieldname === "introVideo"
             ? "intro-video"
           : file.fieldname === "supportingDocuments"
@@ -119,15 +131,130 @@ const upload = multer({
   },
 });
 
+const resolveFfmpegPath = () => {
+  const configured = String(process.env.FFMPEG_PATH || "").trim();
+  const candidates = [
+    configured,
+    path.join(process.cwd(), "node_modules", "ffmpeg-static", "ffmpeg.exe"),
+    path.join(process.cwd(), "node_modules", "ffmpeg-static", "ffmpeg"),
+    path.join(process.cwd(), "tools", "ffmpeg", "bin", "ffmpeg.exe"),
+    path.join(process.cwd(), "tools", "ffmpeg", "bin", "ffmpeg"),
+    "ffmpeg",
+  ].filter(Boolean);
+
+  for (const candidate of candidates) {
+    if (candidate === "ffmpeg" || fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return "ffmpeg";
+};
+
+const runFfmpeg = (ffmpegPath, args) =>
+  new Promise((resolve, reject) => {
+    const child = spawn(ffmpegPath, args, {
+      windowsHide: true,
+      stdio: ["ignore", "ignore", "pipe"],
+    });
+
+    let stderr = "";
+
+    child.stderr.on("data", (chunk) => {
+      stderr += String(chunk || "");
+      if (stderr.length > 12000) {
+        stderr = stderr.slice(-12000);
+      }
+    });
+
+    child.on("error", (error) => {
+      reject(error);
+    });
+
+    child.on("close", (code) => {
+      if (code === 0) {
+        resolve();
+        return;
+      }
+
+      reject(new Error(stderr || `ffmpeg exited with code ${code}`));
+    });
+  });
+
+const removeUploadedFile = async (filePath) => {
+  try {
+    await fs.promises.unlink(filePath);
+  } catch (error) {
+    if (error?.code !== "ENOENT") {
+      console.error("Failed to clean up uploaded file", error);
+    }
+  }
+};
+
+const isHeicImageFile = (file) => {
+  const ext = path.extname(file?.originalname || file?.filename || "").toLowerCase();
+  const mime = String(file?.mimetype || "").toLowerCase();
+  return allowedHeicImageExts.has(ext) || allowedHeicImageMimes.has(mime);
+};
+
+const isAllowedProfilePhoto = (file) => {
+  const ext = path.extname(file?.originalname || "").toLowerCase();
+  const mime = String(file?.mimetype || "").toLowerCase();
+
+  if (allowedStandardImageExts.has(ext)) {
+    return allowedStandardImageMimes.has(mime);
+  }
+
+  if (allowedHeicImageExts.has(ext)) {
+    return allowedHeicImageMimes.has(mime) || mime === "";
+  }
+
+  return false;
+};
+
+const convertHeicProfilePhotoToJpeg = async (file) => {
+  const ffmpegPath = resolveFfmpegPath();
+  const parsed = path.parse(file.path);
+  const outputPath = path.join(parsed.dir, `${parsed.name}.jpg`);
+
+  try {
+    await runFfmpeg(ffmpegPath, [
+      "-y",
+      "-i",
+      file.path,
+      "-frames:v",
+      "1",
+      "-q:v",
+      "2",
+      outputPath,
+    ]);
+  } catch (error) {
+    await removeUploadedFile(outputPath);
+    throw error;
+  }
+
+  const stats = await fs.promises.stat(outputPath);
+  if (!stats.size) {
+    throw new Error("Converted profile photo is empty.");
+  }
+
+  await removeUploadedFile(file.path);
+
+  file.path = outputPath;
+  file.filename = path.basename(outputPath);
+  file.mimetype = "image/jpeg";
+  file.size = stats.size;
+
+  return file;
+};
+
 const profilePhotoUpload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: PROFILE_PHOTO_MAX_BYTES },
   fileFilter: (req, file, cb) => {
-    const ext = path.extname(file.originalname || "").toLowerCase();
-
-    if (!allowedImageExts.has(ext) || !allowedImageMimes.has(file.mimetype)) {
+    if (!isAllowedProfilePhoto(file)) {
       req.fileValidationError =
-        "Only profile photos in JPG, PNG, or WebP format are allowed.";
+        "Only profile photos in JPG, PNG, WebP, HEIC, or HEIF format are allowed.";
       return cb(null, false);
     }
 
@@ -191,12 +318,25 @@ export const uploadLessonVideo = (req, res, next) => {
 };
 
 export const uploadProfilePhoto = (req, res, next) => {
-  profilePhotoUpload.single("profilePhoto")(req, res, (err) => {
+  profilePhotoUpload.single("profilePhoto")(req, res, async (err) => {
     if (err) {
       req.fileValidationError =
         err.code === "LIMIT_FILE_SIZE"
-          ? "Profile photo is too large. Max size is 5MB."
+          ? "Profile photo is larger than 5MB. Please choose an image under 5MB."
           : "Profile photo upload failed. Please try again.";
+
+      return next();
+    }
+
+    if (req.file && isHeicImageFile(req.file)) {
+      try {
+        await convertHeicProfilePhotoToJpeg(req.file);
+      } catch (error) {
+        await removeUploadedFile(req.file.path);
+        req.file = undefined;
+        req.fileValidationError =
+          "HEIC/HEIF photos are supported, but this image could not be processed right now. Please try a JPG or PNG photo.";
+      }
     }
 
     return next();

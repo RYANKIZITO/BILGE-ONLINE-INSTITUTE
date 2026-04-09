@@ -18,8 +18,8 @@ import { notify } from "../../../services/notificationService.js";
 
 const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
 
-const renderAuthPage = (res, view, error, status = 400) =>
-  res.status(status).render(`auth/${view}`, buildAuthPageModel(error));
+const renderAuthPage = (res, view, error, status = 400, formData = {}) =>
+  res.status(status).render(`auth/${view}`, buildAuthPageModel(error, { formData }));
 
 const buildSessionUser = (user) => ({
   id: user.id,
@@ -200,47 +200,84 @@ export const showRegister = (req, res) => {
 
 export const login = async (req, res) => {
   const { email, password } = req.body;
+  const normalizedEmail = normalizeEmail(email);
 
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) return renderAuthPage(res, "login", "Invalid credentials");
+  const user = normalizedEmail
+    ? await prisma.user.findFirst({
+        where: {
+          email: {
+            equals: normalizedEmail,
+            mode: "insensitive",
+          },
+        },
+      })
+    : null;
+  if (!user) return renderAuthPage(res, "login", "Invalid credentials", 400, { email: normalizedEmail });
 
   const valid = await verifyPassword(password, user.password);
-  if (!valid) return renderAuthPage(res, "login", "Invalid credentials");
+  if (!valid) return renderAuthPage(res, "login", "Invalid credentials", 400, { email: normalizedEmail });
 
   return completeLogin(req, res, user);
 };
 
 export const register = async (req, res) => {
   const { name, email, password } = req.body;
+  const normalizedName = String(name || "").trim();
+  const normalizedEmail = normalizeEmail(email);
   const uploadedProfilePhotoUrl = req.file ? `/uploads/${req.file.filename}` : null;
   const languagePreference =
     normalizeLanguagePreference(req.body?.languagePreference, {
       fallback: DEFAULT_LANGUAGE_PREFERENCE,
     }) || DEFAULT_LANGUAGE_PREFERENCE;
 
-  if (!name || !email || !password) {
-    return renderAuthPage(res, "register", "All fields are required");
+  if (!normalizedName || !normalizedEmail || !password) {
+    return renderAuthPage(res, "register", "All fields are required.", 400, {
+      name: normalizedName,
+      email: normalizedEmail,
+    });
   }
 
   if (req.fileValidationError) {
-    return renderAuthPage(res, "register", req.fileValidationError);
+    return renderAuthPage(res, "register", req.fileValidationError, 400, {
+      name: normalizedName,
+      email: normalizedEmail,
+    });
   }
 
   if (!uploadedProfilePhotoUrl) {
-    return renderAuthPage(res, "register", "Profile picture is required.");
+    return renderAuthPage(res, "register", "Profile picture is required.", 400, {
+      name: normalizedName,
+      email: normalizedEmail,
+    });
   }
 
-  const existing = await prisma.user.findUnique({ where: { email } });
+  const existing = await prisma.user.findFirst({
+    where: {
+      email: {
+        equals: normalizedEmail,
+        mode: "insensitive",
+      },
+    },
+  });
   if (existing) {
-    return renderAuthPage(res, "register", "Email already in use");
+    return renderAuthPage(
+      res,
+      "register",
+      "An account with this email already exists. Sign in instead or use a different email.",
+      400,
+      {
+        name: normalizedName,
+        email: normalizedEmail,
+      }
+    );
   }
 
   const hashed = await hashPassword(password);
   const user = await prisma.user.create({
     data: {
-      name,
-      fullName: name,
-      email,
+      name: normalizedName,
+      fullName: normalizedName,
+      email: normalizedEmail,
       password: hashed,
       role: "STUDENT",
       profileCompleted: false,

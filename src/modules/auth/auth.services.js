@@ -68,9 +68,13 @@ export const getSocialAuthAvailability = () => {
   };
 };
 
-export const buildAuthPageModel = (error = null) => ({
+export const buildAuthPageModel = (error = null, options = {}) => ({
   error,
   socialAuth: getSocialAuthAvailability(),
+  formData: {
+    name: String(options?.formData?.name || "").trim(),
+    email: String(options?.formData?.email || "").trim(),
+  },
 });
 
 const saveSession = (req) =>
