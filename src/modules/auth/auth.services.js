@@ -16,13 +16,64 @@ const normalizeMode = (value) => (value === "register" ? "register" : "login");
 
 const readEnv = (key) => String(process.env[key] || "").trim();
 
-const getBaseUrl = (req) => {
-  const configured = readEnv("APP_URL");
-  if (configured) {
-    return configured.replace(/\/+$/, "");
+const normalizeForwardedHeader = (value) =>
+  String(value || "")
+    .split(",")[0]
+    .trim();
+
+const isLocalHostname = (hostname) => {
+  const value = String(hostname || "").trim().toLowerCase();
+  return (
+    !value ||
+    value === "localhost" ||
+    value === "127.0.0.1" ||
+    value === "::1" ||
+    value.endsWith(".local")
+  );
+};
+
+const getRequestOrigin = (req) => {
+  const forwardedProto = normalizeForwardedHeader(req.get("x-forwarded-proto"));
+  const forwardedHost = normalizeForwardedHeader(req.get("x-forwarded-host"));
+  const protocol = forwardedProto || req.protocol || "http";
+  const host = forwardedHost || req.get("host") || "";
+
+  if (!host) {
+    return "";
   }
 
-  return `${req.protocol}://${req.get("host")}`;
+  return `${protocol}://${host}`.replace(/\/+$/, "");
+};
+
+const getBaseUrl = (req) => {
+  const requestOrigin = getRequestOrigin(req);
+  const configured = readEnv("APP_URL").replace(/\/+$/, "");
+
+  if (!configured) {
+    return requestOrigin;
+  }
+
+  try {
+    const configuredUrl = new URL(configured);
+
+    if (requestOrigin) {
+      const requestUrl = new URL(requestOrigin);
+
+      if (!isLocalHostname(requestUrl.hostname)) {
+        return requestOrigin;
+      }
+    }
+
+    if (!isLocalHostname(configuredUrl.hostname)) {
+      return configuredUrl.toString().replace(/\/+$/, "");
+    }
+  } catch {
+    if (requestOrigin) {
+      return requestOrigin;
+    }
+  }
+
+  return requestOrigin || configured;
 };
 
 const getGoogleConfig = () => ({
