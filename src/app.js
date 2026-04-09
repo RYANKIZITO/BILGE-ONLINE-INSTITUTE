@@ -19,9 +19,13 @@ const BOT_SCAN_PATTERNS = [
   /^\/wordpress(?:\/|$)/i,
   /^\/xmlrpc\.php$/i,
   /^\/phpmyadmin(?:\/|$)/i,
+  /^\/\.composer(?:\/|$)/i,
+  /^\/\.config(?:\/|$)/i,
   /^\/\.env(?:$|\.)/i,
   /^\/\.git(?:\/|$)/i,
   /^\/cgi-bin(?:\/|$)/i,
+  /^\/config\/git-credentials$/i,
+  /^\/config\.json$/i,
   /^\/boaform/i,
 ];
 
