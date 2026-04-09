@@ -3,16 +3,18 @@
 <head>
   <link rel="stylesheet" href="/public/css/theme.css" />
   <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Super Admin Dashboard</title>
-    <link rel="stylesheet" href="/public/css/dashboards.css" />
-  </head>
-  <body class="theme-<%= themePreference || "light" %>">
-    <div class="page">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Super Admin Dashboard</title>
+  <link rel="stylesheet" href="/public/css/dashboards.css" />
+</head>
+<body class="theme-<%= themePreference || "light" %> super-admin-dashboard-page">
+  <div class="page dashboard-shell">
+    <section class="hero-panel dashboard-hero super-admin-hero">
       <header class="page-header">
         <div>
+          <p class="page-eyebrow">Executive Control</p>
           <h1>Welcome, <%= user?.name || "Super Admin" %></h1>
-          <p class="muted">Owner and system control</p>
+          <p class="page-subtitle">Oversee platform health, audit risk, instructor performance, and institutional momentum from one premium command center.</p>
         </div>
         <div class="dashboard-header-actions">
           <div class="bilge-language-dock bilge-language-dock--inline" data-bilge-language-dock>
@@ -21,7 +23,7 @@
               <select id="bilge-global-language" data-language-select aria-label="Select application language"></select>
             </label>
           </div>
-          <nav class="nav-links">
+          <nav class="nav-links dashboard-hero-nav">
             <a href="/admin/cms">CMS</a>
             <a href="/admin/settings/users">User Role Management</a>
             <a href="/super-admin/audit-logs">Audit Logs</a>
@@ -36,94 +38,104 @@
           </nav>
         </div>
       </header>
-      <div id="google_translate_element" class="google-translate-anchor" aria-hidden="true"></div>
+    </section>
+    <div id="google_translate_element" class="google-translate-anchor" aria-hidden="true"></div>
 
-      <section class="card-grid">
-        <% if (flash && flash.message) { %>
-          <div class="flash flash-<%= flash.type || "info" %>"><%= flash.message %></div>
+    <% if (flash && flash.message) { %>
+      <div class="flash flash-<%= flash.type || "info" %>"><%= flash.message %></div>
+    <% } %>
+
+    <section class="dashboard-kpis super-admin-kpis">
+      <article class="card dashboard-kpi">
+        <h3>Total Users</h3>
+        <p class="big"><%= totalUsers %></p>
+        <div class="split">
+          <span>Students: <%= userCounts.STUDENT %></span>
+          <span>Instructors: <%= userCounts.INSTRUCTOR %></span>
+          <span>Admins: <%= userCounts.ADMIN %></span>
+          <span>Super Admins: <%= userCounts.SUPER_ADMIN %></span>
+        </div>
+      </article>
+
+      <article class="card dashboard-kpi">
+        <h3>Total Courses</h3>
+        <p class="big"><%= courseStats.total %></p>
+        <% if (courseStats.draft !== null) { %>
+          <div class="split">
+            <span>Published: <%= courseStats.published %></span>
+            <span>Draft: <%= courseStats.draft %></span>
+            <span>Under Review: <%= courseStats.underReview %></span>
+          </div>
+          <p class="muted"><%= courseStats.statusNote %></p>
+        <% } else { %>
+          <p class="muted">Add status later</p>
         <% } %>
-        <div class="card">
-          <h3>Total Users</h3>
-          <p class="big"><%= totalUsers %></p>
+      </article>
+
+      <article class="card dashboard-kpi">
+        <h3>New Signups (7 days)</h3>
+        <p class="big"><%= newSignups %></p>
+        <p class="muted">Users created in the last 7 days.</p>
+      </article>
+
+      <article class="card dashboard-kpi">
+        <h3>Instructor ActiveState</h3>
+        <% if (!engagementAvailable) { %>
+          <p class="muted">Engagement metrics will appear after instructors are assigned to courses.</p>
+        <% } else { %>
+          <p class="big"><%= atRiskInstructorCount + inactiveInstructorCount %></p>
           <div class="split">
-            <span>Students: <%= userCounts.STUDENT %></span>
-            <span>Instructors: <%= userCounts.INSTRUCTOR %></span>
-            <span>Admins: <%= userCounts.ADMIN %></span>
-            <span>Super Admins: <%= userCounts.SUPER_ADMIN %></span>
+            <span>Active: <%= activeInstructorCount %></span>
+            <span>At-Risk: <%= atRiskInstructorCount %></span>
+            <span>Inactive: <%= inactiveInstructorCount %></span>
+          </div>
+        <% } %>
+      </article>
+
+      <article class="card dashboard-kpi super-admin-kpi super-admin-kpi--health">
+        <h3>System Health</h3>
+        <div class="button-row super-admin-health-row">
+          <span class="badge <%= systemHealth?.tone || "info" %>"><%= systemHealth?.status || "Unknown" %></span>
+          <span class="muted">Updated <%= systemHealth?.lastUpdatedAt ? new Date(systemHealth.lastUpdatedAt).toLocaleString() : "just now" %></span>
+        </div>
+        <div class="split">
+          <span>Database: <strong><%= systemHealth?.databaseLabel || "Unknown" %></strong></span>
+          <span>Uptime: <strong><%= systemHealth?.uptimeLabel || "Unavailable" %></strong></span>
+        </div>
+        <div class="split super-admin-health-row">
+          <span>Failed payments (7d): <strong><%= systemHealth?.failedPaymentsLast7Days ?? 0 %></strong></span>
+          <span>Refund reviews: <strong><%= systemHealth?.pendingRefundReviews ?? 0 %></strong></span>
+        </div>
+        <div class="split super-admin-health-row super-admin-health-row--compact">
+          <span>Pending questions: <strong><%= systemHealth?.pendingCourseQuestions ?? 0 %></strong></span>
+          <span>Session verifications: <strong><%= systemHealth?.liveSessionVerificationQueue ?? 0 %></strong></span>
+        </div>
+        <% if (systemHealth?.lastFailedPaymentAt) { %>
+          <p class="muted super-admin-health-note">
+            Last failed payment:
+            <strong><%= systemHealth.lastFailedPaymentProvider || "Provider" %></strong>
+            on <%= new Date(systemHealth.lastFailedPaymentAt).toLocaleString() %>
+          </p>
+        <% } else { %>
+          <p class="muted super-admin-health-note">No failed payments have been recorded recently.</p>
+        <% } %>
+      </article>
+    </section>
+
+    <section class="super-admin-panels super-admin-panels--dual">
+      <article class="card dashboard-panel">
+        <div class="dashboard-panel-header">
+          <div>
+            <p class="page-eyebrow">Security Signals</p>
+            <h2>Last Login Activity</h2>
+            <p class="muted">Recent access history across the institution so you can spot unusual patterns quickly.</p>
           </div>
         </div>
 
-        <div class="card">
-          <h3>Total Courses</h3>
-          <p class="big"><%= courseStats.total %></p>
-          <% if (courseStats.draft !== null) { %>
-            <div class="split">
-              <span>Published: <%= courseStats.published %></span>
-              <span>Draft: <%= courseStats.draft %></span>
-              <span>Under Review: <%= courseStats.underReview %></span>
-            </div>
-            <p class="muted"><%= courseStats.statusNote %></p>
-          <% } else { %>
-            <p class="muted">Add status later</p>
-          <% } %>
-        </div>
-
-        <div class="card">
-          <h3>New Signups (7 days)</h3>
-          <p class="big"><%= newSignups %></p>
-          <p class="muted">Users created in the last 7 days.</p>
-        </div>
-
-        <div class="card">
-          <h3>Instructor ActiveState</h3>
-          <% if (!engagementAvailable) { %>
-            <p class="muted">Engagement metrics will appear after instructors are assigned to courses.</p>
-          <% } else { %>
-            <p class="big"><%= atRiskInstructorCount + inactiveInstructorCount %></p>
-            <div class="split">
-              <span>Active: <%= activeInstructorCount %></span>
-              <span>At-Risk: <%= atRiskInstructorCount %></span>
-              <span>Inactive: <%= inactiveInstructorCount %></span>
-            </div>
-          <% } %>
-        </div>
-
-        <div class="card">
-          <h3>System Health</h3>
-          <div class="button-row" style="margin-bottom: 0.85rem;">
-            <span class="badge <%= systemHealth?.tone || "info" %>"><%= systemHealth?.status || "Unknown" %></span>
-            <span class="muted">Updated <%= systemHealth?.lastUpdatedAt ? new Date(systemHealth.lastUpdatedAt).toLocaleString() : "just now" %></span>
-          </div>
-          <div class="split">
-            <span>Database: <strong><%= systemHealth?.databaseLabel || "Unknown" %></strong></span>
-            <span>Uptime: <strong><%= systemHealth?.uptimeLabel || "Unavailable" %></strong></span>
-          </div>
-          <div class="split" style="margin-top: 0.85rem;">
-            <span>Failed payments (7d): <strong><%= systemHealth?.failedPaymentsLast7Days ?? 0 %></strong></span>
-            <span>Refund reviews: <strong><%= systemHealth?.pendingRefundReviews ?? 0 %></strong></span>
-          </div>
-          <div class="split" style="margin-top: 0.55rem;">
-            <span>Pending questions: <strong><%= systemHealth?.pendingCourseQuestions ?? 0 %></strong></span>
-            <span>Session verifications: <strong><%= systemHealth?.liveSessionVerificationQueue ?? 0 %></strong></span>
-          </div>
-          <% if (systemHealth?.lastFailedPaymentAt) { %>
-            <p class="muted" style="margin-top: 0.85rem;">
-              Last failed payment:
-              <strong><%= systemHealth.lastFailedPaymentProvider || "Provider" %></strong>
-              on <%= new Date(systemHealth.lastFailedPaymentAt).toLocaleString() %>
-            </p>
-          <% } else { %>
-            <p class="muted" style="margin-top: 0.85rem;">No failed payments have been recorded recently.</p>
-          <% } %>
-        </div>
-      </section>
-
-      <section class="card-grid">
-        <div class="card">
-          <h3>Last Login Activity</h3>
-          <% if (loginLogs.length === 0) { %>
-            <p class="muted">No login activity yet.</p>
-          <% } else { %>
+        <% if (loginLogs.length === 0) { %>
+          <div class="empty-state">No login activity yet.</div>
+        <% } else { %>
+          <div class="table-wrap dashboard-table">
             <table class="table">
               <thead>
                 <tr>
@@ -143,23 +155,34 @@
                 <% }) %>
               </tbody>
             </table>
-          <% } %>
+          </div>
+        <% } %>
+      </article>
+
+      <article class="card dashboard-panel">
+        <div class="dashboard-panel-header">
+          <div>
+            <p class="page-eyebrow">Finance Snapshot</p>
+            <h2>Revenue</h2>
+            <p class="muted">Net revenue after approved refunds and successful top-ups, with the latest transactions at a glance.</p>
+          </div>
         </div>
 
-        <div class="card">
-          <h3>Revenue</h3>
-          <% if (!hasPayments) { %>
-            <p class="muted">Coming soon</p>
-          <% } else { %>
+        <% if (!hasPayments) { %>
+          <div class="empty-state">Revenue reporting will appear once payments begin flowing through the platform.</div>
+        <% } else { %>
+          <div class="super-admin-revenue-total">
+            <span class="metric-label">Net revenue</span>
             <p class="big">$<%= revenue %></p>
-            <p class="muted">Net revenue after approved refunds and successful top-ups.</p>
-            <div class="split">
-              <span>Gross payments: $<%= revenueGross %></span>
-              <span>Refunded: $<%= revenueRefunded %></span>
-            </div>
-            <% if (recentPayments.length === 0) { %>
-              <p class="muted">No recent transactions.</p>
-            <% } else { %>
+          </div>
+          <div class="split">
+            <span>Gross payments: $<%= revenueGross %></span>
+            <span>Refunded: $<%= revenueRefunded %></span>
+          </div>
+          <% if (recentPayments.length === 0) { %>
+            <div class="empty-state">No recent transactions.</div>
+          <% } else { %>
+            <div class="table-wrap dashboard-table">
               <table class="table">
                 <thead>
                   <tr>
@@ -183,245 +206,265 @@
                   <% }) %>
                 </tbody>
               </table>
-            <% } %>
+            </div>
           <% } %>
-        </div>
-      </section>
+        <% } %>
+      </article>
+    </section>
 
-      <section class="card-grid">
-        <div class="card" id="super-engagement-monitor">
-          <h3>Instructor Engagement Monitor</h3>
-          <form
-            method="GET"
-            action="/super-admin/dashboard"
-            class="engagement-period-form"
-            style="margin-bottom: 1rem;"
-            data-live-form
-            data-live-target="#super-engagement-monitor"
-            data-live-auto-submit="change"
-          >
-            <label for="engagementPeriod" class="sr-only">Engagement period</label>
-            <select id="engagementPeriod" name="engagementPeriod" onchange="this.form.submit()">
-              <% (engagementPeriodOptions || []).forEach((option) => { %>
-                <option value="<%= option.value %>" <%= engagementPeriod === option.value ? "selected" : "" %>><%= option.label %></option>
-              <% }) %>
-            </select>
-          </form>
-          <% if (!engagementAvailable || !instructorEngagementSnapshots.length) { %>
-            <p class="muted">No instructor engagement reporting data yet.</p>
-          <% } else { %>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Instructor</th>
-                  <th>ActiveState</th>
-                  <th>Attendance</th>
-                  <th>Response</th>
-                  <th>Overdue</th>
-                  <th>Engagement</th>
-                  <th>Verification</th>
-                  <th>Score</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% instructorEngagementSnapshots.forEach(snapshot => { %>
-                  <% const stateTone = snapshot.activeState === "Active" ? "success" : snapshot.activeState === "At-Risk" ? "warning" : "info"; %>
-                  <tr>
-                    <td>
-                      <% const primaryCourse = snapshot.courses?.[0] || null; %>
-                      <% const remainingCourses = snapshot.courses ? snapshot.courses.slice(1) : []; %>
-                      <strong><%= snapshot.instructorName %></strong>
-                      <% if (!primaryCourse) { %>
-                        <div class="muted">No assigned courses</div>
-                      <% } else { %>
-                        <div class="engagement-course-list">
-                          <div class="muted"><%= primaryCourse.title %></div>
-                          <% if (remainingCourses.length > 0) { %>
-                            <div class="muted">Showing 1 of <%= snapshot.courses.length %> courses</div>
-                            <details class="engagement-course-details">
-                              <summary>Show <%= remainingCourses.length %> more course<%= remainingCourses.length === 1 ? "" : "s" %></summary>
-                              <div class="stack-sm engagement-course-extra">
-                                <% remainingCourses.forEach((course) => { %>
-                                  <div><%= course.title %></div>
-                                <% }) %>
-                              </div>
-                            </details>
-                          <% } %>
-                        </div>
-                      <% } %>
-                    </td>
-                    <td><span class="badge <%= stateTone %>"><%= snapshot.activeState %></span></td>
-                    <td><%= Number(snapshot.attendanceRate || 0).toFixed(1) %>%</td>
-                    <td><%= snapshot.averageResponseHours === null ? "No answered questions" : `${Number(snapshot.averageResponseHours).toFixed(1)} hrs` %></td>
-                    <td><%= snapshot.pendingQuestionsOverSla %></td>
-                    <td><%= snapshot.engagementVolume %></td>
-                    <td>
-                      <div><strong><%= snapshot.verificationSummary?.VERIFIED || 0 %></strong> verified</div>
-                      <% if ((snapshot.verificationSummary?.PENDING || 0) > 0) { %>
-                        <div class="muted"><%= snapshot.verificationSummary.PENDING %> pending</div>
-                      <% } %>
-                      <% if ((snapshot.verificationSummary?.UNVERIFIED || 0) > 0) { %>
-                        <div class="muted"><%= snapshot.verificationSummary.UNVERIFIED %> unverified</div>
-                      <% } %>
-                    </td>
-                    <td><strong><%= Number(snapshot.performanceScore || 0).toFixed(1) %></strong></td>
-                  </tr>
-                <% }) %>
-              </tbody>
-            </table>
-          <% } %>
+    <section class="card dashboard-panel" id="super-engagement-monitor">
+      <div class="dashboard-panel-header">
+        <div>
+          <p class="page-eyebrow">Instructor Oversight</p>
+          <h2>Engagement Monitor</h2>
+          <p class="muted"><%= (engagementPeriodOptions || []).find((option) => option.value === engagementPeriod)?.label || "Monthly" %> reporting across attendance, responsiveness, and verification workload.</p>
         </div>
-      </section>
+        <form
+          method="GET"
+          action="/super-admin/dashboard"
+          class="engagement-period-form"
+          data-live-form
+          data-live-target="#super-engagement-monitor"
+          data-live-auto-submit="change"
+        >
+          <label for="engagementPeriod" class="sr-only">Engagement period</label>
+          <select id="engagementPeriod" name="engagementPeriod" onchange="this.form.submit()">
+            <% (engagementPeriodOptions || []).forEach((option) => { %>
+              <option value="<%= option.value %>" <%= engagementPeriod === option.value ? "selected" : "" %>><%= option.label %></option>
+            <% }) %>
+          </select>
+        </form>
+      </div>
 
-      <section class="card-grid">
-        <div class="card">
-          <h3>Recent Enrollment Cancellations</h3>
-          <p class="muted">Latest student self-cancel requests together with the reason they selected.</p>
-          <% if (!recentEnrollmentCancellations || !recentEnrollmentCancellations.length) { %>
-            <div class="empty-state">No student enrollment cancellations have been recorded yet.</div>
-          <% } else { %>
-            <table class="table">
-              <thead>
+      <% if (!engagementAvailable || !instructorEngagementSnapshots.length) { %>
+        <div class="empty-state">No instructor engagement reporting data yet.</div>
+      <% } else { %>
+        <div class="table-wrap dashboard-table">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Instructor</th>
+                <th>ActiveState</th>
+                <th>Attendance</th>
+                <th>Response</th>
+                <th>Overdue</th>
+                <th>Engagement</th>
+                <th>Verification</th>
+                <th>Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% instructorEngagementSnapshots.forEach(snapshot => { %>
+                <% const stateTone = snapshot.activeState === "Active" ? "success" : snapshot.activeState === "At-Risk" ? "warning" : "info"; %>
                 <tr>
-                  <th>Student</th>
-                  <th>Course</th>
-                  <th>Reason</th>
-                  <th>Requested Switch</th>
-                  <th>Extra Note</th>
-                  <th>Review Status</th>
-                  <th>Decision</th>
-                  <th>Cancelled</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% recentEnrollmentCancellations.forEach((cancellation, index) => { %>
-                  <% const reviewModalId = `super-admin-review-modal-${index}`; %>
-                  <tr>
-                    <td>
-                      <strong><%= cancellation.studentDisplayName %></strong>
-                      <div class="muted"><%= cancellation.user?.email || "" %></div>
-                    </td>
-                    <td><strong><%= cancellation.course?.title || "Course" %></strong></td>
-                    <td><%= cancellation.reasonLabel %></td>
-                    <td>
-                      <% if (cancellation.requestedTargetCourse?.title) { %>
-                        <div class="review-switch-card">
-                          <strong><%= cancellation.requestedTargetCourse.title %></strong>
-                          <div class="muted">Switch request captured</div>
-                        </div>
-                      <% } else { %>
-                        <div class="review-switch-empty">
-                          <strong>No target course selected</strong>
-                          <div class="muted">This request can only be handled as a refund or decline.</div>
-                        </div>
-                      <% } %>
-                    </td>
-                    <td><%= cancellation.reasonText || "-" %></td>
-                    <td>
-                      <div class="dashboard-review-summary">
-                        <div><strong><%= cancellation.refundStatusLabel %></strong></div>
-                        <% if (cancellation.refundAmount) { %>
-                          <div class="muted"><%= cancellation.refundAmount %> <%= cancellation.refundCurrency %></div>
-                        <% } %>
-                        <% if (cancellation.requestedTargetCourse?.title) { %>
-                          <div class="muted">Switch to <%= cancellation.requestedTargetCourse.title %></div>
-                        <% } else if (cancellation.refundRecommended) { %>
-                          <div class="muted">Refund review flagged</div>
-                        <% } %>
-                        <button
-                          type="button"
-                          class="button ghost review-read-button"
-                          data-review-modal-trigger="<%= reviewModalId %>"
-                        >
-                          Read Me
-                        </button>
-                      </div>
-                      <div class="review-modal" id="<%= reviewModalId %>" hidden>
-                        <div class="review-modal__backdrop" data-review-modal-close></div>
-                        <div class="review-modal__panel" role="dialog" aria-modal="true" aria-labelledby="<%= reviewModalId %>-title">
-                          <div class="review-modal__header">
-                            <div>
-                              <p class="page-eyebrow">Review Status</p>
-                              <h3 id="<%= reviewModalId %>-title"><%= cancellation.refundStatusLabel %></h3>
+                  <td>
+                    <% const primaryCourse = snapshot.courses?.[0] || null; %>
+                    <% const remainingCourses = snapshot.courses ? snapshot.courses.slice(1) : []; %>
+                    <strong><%= snapshot.instructorName %></strong>
+                    <% if (!primaryCourse) { %>
+                      <div class="muted">No assigned courses</div>
+                    <% } else { %>
+                      <div class="engagement-course-list">
+                        <div class="engagement-course-primary"><%= primaryCourse.title %></div>
+                        <% if (remainingCourses.length > 0) { %>
+                          <div class="muted">Showing 1 of <%= snapshot.courses.length %> courses</div>
+                          <details class="engagement-course-details">
+                            <summary>Show <%= remainingCourses.length %> more course<%= remainingCourses.length === 1 ? "" : "s" %></summary>
+                            <div class="stack-sm engagement-course-extra">
+                              <% remainingCourses.forEach((course) => { %>
+                                <div><%= course.title %></div>
+                              <% }) %>
                             </div>
-                            <button type="button" class="review-modal__icon" aria-label="Close" data-review-modal-close>&times;</button>
+                          </details>
+                        <% } %>
+                      </div>
+                    <% } %>
+                  </td>
+                  <td><span class="badge <%= stateTone %>"><%= snapshot.activeState %></span></td>
+                  <td><%= Number(snapshot.attendanceRate || 0).toFixed(1) %>%</td>
+                  <td><%= snapshot.averageResponseHours === null ? "No answered questions" : `${Number(snapshot.averageResponseHours).toFixed(1)} hrs` %></td>
+                  <td><%= snapshot.pendingQuestionsOverSla %></td>
+                  <td><%= snapshot.engagementVolume %></td>
+                  <td>
+                    <div><strong><%= snapshot.verificationSummary?.VERIFIED || 0 %></strong> verified</div>
+                    <% if ((snapshot.verificationSummary?.PENDING || 0) > 0) { %>
+                      <div class="muted"><%= snapshot.verificationSummary.PENDING %> pending</div>
+                    <% } %>
+                    <% if ((snapshot.verificationSummary?.UNVERIFIED || 0) > 0) { %>
+                      <div class="muted"><%= snapshot.verificationSummary.UNVERIFIED %> unverified</div>
+                    <% } %>
+                  </td>
+                  <td><strong><%= Number(snapshot.performanceScore || 0).toFixed(1) %></strong></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
+
+    <section class="card dashboard-panel">
+      <div class="dashboard-panel-header">
+        <div>
+          <p class="page-eyebrow">Student Retention</p>
+          <h2>Recent Enrollment Cancellations</h2>
+          <p class="muted">Latest student self-cancel requests together with the reasons selected and the current review state.</p>
+        </div>
+      </div>
+
+      <% if (!recentEnrollmentCancellations || !recentEnrollmentCancellations.length) { %>
+        <div class="empty-state">No student enrollment cancellations have been recorded yet.</div>
+      <% } else { %>
+        <div class="table-wrap dashboard-table dashboard-table--cancellations">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Course</th>
+                <th>Reason</th>
+                <th>Requested Switch</th>
+                <th>Extra Note</th>
+                <th>Review Status</th>
+                <th>Decision</th>
+                <th>Cancelled</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% recentEnrollmentCancellations.forEach((cancellation, index) => { %>
+                <% const reviewModalId = `super-admin-review-modal-${index}`; %>
+                <tr>
+                  <td class="dashboard-cell-identity">
+                    <strong><%= cancellation.studentDisplayName %></strong>
+                    <div class="muted"><%= cancellation.user?.email || "" %></div>
+                  </td>
+                  <td class="dashboard-cell-identity"><strong><%= cancellation.course?.title || "Course" %></strong></td>
+                  <td class="dashboard-cell-note"><%= cancellation.reasonLabel %></td>
+                  <td>
+                    <% if (cancellation.requestedTargetCourse?.title) { %>
+                      <div class="review-switch-card">
+                        <strong><%= cancellation.requestedTargetCourse.title %></strong>
+                        <div class="muted">Switch request captured</div>
+                      </div>
+                    <% } else { %>
+                      <div class="review-switch-empty">
+                        <strong>No target course selected</strong>
+                        <div class="muted">This request can only be handled as a refund or decline.</div>
+                      </div>
+                    <% } %>
+                  </td>
+                  <td class="dashboard-cell-note"><%= cancellation.reasonText || "-" %></td>
+                  <td class="dashboard-review-cell">
+                    <div class="dashboard-review-summary">
+                      <div><strong><%= cancellation.refundStatusLabel %></strong></div>
+                      <% if (cancellation.refundAmount) { %>
+                        <div class="muted"><%= cancellation.refundAmount %> <%= cancellation.refundCurrency %></div>
+                      <% } %>
+                      <% if (cancellation.requestedTargetCourse?.title) { %>
+                        <div class="muted">Switch to <%= cancellation.requestedTargetCourse.title %></div>
+                      <% } else if (cancellation.refundRecommended) { %>
+                        <div class="muted">Refund review flagged</div>
+                      <% } %>
+                      <button
+                        type="button"
+                        class="button ghost review-read-button"
+                        data-review-modal-trigger="<%= reviewModalId %>"
+                      >
+                        Read Me
+                      </button>
+                    </div>
+                    <div class="review-modal" id="<%= reviewModalId %>" hidden>
+                      <div class="review-modal__backdrop" data-review-modal-close></div>
+                      <div class="review-modal__panel" role="dialog" aria-modal="true" aria-labelledby="<%= reviewModalId %>-title">
+                        <div class="review-modal__header">
+                          <div>
+                            <p class="page-eyebrow">Review Status</p>
+                            <h3 id="<%= reviewModalId %>-title"><%= cancellation.refundStatusLabel %></h3>
                           </div>
-                          <div class="review-modal__body">
-                            <% if (cancellation.refundAmount) { %>
-                              <div class="review-modal__item"><strong>Amount:</strong> <%= cancellation.refundAmount %> <%= cancellation.refundCurrency %></div>
-                            <% } %>
-                            <% if (cancellation.refundRecommended) { %>
-                              <div class="review-modal__item">Reason marked as potentially reasonable</div>
-                            <% } %>
-                            <% if (cancellation.requestedTargetCourse?.title) { %>
-                              <div class="review-modal__item">Requested switch to <strong><%= cancellation.requestedTargetCourse.title %></strong></div>
-                              <% if (cancellation.switchFinancialSummary) { %>
-                                <div class="review-modal__item"><%= cancellation.switchFinancialSummary.summaryText %></div>
-                                <% if (cancellation.switchFinancialSummary.sourceCourseFee !== null && cancellation.switchFinancialSummary.targetCourseFee !== null) { %>
-                                  <div class="review-modal__item">
-                                    Source: <%= cancellation.switchFinancialSummary.sourceCourseFee %> <%= cancellation.switchFinancialSummary.currency %>,
-                                    Target: <%= cancellation.switchFinancialSummary.targetCourseFee %> <%= cancellation.switchFinancialSummary.currency %>,
-                                    Transfer: <%= cancellation.switchFinancialSummary.transferAmount %> <%= cancellation.switchFinancialSummary.currency %>
-                                  </div>
-                                <% } %>
+                          <button type="button" class="review-modal__icon" aria-label="Close" data-review-modal-close>&times;</button>
+                        </div>
+                        <div class="review-modal__body">
+                          <% if (cancellation.refundAmount) { %>
+                            <div class="review-modal__item"><strong>Amount:</strong> <%= cancellation.refundAmount %> <%= cancellation.refundCurrency %></div>
+                          <% } %>
+                          <% if (cancellation.refundRecommended) { %>
+                            <div class="review-modal__item">Reason marked as potentially reasonable</div>
+                          <% } %>
+                          <% if (cancellation.requestedTargetCourse?.title) { %>
+                            <div class="review-modal__item">Requested switch to <strong><%= cancellation.requestedTargetCourse.title %></strong></div>
+                            <% if (cancellation.switchFinancialSummary) { %>
+                              <div class="review-modal__item"><%= cancellation.switchFinancialSummary.summaryText %></div>
+                              <% if (cancellation.switchFinancialSummary.sourceCourseFee !== null && cancellation.switchFinancialSummary.targetCourseFee !== null) { %>
+                                <div class="review-modal__item">
+                                  Source: <%= cancellation.switchFinancialSummary.sourceCourseFee %> <%= cancellation.switchFinancialSummary.currency %>,
+                                  Target: <%= cancellation.switchFinancialSummary.targetCourseFee %> <%= cancellation.switchFinancialSummary.currency %>,
+                                  Transfer: <%= cancellation.switchFinancialSummary.transferAmount %> <%= cancellation.switchFinancialSummary.currency %>
+                                </div>
                               <% } %>
                             <% } %>
-                            <% if (cancellation.providerAdjustmentStatus) { %>
-                              <div class="review-modal__item">Financial action: <%= cancellation.providerAdjustmentStatus %></div>
-                            <% } %>
-                            <% if (cancellation.topUpPayment?.id) { %>
-                              <div class="review-modal__item">Top-up payment: <%= cancellation.topUpPayment.status %> via <%= cancellation.topUpPayment.provider %></div>
-                            <% } %>
-                            <% if (cancellation.reviewedByDisplayName) { %>
-                              <div class="review-modal__item">Reviewed by <%= cancellation.reviewedByDisplayName %></div>
-                            <% } %>
-                            <% if (cancellation.refundDecisionNote) { %>
-                              <div class="review-modal__item"><%= cancellation.refundDecisionNote %></div>
-                            <% } %>
-                          </div>
-                          <div class="review-modal__footer">
-                            <button type="button" class="button primary" data-review-modal-close>Done</button>
-                          </div>
+                          <% } %>
+                          <% if (cancellation.providerAdjustmentStatus) { %>
+                            <div class="review-modal__item">Financial action: <%= cancellation.providerAdjustmentStatus %></div>
+                          <% } %>
+                          <% if (cancellation.topUpPayment?.id) { %>
+                            <div class="review-modal__item">Top-up payment: <%= cancellation.topUpPayment.status %> via <%= cancellation.topUpPayment.provider %></div>
+                          <% } %>
+                          <% if (cancellation.reviewedByDisplayName) { %>
+                            <div class="review-modal__item">Reviewed by <%= cancellation.reviewedByDisplayName %></div>
+                          <% } %>
+                          <% if (cancellation.refundDecisionNote) { %>
+                            <div class="review-modal__item"><%= cancellation.refundDecisionNote %></div>
+                          <% } %>
+                        </div>
+                        <div class="review-modal__footer">
+                          <button type="button" class="button primary" data-review-modal-close>Done</button>
                         </div>
                       </div>
-                    </td>
-                    <td>
-                      <% if (cancellation.refundReviewStatus === "PENDING_REVIEW") { %>
-                        <form method="POST" action="/admin/enrollment-cancellations/<%= cancellation.id %>/refund-review" class="stack-sm review-form">
-                          <% if (!cancellation.requestedTargetCourse?.id) { %>
-                            <div class="muted review-helper">Switch approval appears only when the student selected a target course.</div>
+                    </div>
+                  </td>
+                  <td class="dashboard-decision-cell">
+                    <% if (cancellation.refundReviewStatus === "PENDING_REVIEW") { %>
+                      <form method="POST" action="/admin/enrollment-cancellations/<%= cancellation.id %>/refund-review" class="stack-sm review-form">
+                        <% if (!cancellation.requestedTargetCourse?.id) { %>
+                          <div class="muted review-helper">Switch approval appears only when the student selected a target course.</div>
+                        <% } %>
+                        <select name="refundDecision" required>
+                          <option value="">Choose decision</option>
+                          <option value="APPROVED">Approve Refund</option>
+                          <% if (cancellation.requestedTargetCourse?.id) { %>
+                            <option value="SWITCH_APPROVED"><%= cancellation.switchFinancialSummary?.direction === "TOP_UP_REQUIRED" ? "Approve Switch / Require Top-Up" : "Approve Switch" %></option>
                           <% } %>
-                          <select name="refundDecision" required>
-                            <option value="">Choose decision</option>
-                            <option value="APPROVED">Approve Refund</option>
-                            <% if (cancellation.requestedTargetCourse?.id) { %>
-                              <option value="SWITCH_APPROVED"><%= cancellation.switchFinancialSummary?.direction === "TOP_UP_REQUIRED" ? "Approve Switch / Require Top-Up" : "Approve Switch" %></option>
-                            <% } %>
-                            <option value="DECLINED">Decline</option>
-                          </select>
-                          <textarea name="refundDecisionNote" rows="2" placeholder="Optional admin note"></textarea>
-                          <button type="submit">Save Decision</button>
-                        </form>
-                      <% } else { %>
-                        <span class="muted">No action pending</span>
-                      <% } %>
-                    </td>
-                    <td><%= new Date(cancellation.createdAt).toLocaleString() %></td>
-                  </tr>
-                <% }) %>
-              </tbody>
-            </table>
-          <% } %>
+                          <option value="DECLINED">Decline</option>
+                        </select>
+                        <textarea name="refundDecisionNote" rows="2" placeholder="Optional admin note"></textarea>
+                        <button type="submit">Save Decision</button>
+                      </form>
+                    <% } else { %>
+                      <span class="muted">No action pending</span>
+                    <% } %>
+                  </td>
+                  <td class="dashboard-cell-date"><%= new Date(cancellation.createdAt).toLocaleString() %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
         </div>
-      </section>
+      <% } %>
+    </section>
 
-      <section class="card-grid">
-        <div class="card" data-live-tomorrow-section>
-          <h3>Tomorrow's Live Sessions</h3>
-          <p class="muted">Shown in your local time so you can monitor tomorrow’s teaching activity without doing manual time conversion.</p>
-          <% if (!nextDayLiveSessionAlerts || !nextDayLiveSessionAlerts.length) { %>
-            <div class="empty-state" data-live-tomorrow-empty>No live sessions are currently lined up for tomorrow.</div>
-          <% } else { %>
+    <section class="super-admin-panels super-admin-panels--dual">
+      <article class="card dashboard-panel" data-live-tomorrow-section>
+        <div class="dashboard-panel-header">
+          <div>
+            <p class="page-eyebrow">Live Session Tomorrow</p>
+            <h2>Forward Monitoring</h2>
+            <p class="muted">Shown in your local time so you can watch tomorrow's teaching activity without manual time conversion.</p>
+          </div>
+        </div>
+
+        <% if (!nextDayLiveSessionAlerts || !nextDayLiveSessionAlerts.length) { %>
+          <div class="empty-state" data-live-tomorrow-empty>No live sessions are currently lined up for tomorrow.</div>
+        <% } else { %>
+          <div class="table-wrap dashboard-table">
             <table class="table" data-live-tomorrow-list>
               <thead>
                 <tr>
@@ -467,18 +510,24 @@
                 <% }) %>
               </tbody>
             </table>
-            <div class="empty-state" data-live-tomorrow-empty hidden>No live sessions are currently lined up for tomorrow in your local time.</div>
-          <% } %>
-        </div>
-      </section>
+          </div>
+          <div class="empty-state" data-live-tomorrow-empty hidden>No live sessions are currently lined up for tomorrow in your local time.</div>
+        <% } %>
+      </article>
 
-      <section class="card-grid">
-        <div class="card">
-          <h3>Live Session Access</h3>
-          <p class="muted">Join any instructor live class directly for a real-time spot check. Times are shown in your local time.</p>
-          <% if (!adminLiveSessions || !adminLiveSessions.length) { %>
-            <div class="empty-state">No live sessions with join links are available right now.</div>
-          <% } else { %>
+      <article class="card dashboard-panel">
+        <div class="dashboard-panel-header">
+          <div>
+            <p class="page-eyebrow">Live Session Access</p>
+            <h2>Spot-Check Join</h2>
+            <p class="muted">Join any instructor live class directly for a real-time spot check. Times are shown in your local time.</p>
+          </div>
+        </div>
+
+        <% if (!adminLiveSessions || !adminLiveSessions.length) { %>
+          <div class="empty-state">No live sessions with join links are available right now.</div>
+        <% } else { %>
+          <div class="table-wrap dashboard-table">
             <table class="table">
               <thead>
                 <tr>
@@ -521,42 +570,56 @@
                 <% }) %>
               </tbody>
             </table>
-          <% } %>
-        </div>
-      </section>
-    </div>
+          </div>
+        <% } %>
+      </article>
+    </section>
 
-    <script>
-      (() => {
-        const setModalState = (modal, open) => {
-          if (!modal) return;
-          modal.hidden = !open;
-          document.body.classList.toggle("review-modal-open", open);
-        };
+    <section class="quick-links">
+      <a class="quick-link" href="/super-admin/audit-logs">
+        <strong>Audit Logs</strong>
+        <span class="muted">Review privileged actions, access patterns, and sensitive changes across the platform.</span>
+      </a>
+      <a class="quick-link" href="/super-admin/settings">
+        <strong>Platform Settings</strong>
+        <span class="muted">Tune institution-wide controls, workflows, and ownership-level platform behavior.</span>
+      </a>
+      <a class="quick-link" href="/admin/settings/users">
+        <strong>User Governance</strong>
+        <span class="muted">Review roles, permissions, and the operational structure supporting the LMS.</span>
+      </a>
+    </section>
+  </div>
 
-        document.addEventListener("click", (event) => {
-          const trigger = event.target.closest("[data-review-modal-trigger]");
-          if (trigger) {
-            const modal = document.getElementById(trigger.dataset.reviewModalTrigger);
-            setModalState(modal, true);
-            return;
-          }
+  <script>
+    (() => {
+      const setModalState = (modal, open) => {
+        if (!modal) return;
+        modal.hidden = !open;
+        document.body.classList.toggle("review-modal-open", open);
+      };
 
-          const closeButton = event.target.closest("[data-review-modal-close]");
-          if (closeButton) {
-            setModalState(closeButton.closest(".review-modal"), false);
-          }
+      document.addEventListener("click", (event) => {
+        const trigger = event.target.closest("[data-review-modal-trigger]");
+        if (trigger) {
+          const modal = document.getElementById(trigger.dataset.reviewModalTrigger);
+          setModalState(modal, true);
+          return;
+        }
+
+        const closeButton = event.target.closest("[data-review-modal-close]");
+        if (closeButton) {
+          setModalState(closeButton.closest(".review-modal"), false);
+        }
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape") return;
+        document.querySelectorAll(".review-modal:not([hidden])").forEach((modal) => {
+          setModalState(modal, false);
         });
-
-        document.addEventListener("keydown", (event) => {
-          if (event.key !== "Escape") return;
-          document.querySelectorAll(".review-modal:not([hidden])").forEach((modal) => {
-            setModalState(modal, false);
-          });
-        });
-      })();
-    </script>
-  </body>
+      });
+    })();
+  </script>
+</body>
 </html>
-
-

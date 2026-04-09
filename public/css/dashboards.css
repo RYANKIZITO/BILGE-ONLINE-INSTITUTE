@@ -2,6 +2,10 @@
   width: min(1420px, calc(100% - 1.75rem));
 }
 
+.super-admin-dashboard-page .page.dashboard-shell {
+  width: min(1460px, calc(100% - 1.75rem));
+}
+
 .dashboard-shell {
   display: grid;
   gap: var(--space-6);
@@ -85,6 +89,13 @@
   min-width: 8.75rem;
 }
 
+.super-admin-hero {
+  background:
+    radial-gradient(circle at top right, rgba(20, 84, 126, 0.18), transparent 24%),
+    radial-gradient(circle at bottom left, rgba(162, 122, 44, 0.16), transparent 36%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(239, 244, 248, 0.98));
+}
+
 .dashboard-kpis {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -119,6 +130,14 @@
   margin-bottom: var(--space-4);
 }
 
+.super-admin-kpis {
+  align-items: stretch;
+}
+
+.super-admin-kpi--health {
+  grid-column: span 2;
+}
+
 .dashboard-panel {
   display: grid;
   gap: var(--space-4);
@@ -149,6 +168,33 @@
 .engagement-period-form select {
   width: auto;
   min-width: 140px;
+}
+
+.super-admin-panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-5);
+}
+
+.super-admin-panels .dashboard-panel {
+  height: 100%;
+}
+
+.super-admin-health-row {
+  margin-bottom: 0.85rem;
+}
+
+.super-admin-health-row--compact {
+  margin-top: 0.55rem;
+}
+
+.super-admin-health-note {
+  margin-top: 0.85rem;
+}
+
+.super-admin-revenue-total {
+  display: grid;
+  gap: 0.2rem;
 }
 
 .quick-links {
@@ -640,6 +686,13 @@ body.theme-dark .dashboard-hero {
     linear-gradient(135deg, rgba(18, 27, 42, 0.98), rgba(12, 19, 31, 0.98));
 }
 
+body.theme-dark .super-admin-hero {
+  background:
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.16), transparent 24%),
+    radial-gradient(circle at bottom left, rgba(215, 179, 107, 0.14), transparent 34%),
+    linear-gradient(135deg, rgba(16, 25, 39, 0.98), rgba(11, 18, 29, 0.99));
+}
+
 body.theme-dark .dashboard-hero-nav {
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(153, 171, 194, 0.14);
@@ -692,8 +745,16 @@ body.theme-dark .review-modal__item {
     width: min(1420px, calc(100% - 1.25rem));
   }
 
+  .super-admin-dashboard-page .page.dashboard-shell {
+    width: min(1460px, calc(100% - 1.25rem));
+  }
+
   .dashboard-hero-nav {
     width: 100%;
+  }
+
+  .super-admin-kpi--health {
+    grid-column: auto;
   }
 
   .review-modal__panel {
