@@ -2,13 +2,25 @@ const HEADER_TOP_OFFSET = 24;
 const HEADER_SCROLL_TOLERANCE = 10;
 const MOBILE_NAV_BREAKPOINT = window.matchMedia("(max-width: 980px)");
 
-document.addEventListener("DOMContentLoaded", () => {
-  const siteHeader = document.querySelector("[data-site-header]");
-  const navToggle = document.querySelector("[data-nav-toggle]");
-  const navPanel = document.querySelector("[data-nav-panel]");
+const getScopedElement = (root, selector) => {
+  if (root && typeof root.querySelector === "function") {
+    return root.querySelector(selector);
+  }
+
+  return document.querySelector(selector);
+};
+
+const initializeWebsiteHeader = (root = document) => {
+  const siteHeader = getScopedElement(root, "[data-site-header]") || document.querySelector("[data-site-header]");
+  const navToggle = siteHeader?.querySelector("[data-nav-toggle]") || null;
+  const navPanel = siteHeader?.querySelector("[data-nav-panel]") || null;
 
   if (!siteHeader) {
     return;
+  }
+
+  if (typeof window.__cleanupBilgeWebsiteHeader === "function") {
+    window.__cleanupBilgeWebsiteHeader();
   }
 
   let lastScrollY = window.scrollY;
@@ -62,46 +74,98 @@ document.addEventListener("DOMContentLoaded", () => {
     ticking = false;
   };
 
+  const onScroll = () => {
+    if (ticking) {
+      return;
+    }
+
+    ticking = true;
+    window.requestAnimationFrame(syncHeaderVisibility);
+  };
+
   window.addEventListener(
     "scroll",
-    () => {
-      if (ticking) {
-        return;
-      }
-
-      ticking = true;
-      window.requestAnimationFrame(syncHeaderVisibility);
-    },
+    onScroll,
     { passive: true }
   );
+
+  const navLinkHandlers = [];
 
   if (navToggle && navPanel) {
     setNavOpen(false);
 
-    navToggle.addEventListener("click", () => {
+    const handleToggleClick = () => {
       setNavOpen(siteHeader.dataset.navOpen !== "true");
-    });
+    };
+
+    navToggle.addEventListener("click", handleToggleClick);
 
     navPanel.querySelectorAll("a").forEach((link) => {
-      link.addEventListener("click", () => {
+      const handleNavLinkClick = () => {
         setNavOpen(false);
-      });
+      };
+
+      navLinkHandlers.push({ link, handleNavLinkClick });
+      link.addEventListener("click", handleNavLinkClick);
     });
 
-    MOBILE_NAV_BREAKPOINT.addEventListener("change", (event) => {
+    const handleBreakpointChange = (event) => {
       if (!event.matches) {
         setNavOpen(false);
       }
-    });
+    };
 
-    window.addEventListener("keydown", (event) => {
+    MOBILE_NAV_BREAKPOINT.addEventListener("change", handleBreakpointChange);
+
+    const handleKeydown = (event) => {
       if (event.key === "Escape") {
         setNavOpen(false);
       }
-    });
+    };
+
+    window.addEventListener("keydown", handleKeydown);
+
+    const handleFocus = () => {
+      siteHeader.classList.remove("site-header--hidden");
+    };
+
+    window.addEventListener("focus", handleFocus);
+
+    window.__cleanupBilgeWebsiteHeader = () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("keydown", handleKeydown);
+      window.removeEventListener("focus", handleFocus);
+      navToggle.removeEventListener("click", handleToggleClick);
+      MOBILE_NAV_BREAKPOINT.removeEventListener("change", handleBreakpointChange);
+
+      navLinkHandlers.forEach(({ link, handleNavLinkClick }) => {
+        link.removeEventListener("click", handleNavLinkClick);
+      });
+    };
+
+    syncHeaderVisibility();
+    return;
   }
 
-  window.addEventListener("focus", () => {
+  const handleFocus = () => {
     siteHeader.classList.remove("site-header--hidden");
+  };
+
+  window.addEventListener("focus", handleFocus);
+  window.__cleanupBilgeWebsiteHeader = () => {
+    window.removeEventListener("scroll", onScroll);
+    window.removeEventListener("focus", handleFocus);
+  };
+
+  syncHeaderVisibility();
+};
+
+window.__runBilgeWebsiteHeaderEnhancements = initializeWebsiteHeader;
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => initializeWebsiteHeader(document), {
+    once: true,
   });
-});
+} else {
+  initializeWebsiteHeader(document);
+}

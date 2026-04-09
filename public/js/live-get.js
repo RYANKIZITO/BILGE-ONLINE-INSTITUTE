@@ -113,6 +113,10 @@
     if (typeof window.__runBilgeClientTimeEnhancements === "function") {
       window.__runBilgeClientTimeEnhancements(root || document);
     }
+
+    if (typeof window.__runBilgeWebsiteHeaderEnhancements === "function") {
+      window.__runBilgeWebsiteHeaderEnhancements(root || document);
+    }
   };
 
   const activateScripts = (root) => {
