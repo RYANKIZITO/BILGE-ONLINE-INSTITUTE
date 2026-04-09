@@ -3,6 +3,7 @@ import fs from "fs/promises";
 import path from "path";
 import mammoth from "mammoth";
 import { hashPassword } from "../src/utils/password.js";
+import { syncConfiguredSuperAdmins } from "../src/bootstrap/super-admin-sync.js";
 
 const prisma = new PrismaClient();
 
@@ -331,25 +332,6 @@ const CATEGORY_BY_PRICING_TITLE = CATEGORY_DEFINITIONS.reduce((acc, category) =>
   }
   return acc;
 }, {});
-
-const getSuperAdminEnv = (prefix, label) => {
-  const requiredKeys = [
-    `${prefix}_EMAIL`,
-    `${prefix}_PASSWORD`,
-    `${prefix}_NAME`
-  ];
-
-  const missing = requiredKeys.filter((key) => !process.env[key]);
-  if (missing.length > 0) {
-    throw new Error(`Missing required ${label} environment variable(s): ${missing.join(", ")}`);
-  }
-
-  return {
-    email: process.env[`${prefix}_EMAIL`],
-    password: process.env[`${prefix}_PASSWORD`],
-    name: process.env[`${prefix}_NAME`]
-  };
-};
 
 const ensureSystemInstructor = async () => {
   const hashedPassword = await hashPassword(SYSTEM_INSTRUCTOR.password);
@@ -948,40 +930,7 @@ const seedWebsiteContent = async () => {
 };
 
 const main = async () => {
-  const rootSuperAdmin = getSuperAdminEnv("ROOT_SUPERADMIN", "ROOT_SUPERADMIN");
-  const secondSuperAdmin = getSuperAdminEnv("SECOND_SUPERADMIN", "SECOND_SUPERADMIN");
-
-  const rootHashedPassword = await hashPassword(rootSuperAdmin.password);
-  await prisma.user.upsert({
-    where: { email: rootSuperAdmin.email },
-    update: {
-      name: rootSuperAdmin.name,
-      password: rootHashedPassword,
-      role: "SUPER_ADMIN"
-    },
-    create: {
-      name: rootSuperAdmin.name,
-      email: rootSuperAdmin.email,
-      password: rootHashedPassword,
-      role: "SUPER_ADMIN"
-    }
-  });
-
-  const secondHashedPassword = await hashPassword(secondSuperAdmin.password);
-  await prisma.user.upsert({
-    where: { email: secondSuperAdmin.email },
-    update: {
-      name: secondSuperAdmin.name,
-      password: secondHashedPassword,
-      role: "SUPER_ADMIN"
-    },
-    create: {
-      name: secondSuperAdmin.name,
-      email: secondSuperAdmin.email,
-      password: secondHashedPassword,
-      role: "SUPER_ADMIN"
-    }
-  });
+  await syncConfiguredSuperAdmins(prisma);
 
   const categoryIdByName = {};
 

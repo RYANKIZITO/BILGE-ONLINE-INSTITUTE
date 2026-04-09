@@ -7,6 +7,7 @@ import websiteRouter, { showWebsite404 } from "./modules/website/website.routes.
 import appRouter from "./routes.js";
 import sessionMiddleware from "./config/session.js";
 import { DEFAULT_LANGUAGE_PREFERENCE } from "./utils/language.js";
+import { syncConfiguredSuperAdmins } from "./bootstrap/super-admin-sync.js";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -309,6 +310,12 @@ app.use((err, req, res, next) => {
   }
   res.status(500).json(payload);
 });
+
+try {
+  await syncConfiguredSuperAdmins(prisma);
+} catch (error) {
+  console.error("[bootstrap] Superadmin sync failed:", error?.message || error);
+}
 
 app.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
