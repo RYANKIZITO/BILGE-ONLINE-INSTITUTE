@@ -9,10 +9,26 @@ import sessionMiddleware from "./config/session.js";
 import { DEFAULT_LANGUAGE_PREFERENCE } from "./utils/language.js";
 
 const app = express();
-app.set("trust proxy")
+app.set("trust proxy", 1);
 const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_DIR = path.join(process.cwd(), "public");
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+const BOT_SCAN_PATTERNS = [
+  /^\/wp-admin(?:\/|$)/i,
+  /^\/wordpress(?:\/|$)/i,
+  /^\/xmlrpc\.php$/i,
+  /^\/phpmyadmin(?:\/|$)/i,
+  /^\/\.env(?:$|\.)/i,
+  /^\/\.git(?:\/|$)/i,
+  /^\/cgi-bin(?:\/|$)/i,
+  /^\/boaform/i,
+];
+
+function isLikelyBotScan(requestUrl) {
+  const pathname = String(requestUrl || "").split("?")[0];
+  return BOT_SCAN_PATTERNS.some((pattern) => pattern.test(pathname));
+}
 
 // View engine
 app.set("view engine", "ejs");
@@ -38,6 +54,23 @@ app.use(
   })
 );
 
+// Basic production-safe security headers
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+
+  if (req.secure) {
+    res.setHeader(
+      "Strict-Transport-Security",
+      "max-age=31536000; includeSubDomains; preload"
+    );
+  }
+
+  next();
+});
+
 // Body parsers
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
@@ -48,6 +81,11 @@ app.use((req, res, next) => {
   res.on("finish", () => {
     const end = process.hrtime.bigint();
     const ms = Number(end - start) / 1e6;
+
+    if (IS_PRODUCTION && res.statusCode === 404 && isLikelyBotScan(req.originalUrl)) {
+      return;
+    }
+
     const line = `${req.method} ${req.originalUrl} ${res.statusCode} ${ms.toFixed(1)}ms`;
     console.log(line);
   });
