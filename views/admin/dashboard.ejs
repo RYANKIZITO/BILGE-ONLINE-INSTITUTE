@@ -16,19 +16,31 @@
           <h1>Welcome, <%= user?.name || "Admin" %></h1>
           <p class="page-subtitle">Monitor platform activity, manage users, and keep course operations moving smoothly.</p>
         </div>
-        <nav class="nav-links dashboard-hero-nav">
-          <a href="/admin/cms">CMS</a>
-          <a href="/admin/settings/users">Manage Users</a>
-          <a href="/admin/courses">Manage Courses</a>
-          <% if (user?.profileCompleted) { %>
-            <a href="/settings">Settings</a>
-          <% } %>
-          <% if (user?.role === "SUPER_ADMIN") { %>
-            <a href="/super-admin/dashboard">Super Admin</a>
-          <% } %>
-        </nav>
+        <div class="dashboard-header-actions">
+          <div class="bilge-language-dock bilge-language-dock--inline" data-bilge-language-dock>
+            <label class="bilge-language-control" for="bilge-global-language">
+              <span>Language</span>
+              <select id="bilge-global-language" data-language-select aria-label="Select application language"></select>
+            </label>
+          </div>
+          <nav class="nav-links dashboard-hero-nav">
+            <a href="/admin/cms">CMS</a>
+            <a href="/admin/settings/users">Manage Users</a>
+            <a href="/admin/courses">Manage Courses</a>
+            <% if (user?.profileCompleted) { %>
+              <a href="/settings">Settings</a>
+            <% } %>
+            <% if (user?.role === "SUPER_ADMIN") { %>
+              <a href="/super-admin/dashboard">Super Admin</a>
+            <% } %>
+            <form class="nav-logout-form" method="POST" action="/logout">
+              <button type="submit" class="button">Log Out</button>
+            </form>
+          </nav>
+        </div>
       </header>
     </section>
+    <div id="google_translate_element" class="google-translate-anchor" aria-hidden="true"></div>
 
     <% if (flash && flash.message) { %>
       <div class="flash flash-<%= flash.type || "info" %>"><%= flash.message %></div>

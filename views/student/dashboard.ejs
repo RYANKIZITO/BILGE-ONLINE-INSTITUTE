@@ -16,15 +16,27 @@
           <h1>Welcome, <%= user?.name || "Student" %></h1>
           <p class="page-subtitle">Resume your coursework, review academic progress, and manage your learning path with confidence.</p>
         </div>
-        <nav class="nav-links">
-          <a href="/courses">Browse Courses</a>
-          <a href="/my-courses">My Courses</a>
-          <% if (user?.profileCompleted) { %>
-            <a href="/settings">Settings</a>
-          <% } %>
-        </nav>
+        <div class="dashboard-header-actions">
+          <div class="bilge-language-dock bilge-language-dock--inline" data-bilge-language-dock>
+            <label class="bilge-language-control" for="bilge-global-language">
+              <span>Language</span>
+              <select id="bilge-global-language" data-language-select aria-label="Select application language"></select>
+            </label>
+          </div>
+          <nav class="nav-links">
+            <a href="/courses">Browse Courses</a>
+            <a href="/my-courses">My Courses</a>
+            <% if (user?.profileCompleted) { %>
+              <a href="/settings">Settings</a>
+            <% } %>
+            <form class="nav-logout-form" method="POST" action="/logout">
+              <button type="submit" class="button">Log Out</button>
+            </form>
+          </nav>
+        </div>
       </header>
     </section>
+    <div id="google_translate_element" class="google-translate-anchor" aria-hidden="true"></div>
 
     <% if (flash && flash.message) { %>
       <div class="flash flash-<%= flash.type || "info" %>"><%= flash.message %></div>

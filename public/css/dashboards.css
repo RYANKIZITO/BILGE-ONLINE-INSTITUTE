@@ -42,6 +42,49 @@
   backdrop-filter: blur(14px);
 }
 
+.dashboard-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: min(100%, 420px);
+}
+
+.dashboard-header-actions .nav-links {
+  justify-content: flex-end;
+}
+
+.dashboard-header-actions .bilge-language-dock {
+  position: static;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  z-index: auto;
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: 0.6rem 0.75rem;
+  border-radius: 1rem;
+  transform: none;
+}
+
+.dashboard-header-actions .bilge-language-dock.is-hidden {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: none;
+  box-shadow: inherit;
+}
+
+.dashboard-header-actions .bilge-language-control {
+  gap: 0.65rem;
+}
+
+.dashboard-header-actions .bilge-language-control select {
+  min-width: 8.75rem;
+}
+
 .dashboard-kpis {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -201,6 +244,31 @@
 
 .cms-page {
   width: min(1380px, calc(100% - 1.75rem));
+}
+
+@media (max-width: 760px) {
+  .dashboard-header-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .dashboard-header-actions .bilge-language-dock {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .dashboard-header-actions .bilge-language-control {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .dashboard-header-actions .bilge-language-control select {
+    width: min(100%, 12rem);
+  }
+
+  .dashboard-header-actions .nav-links {
+    width: 100%;
+  }
 }
 
 .cms-section {

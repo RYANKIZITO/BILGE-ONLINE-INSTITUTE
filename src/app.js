@@ -170,9 +170,9 @@ app.use((req, res, next) => {
         '<script src="/public/js/local-datetime.js" defer data-local-datetime-script></script>';
       const isWebsiteView = String(view || "").startsWith("website/");
       const isDashboardLanguageView = dashboardLanguageViews.has(String(view || ""));
+      const isLmsView = !isWebsiteView;
       const languageBootstrap =
-        !isWebsiteView &&
-        isDashboardLanguageView &&
+        isLmsView &&
         !html.includes("data-bilge-language-bootstrap")
           ? `<link rel="stylesheet" href="/public/css/language-selector.css" data-bilge-language-style />
 <script data-bilge-language-bootstrap>
@@ -245,18 +245,9 @@ app.use((req, res, next) => {
 <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer data-bilge-language-script></script>`
           : "";
       const languageBodyMarkup =
-        !isWebsiteView &&
-        isDashboardLanguageView &&
-        !html.includes("data-bilge-language-dock")
-          ? `<div class="bilge-language-dock" data-bilge-language-dock>
-  <label class="bilge-language-control" for="bilge-global-language">
-    <span>Language</span>
-    <select id="bilge-global-language" data-language-select aria-label="Select application language"></select>
-  </label>
-</div>
-<div id="google_translate_element" class="google-translate-anchor" aria-hidden="true"></div>`
+        isLmsView && !html.includes('id="google_translate_element"')
+          ? '<div id="google_translate_element" class="google-translate-anchor" aria-hidden="true"></div>'
           : "";
-
       const nextHtml =
         typeof html === "string" && html.includes("</body>")
           ? html
@@ -266,9 +257,7 @@ app.use((req, res, next) => {
               )
               .replace(
                 "</body>",
-                `${languageBodyMarkup}${
-                  !html.includes("data-live-navigation") ? liveNavigationScript : ""
-                }${
+                `${languageBodyMarkup}${!html.includes("data-live-navigation") ? liveNavigationScript : ""}${
                   !html.includes("data-local-datetime-script") ? localDateTimeScript : ""
                 }</body>`
               )

@@ -250,6 +250,16 @@ main,
   align-items: center;
 }
 
+.nav-logout-form {
+  margin: 0;
+  display: inline-flex;
+}
+
+.nav-logout-form .button,
+.nav-logout-form button {
+  width: auto;
+}
+
 .nav-links a,
 .nav-link {
   padding: 0.78rem 1rem;
