@@ -3,6 +3,11 @@ import path from "path";
 import crypto from "crypto";
 import { spawn } from "child_process";
 import multer from "multer";
+import {
+  CAREER_EMAIL_ATTACHMENT_MAX_TOTAL_BYTES,
+  CAREER_EMAIL_ATTACHMENT_MAX_TOTAL_LABEL,
+  getCareerApplicationTotalBytes,
+} from "../modules/website/career-application.constants.js";
 
 const uploadDir = path.join(process.cwd(), "uploads");
 const lessonVideoTempDir = path.join(process.cwd(), "tmp", "lesson-videos");
@@ -266,7 +271,7 @@ const careerDocumentUpload = multer({
   storage,
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB per file
-    files: 5,
+    files: 6,
   },
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname || "").toLowerCase();
@@ -353,7 +358,21 @@ export const uploadCareerApplicationFiles = (req, res, next) => {
       req.fileValidationError =
         err.code === "LIMIT_FILE_SIZE"
           ? "One of the uploaded files is too large. Each file must be 10MB or less."
-          : "Document upload failed. Please review your files and try again.";
+          : err.code === "LIMIT_FILE_COUNT"
+            ? "You can upload up to 1 resume, 1 intro video, and 4 supporting documents."
+            : "Document upload failed. Please review your files and try again.";
+    }
+
+    if (!req.fileValidationError) {
+      const totalUploadBytes = getCareerApplicationTotalBytes({
+        resumeFile: req.files?.resumeFile?.[0] || null,
+        introVideo: req.files?.introVideo?.[0] || null,
+        supportingDocuments: req.files?.supportingDocuments || [],
+      });
+
+      if (totalUploadBytes > CAREER_EMAIL_ATTACHMENT_MAX_TOTAL_BYTES) {
+        req.fileValidationError = `Career application uploads must be ${CAREER_EMAIL_ATTACHMENT_MAX_TOTAL_LABEL} or less in total because they are delivered as email attachments.`;
+      }
     }
 
     return next();

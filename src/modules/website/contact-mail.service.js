@@ -218,7 +218,12 @@ const buildBrevoAttachments = async (files = []) =>
 export const sendContactNotifications = async ({ payload, contactDetails }) => {
   const config = getMailConfig();
   if (!config.isConfigured) {
-    console.warn(`${MAIL_LOG_PREFIX} Brevo API key is not configured. Skipping email delivery.`);
+    console.warn(`${MAIL_LOG_PREFIX} Email delivery is not configured. Skipping email delivery.`, {
+      hasApiKey: Boolean(config.apiKey),
+      hasFromEmail: Boolean(config.fromEmail),
+      fromEmail: config.fromEmail || null,
+      overrideRecipient: config.overrideRecipient || null,
+    });
     return { configured: false, delivered: false };
   }
 

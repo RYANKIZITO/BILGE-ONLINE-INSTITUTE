@@ -4,6 +4,11 @@ import {
   getPrimaryContactEmail,
   sendBrevoEmail,
 } from "./contact-mail.service.js";
+import {
+  CAREER_EMAIL_ATTACHMENT_MAX_TOTAL_BYTES,
+  CAREER_EMAIL_ATTACHMENT_MAX_TOTAL_LABEL,
+  getCareerApplicationTotalBytes,
+} from "./career-application.constants.js";
 
 const MAIL_LOG_PREFIX = "[website-careers-mail]";
 
@@ -101,6 +106,11 @@ export const sendCareerApplicationNotifications = async ({
   contactDetails,
 }) => {
   const config = getMailConfig();
+  const totalAttachmentBytes = getCareerApplicationTotalBytes({
+    resumeFile,
+    introVideo,
+    supportingDocuments,
+  });
   const recipients = Array.from(
     new Set(
       [
@@ -120,6 +130,12 @@ export const sendCareerApplicationNotifications = async ({
     return { configured: true, delivered: false };
   }
 
+  if (totalAttachmentBytes > CAREER_EMAIL_ATTACHMENT_MAX_TOTAL_BYTES) {
+    throw new Error(
+      `Career application attachments exceed the ${CAREER_EMAIL_ATTACHMENT_MAX_TOTAL_LABEL} total delivery limit.`
+    );
+  }
+
   const message = buildInternalMessage({
     payload,
     resumeFile,
@@ -133,6 +149,12 @@ export const sendCareerApplicationNotifications = async ({
     introVideo,
     ...(supportingDocuments || []),
   ]);
+
+  console.info(`${MAIL_LOG_PREFIX} Sending career application email.`, {
+    recipients,
+    attachmentCount: attachments.length,
+    totalAttachmentBytes,
+  });
 
   await sendBrevoEmail({
     to: recipients,

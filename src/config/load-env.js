@@ -39,7 +39,10 @@ try {
       }
 
       const key = trimmedLine.slice(0, separatorIndex).trim();
-      if (!key || Object.prototype.hasOwnProperty.call(process.env, key)) {
+      const existingValue = process.env[key];
+      const hasUsableExistingValue = String(existingValue || "").trim() !== "";
+
+      if (!key || hasUsableExistingValue) {
         return;
       }
 
