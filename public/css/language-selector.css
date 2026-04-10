@@ -61,6 +61,74 @@ body {
   white-space: nowrap;
 }
 
+.bilge-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+  padding: 0.45rem 0.7rem;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.theme-light .bilge-theme-toggle {
+  background: rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+}
+
+.bilge-theme-toggle:hover {
+  transform: translateY(-1px);
+}
+
+.bilge-theme-toggle__label,
+.bilge-theme-toggle__current {
+  white-space: nowrap;
+}
+
+.bilge-theme-toggle__label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.bilge-theme-toggle__track {
+  position: relative;
+  width: 2.9rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.theme-light .bilge-theme-toggle__track {
+  background: rgba(15, 23, 42, 0.14);
+}
+
+.bilge-theme-toggle__thumb {
+  position: absolute;
+  top: 0.14rem;
+  left: 0.16rem;
+  width: 1.22rem;
+  height: 1.22rem;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #f5cf84, #c99536);
+  box-shadow:
+    0 6px 16px rgba(15, 23, 42, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transition: transform 220ms ease;
+}
+
+html[data-theme="light"] .bilge-theme-toggle__thumb {
+  transform: translateX(1.36rem);
+}
+
 .bilge-language-control select {
   min-width: 9.75rem;
   border: 1px solid rgba(148, 163, 184, 0.35);
@@ -102,6 +170,11 @@ body {
   }
 
   .bilge-language-control {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .bilge-theme-toggle {
     width: 100%;
     justify-content: space-between;
   }

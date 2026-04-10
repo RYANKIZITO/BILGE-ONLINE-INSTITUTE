@@ -314,7 +314,14 @@ const buildLanguageNavigationUrl = (languageCode) => {
 
 const reloadCurrentPageForLanguage = (languageCode) => {
   writeReloadGuard(languageCode);
-  window.location.replace(buildLanguageNavigationUrl(languageCode));
+
+  if (typeof window.__bilgeShowPageLoader === "function") {
+    window.__bilgeShowPageLoader();
+  }
+
+  window.setTimeout(() => {
+    window.location.replace(buildLanguageNavigationUrl(languageCode));
+  }, 40);
 };
 
 const cleanupLanguageNavigationUrl = () => {
@@ -534,7 +541,6 @@ const applyLanguage = (languageCode, { persist = false } = {}) => {
 
   watchForGoogleTranslate();
   queueGoogleTranslateRetry();
-  ensureLanguagePersistence(nextLanguage);
 };
 
 const initializeGoogleTranslate = () => {
@@ -626,7 +632,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   applyLanguage(currentLanguage, { persist: true });
-  ensureLanguagePersistence(currentLanguage);
 
   if (window.google?.translate?.TranslateElement) {
     initializeGoogleTranslate();

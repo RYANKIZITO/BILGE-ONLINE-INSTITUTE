@@ -1,4 +1,5 @@
 const WEBSITE_THEME_KEY = "bilge-website-theme";
+const WEBSITE_THEME_API_ENDPOINT = "/preferences/theme";
 const prefersLightScheme = window.matchMedia("(prefers-color-scheme: light)");
 
 const readStoredTheme = () => {
@@ -12,10 +13,20 @@ const readStoredTheme = () => {
 
 const resolveTheme = () => readStoredTheme() || (prefersLightScheme.matches ? "light" : "dark");
 
+const syncBodyTheme = (theme) => {
+  if (!document.body) {
+    return;
+  }
+
+  document.body.classList.remove("theme-light", "theme-dark");
+  document.body.classList.add(`theme-${theme}`);
+};
+
 const applyTheme = (theme, persist = false) => {
   const nextTheme = theme === "light" ? "light" : "dark";
   document.documentElement.setAttribute("data-theme", nextTheme);
   document.documentElement.style.colorScheme = nextTheme;
+  syncBodyTheme(nextTheme);
 
   if (persist) {
     try {
@@ -37,13 +48,60 @@ const applyTheme = (theme, persist = false) => {
   });
 };
 
+const persistThemePreference = (theme) => {
+  if (!window.__bilgeThemeUserAuthenticated) {
+    return;
+  }
+
+  const body = JSON.stringify({
+    themePreference: theme === "light" ? "light" : "dark",
+  });
+
+  if (typeof navigator.sendBeacon === "function") {
+    try {
+      const payload = new Blob([body], { type: "application/json" });
+      if (navigator.sendBeacon(WEBSITE_THEME_API_ENDPOINT, payload)) {
+        return;
+      }
+    } catch {
+      /* Fall back to fetch when sendBeacon is not available. */
+    }
+  }
+
+  window.fetch(WEBSITE_THEME_API_ENDPOINT, {
+    method: "POST",
+    credentials: "same-origin",
+    keepalive: true,
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body,
+  }).catch(() => {
+    /* Ignore network errors and keep the client preference applied locally. */
+  });
+};
+
+const reloadCurrentPageForTheme = () => {
+  if (typeof window.__bilgeShowPageLoader === "function") {
+    window.__bilgeShowPageLoader();
+  }
+
+  window.setTimeout(() => {
+    window.location.replace(window.location.href);
+  }, 40);
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   applyTheme(resolveTheme(), false);
 
   document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
     button.addEventListener("click", () => {
       const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
-      applyTheme(currentTheme === "dark" ? "light" : "dark", true);
+      const nextTheme = currentTheme === "dark" ? "light" : "dark";
+      applyTheme(nextTheme, true);
+      persistThemePreference(nextTheme);
+      reloadCurrentPageForTheme();
     });
   });
 });

@@ -17,6 +17,13 @@
           <p class="page-subtitle">Manage your assigned courses, publishing flow, and teaching actions from one refined workspace.</p>
         </div>
         <div class="dashboard-header-actions">
+          <button class="dashboard-theme-toggle" type="button" data-theme-toggle aria-label="Switch theme">
+            <span class="dashboard-theme-toggle__label">Theme</span>
+            <span class="dashboard-theme-toggle__track" aria-hidden="true">
+              <span class="dashboard-theme-toggle__thumb"></span>
+            </span>
+            <span class="dashboard-theme-toggle__current" data-theme-current><%= themePreference === "light" ? "Light" : "Dark" %></span>
+          </button>
           <div class="bilge-language-dock bilge-language-dock--inline" data-bilge-language-dock>
             <label class="bilge-language-control" for="bilge-global-language">
               <span>Language</span>

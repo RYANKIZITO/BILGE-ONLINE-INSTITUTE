@@ -70,6 +70,7 @@
         document.documentElement.setAttribute("lang", resolvedLanguage);
         window.__bilgeServerLanguagePreference = serverLanguage;
         window.__bilgeLanguageUserAuthenticated = <%- JSON.stringify(Boolean(user)) %>;
+        window.__bilgeThemeUserAuthenticated = <%- JSON.stringify(Boolean(user)) %>;
         window.__bilgePreferredLanguage = resolvedLanguage;
 
         if (resolvedLanguage) {
@@ -88,6 +89,7 @@
         document.documentElement.setAttribute("lang", "en");
         window.__bilgeServerLanguagePreference = <%- JSON.stringify(languagePreference || null) %>;
         window.__bilgeLanguageUserAuthenticated = <%- JSON.stringify(Boolean(user)) %>;
+        window.__bilgeThemeUserAuthenticated = <%- JSON.stringify(Boolean(user)) %>;
         window.__bilgePreferredLanguage = "en";
       }
     })();

@@ -565,3 +565,47 @@ export const updateLanguagePreference = async (req, res, next) => {
     return next(err);
   }
 };
+
+export const updateThemePreference = async (req, res, next) => {
+  try {
+    if (!req.session?.user?.id) {
+      return res.status(401).json({
+        ok: false,
+        message: "Authentication required.",
+      });
+    }
+
+    const themePreference = normalizeText(req.body?.themePreference).toLowerCase();
+
+    if (themePreference !== "light" && themePreference !== "dark") {
+      return res.status(400).json({
+        ok: false,
+        message: "Please provide a valid theme preference.",
+      });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: req.session.user.id },
+      data: {
+        themePreference,
+      },
+      select: {
+        themePreference: true,
+      },
+    });
+
+    req.session.user = {
+      ...req.session.user,
+      themePreference: updatedUser.themePreference || "light",
+    };
+
+    await saveSession(req);
+
+    return res.json({
+      ok: true,
+      themePreference: req.session.user.themePreference,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};

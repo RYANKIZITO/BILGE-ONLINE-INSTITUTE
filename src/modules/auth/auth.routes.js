@@ -13,6 +13,7 @@ import {
   showCompleteProfile,
   submitCompleteProfile,
   updateLanguagePreference,
+  updateThemePreference,
 } from "../profile/profile.controller.js";
 import { isAuthenticated } from "../../middlewares/auth.middleware.js";
 import { uploadProfilePhoto } from "../../middlewares/upload.middleware.js";
@@ -36,6 +37,7 @@ router.post("/auth/apple/callback", appleCallback);
 router.get("/complete-profile", isAuthenticated, showCompleteProfile);
 router.post("/complete-profile", isAuthenticated, uploadProfilePhoto, submitCompleteProfile);
 router.post("/preferences/language", isAuthenticated, updateLanguagePreference);
+router.post("/preferences/theme", isAuthenticated, updateThemePreference);
 
 router.post("/logout", (req, res) => {
   req.session.destroy(() => {
