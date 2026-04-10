@@ -584,31 +584,37 @@ const initializeGoogleTranslate = () => {
 
 window.googleTranslateElementInit = initializeGoogleTranslate;
 
-document.addEventListener("DOMContentLoaded", () => {
-  const currentLanguage = resolveLanguage();
-  writeStoredLanguage(currentLanguage);
-  cleanupLanguageNavigationUrl();
-  lastLanguageDockScrollTop = Math.max(window.scrollY || 0, 0);
-  syncLanguageDockScrollState();
+const bindLanguageDock = (root) => {
+  const scope = root && root.querySelectorAll ? root : document;
 
-  window.addEventListener("scroll", syncLanguageDockScrollState, { passive: true });
+  scope.querySelectorAll("[data-bilge-language-dock]").forEach((languageDock) => {
+    if (languageDock.dataset.bilgeLanguageDockBound === "true") {
+      return;
+    }
 
-  document
-    .querySelector("[data-bilge-language-dock]")
-    ?.addEventListener("focusin", () => {
-      const languageDock = document.querySelector("[data-bilge-language-dock]");
-      if (!languageDock) {
-        return;
-      }
-
+    languageDock.dataset.bilgeLanguageDockBound = "true";
+    languageDock.addEventListener("focusin", () => {
       languageDock.classList.remove("is-hidden");
     });
+  });
+};
 
-  document.querySelectorAll("[data-language-select]").forEach((select) => {
+const bindLanguageSelects = (root, currentLanguage) => {
+  const scope = root && root.querySelectorAll ? root : document;
+
+  scope.querySelectorAll("[data-language-select]").forEach((select) => {
     buildLanguageOptions(select, currentLanguage);
+
+    if (select.dataset.bilgeLanguageBound === "true") {
+      return;
+    }
+
+    select.dataset.bilgeLanguageBound = "true";
     select.addEventListener("change", (event) => {
       const nextLanguage = normalizeLanguageCode(event.target.value);
-      const activeLanguage = normalizeLanguageCode(window.__bilgePreferredLanguage || currentLanguage);
+      const activeLanguage = normalizeLanguageCode(
+        window.__bilgePreferredLanguage || resolveLanguage()
+      );
 
       if (nextLanguage === activeLanguage) {
         syncVisibleSelectors(activeLanguage);
@@ -620,6 +626,22 @@ document.addEventListener("DOMContentLoaded", () => {
       reloadCurrentPageForLanguage(nextLanguage);
     });
   });
+};
+
+const initializeLanguagePreferences = (root) => {
+  const currentLanguage = resolveLanguage();
+  writeStoredLanguage(currentLanguage);
+  cleanupLanguageNavigationUrl();
+  lastLanguageDockScrollTop = Math.max(window.scrollY || 0, 0);
+  syncLanguageDockScrollState();
+
+  if (!window.__bilgeLanguageScrollBound) {
+    window.__bilgeLanguageScrollBound = true;
+    window.addEventListener("scroll", syncLanguageDockScrollState, { passive: true });
+  }
+
+  bindLanguageDock(root || document);
+  bindLanguageSelects(root || document, currentLanguage);
 
   updateDocumentLanguage(currentLanguage);
   syncLanguagePreferenceInputs(currentLanguage);
@@ -636,4 +658,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (window.google?.translate?.TranslateElement) {
     initializeGoogleTranslate();
   }
-});
+};
+
+window.__runBilgeLanguageEnhancements = initializeLanguagePreferences;
+initializeLanguagePreferences(document);

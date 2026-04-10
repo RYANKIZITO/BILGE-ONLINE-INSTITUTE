@@ -283,19 +283,22 @@ const LMS_PREMIUM_LOADER_MARKUP = `<div class="bilge-page-loader" data-bilge-pag
 const LMS_THEME_SCRIPT =
   '<script src="/public/js/website-theme.js" defer data-bilge-theme-script></script>';
 
-const LMS_FLOATING_PREFERENCES_DOCK = `<div class="bilge-language-dock" data-bilge-language-dock data-bilge-lms-preferences>
-  <button class="bilge-theme-toggle" type="button" data-theme-toggle aria-label="Switch theme">
-    <span class="bilge-theme-toggle__label">Theme</span>
-    <span class="bilge-theme-toggle__track" aria-hidden="true">
-      <span class="bilge-theme-toggle__thumb"></span>
-    </span>
-    <span class="bilge-theme-toggle__current" data-theme-current>Dark</span>
-  </button>
-  <label class="bilge-language-control" for="bilge-global-language-floating">
-    <span>Language</span>
-    <select id="bilge-global-language-floating" data-language-select aria-label="Select application language"></select>
-  </label>
-</div>`;
+const LMS_BODY_THEME_SYNC_SCRIPT = `<script data-bilge-body-theme-sync>
+  (function () {
+    try {
+      var resolvedTheme =
+        document.documentElement.getAttribute("data-theme") ||
+        window.localStorage.getItem("bilge-website-theme") ||
+        "light";
+      var nextTheme = resolvedTheme === "dark" ? "dark" : "light";
+      document.body.classList.remove("theme-light", "theme-dark");
+      document.body.classList.add("theme-" + nextTheme);
+    } catch (error) {
+      document.body.classList.remove("theme-light", "theme-dark");
+      document.body.classList.add("theme-light");
+    }
+  })();
+</script>`;
 
 // View engine
 app.set("view engine", "ejs");
@@ -399,12 +402,6 @@ app.use((req, res, next) => {
 
 app.use((req, res, next) => {
   const originalRender = res.render.bind(res);
-  const dashboardLanguageViews = new Set([
-    "student/dashboard",
-    "instructor/dashboard",
-    "admin/dashboard",
-    "super-admin/dashboard",
-  ]);
 
   res.render = (view, options, callback) => {
     let renderOptions = options;
@@ -429,7 +426,6 @@ app.use((req, res, next) => {
       const localDateTimeScript =
         '<script src="/public/js/local-datetime.js" defer data-local-datetime-script></script>';
       const isWebsiteView = String(view || "").startsWith("website/");
-      const isDashboardLanguageView = dashboardLanguageViews.has(String(view || ""));
       const isLmsView = !isWebsiteView;
       const loaderBootstrap =
         isLmsView && !html.includes("data-bilge-loader-bootstrap")
@@ -526,11 +522,9 @@ app.use((req, res, next) => {
           : "";
       const loaderMarkup =
         isLmsView && !html.includes("data-bilge-page-loader") ? LMS_PREMIUM_LOADER_MARKUP : "";
-      const floatingPreferencesDock =
-        isLmsView &&
-        !isDashboardLanguageView &&
-        !html.includes("data-bilge-lms-preferences")
-          ? LMS_FLOATING_PREFERENCES_DOCK
+      const bodyThemeSyncScript =
+        isLmsView && !html.includes("data-bilge-body-theme-sync")
+          ? LMS_BODY_THEME_SYNC_SCRIPT
           : "";
       const languageBodyMarkup =
         isLmsView && !html.includes('id="google_translate_element"')
@@ -547,7 +541,7 @@ app.use((req, res, next) => {
               )
               .replace(
                 "</body>",
-                `${loaderMarkup}${floatingPreferencesDock}${languageBodyMarkup}${
+                `${bodyThemeSyncScript}${loaderMarkup}${languageBodyMarkup}${
                   !html.includes("data-live-navigation") ? liveNavigationScript : ""
                 }${
                   !html.includes("data-local-datetime-script") ? localDateTimeScript : ""

@@ -117,6 +117,14 @@
     if (typeof window.__runBilgeWebsiteHeaderEnhancements === "function") {
       window.__runBilgeWebsiteHeaderEnhancements(root || document);
     }
+
+    if (typeof window.__runBilgeThemeEnhancements === "function") {
+      window.__runBilgeThemeEnhancements(root || document);
+    }
+
+    if (typeof window.__runBilgeLanguageEnhancements === "function") {
+      window.__runBilgeLanguageEnhancements(root || document);
+    }
   };
 
   const activateScripts = (root) => {

@@ -48,7 +48,7 @@ const applyTheme = (theme, persist = false) => {
   });
 };
 
-const persistThemePreference = (theme) => {
+const persistThemePreference = async (theme) => {
   if (!window.__bilgeThemeUserAuthenticated) {
     return;
   }
@@ -57,29 +57,23 @@ const persistThemePreference = (theme) => {
     themePreference: theme === "light" ? "light" : "dark",
   });
 
-  if (typeof navigator.sendBeacon === "function") {
-    try {
-      const payload = new Blob([body], { type: "application/json" });
-      if (navigator.sendBeacon(WEBSITE_THEME_API_ENDPOINT, payload)) {
-        return;
-      }
-    } catch {
-      /* Fall back to fetch when sendBeacon is not available. */
-    }
-  }
-
-  window.fetch(WEBSITE_THEME_API_ENDPOINT, {
-    method: "POST",
-    credentials: "same-origin",
-    keepalive: true,
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body,
-  }).catch(() => {
-    /* Ignore network errors and keep the client preference applied locally. */
-  });
+  await Promise.race([
+    window.fetch(WEBSITE_THEME_API_ENDPOINT, {
+      method: "POST",
+      credentials: "same-origin",
+      keepalive: true,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body,
+    }).catch(() => {
+      /* Ignore network errors and keep the client preference applied locally. */
+    }),
+    new Promise((resolve) => {
+      window.setTimeout(resolve, 320);
+    }),
+  ]);
 };
 
 const reloadCurrentPageForTheme = () => {
@@ -92,19 +86,29 @@ const reloadCurrentPageForTheme = () => {
   }, 40);
 };
 
-document.addEventListener("DOMContentLoaded", () => {
+const initializeThemeControls = (root) => {
+  const scope = root && root.querySelectorAll ? root : document;
+
   applyTheme(resolveTheme(), false);
 
-  document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
-    button.addEventListener("click", () => {
+  scope.querySelectorAll("[data-theme-toggle]").forEach((button) => {
+    if (button.dataset.bilgeThemeBound === "true") {
+      return;
+    }
+
+    button.dataset.bilgeThemeBound = "true";
+    button.addEventListener("click", async () => {
       const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
       const nextTheme = currentTheme === "dark" ? "light" : "dark";
       applyTheme(nextTheme, true);
-      persistThemePreference(nextTheme);
+      await persistThemePreference(nextTheme);
       reloadCurrentPageForTheme();
     });
   });
-});
+};
+
+window.__runBilgeThemeEnhancements = initializeThemeControls;
+initializeThemeControls(document);
 
 prefersLightScheme.addEventListener("change", (event) => {
   if (readStoredTheme()) {

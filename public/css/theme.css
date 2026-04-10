@@ -47,6 +47,7 @@
   --theme-table-stripe: rgba(251, 248, 243, 0.92);
 }
 
+:root[data-theme="dark"],
 body.theme-dark {
   color-scheme: dark;
   --theme-bg: #09111d;
