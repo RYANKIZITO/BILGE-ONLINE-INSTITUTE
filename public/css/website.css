@@ -3004,7 +3004,7 @@ body.profile-modal-open {
 
 .ready-course-rail__header {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.95fr);
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.75fr);
   gap: 0.75rem;
   align-items: end;
 }
@@ -3015,10 +3015,10 @@ body.profile-modal-open {
 
 .ready-course-rail__header h2 {
   margin: 0;
-  max-width: none;
+  max-width: 13ch;
   font-family: var(--heading-font);
-  font-size: clamp(2.4rem, 4.8vw, 4.4rem);
-  line-height: 0.94;
+  font-size: clamp(2.15rem, 3.7vw, 3.55rem);
+  line-height: 0.97;
   text-wrap: balance;
 }
 
