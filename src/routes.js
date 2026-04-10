@@ -97,6 +97,7 @@ import {
   getSuperAdminAuditLogs,
   getSuperAdminSettings,
   reviewEnrollmentCancellationRefund,
+  submitLmsDashboardFeedback,
 } from "./modules/dashboard/dashboard.controller.js";
 
 import {
@@ -130,6 +131,12 @@ import {
 const router = express.Router();
 
 router.get("/dashboard", isAuthenticated, requireCompletedProfile, getDashboardRedirect);
+router.post(
+  "/dashboard/feedback",
+  isAuthenticated,
+  requireCompletedProfile,
+  submitLmsDashboardFeedback
+);
 
 router.get("/settings", isAuthenticated, requireCompletedProfile, showAccountSettings);
 router.post(

@@ -175,7 +175,16 @@ const buildAcknowledgementMessage = (payload, contactDetails) => {
   };
 };
 
-const sendBrevoEmail = async ({ to, replyTo, subject, text, html, attachments = [] }) => {
+const sendBrevoEmail = async ({
+  to,
+  replyTo,
+  subject,
+  text,
+  html,
+  attachments = [],
+  senderName,
+  senderEmail,
+}) => {
   const config = getMailConfig();
   const response = await fetch(BREVO_ENDPOINT, {
     method: "POST",
@@ -185,8 +194,8 @@ const sendBrevoEmail = async ({ to, replyTo, subject, text, html, attachments = 
     },
     body: JSON.stringify({
       sender: {
-        name: config.fromName,
-        email: config.fromEmail,
+        name: normalizeString(senderName) || config.fromName,
+        email: normalizeString(senderEmail) || config.fromEmail,
       },
       to: to.map((email) => ({ email })),
       replyTo: replyTo ? { email: replyTo } : undefined,

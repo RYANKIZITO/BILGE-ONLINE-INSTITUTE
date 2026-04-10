@@ -575,6 +575,12 @@
       </article>
     </section>
 
+    <%- include("../partials/lms-feedback-panel", {
+      user,
+      dashboardLabel: "Super Admin Dashboard",
+      pagePath: "/super-admin/dashboard",
+    }) %>
+
     <section class="quick-links">
       <a class="quick-link" href="/super-admin/audit-logs">
         <strong>Audit Logs</strong>

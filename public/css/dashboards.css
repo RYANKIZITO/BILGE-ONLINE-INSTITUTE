@@ -203,6 +203,97 @@
   gap: var(--space-4);
 }
 
+.dashboard-feedback-panel {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top right, rgba(162, 122, 44, 0.12), transparent 28%),
+    radial-gradient(circle at bottom left, rgba(24, 58, 99, 0.1), transparent 32%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 241, 232, 0.98));
+}
+
+.dashboard-feedback-panel__trigger {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dashboard-feedback-panel__trigger:hover {
+  color: var(--theme-link-hover);
+}
+
+.dashboard-feedback-modal__panel {
+  width: min(720px, calc(100% - 2rem));
+}
+
+.dashboard-feedback-form {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.dashboard-feedback-form__grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.8fr) minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: stretch;
+}
+
+.dashboard-feedback-form__field {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.dashboard-feedback-form__field > span {
+  font-weight: 700;
+  color: var(--theme-text);
+}
+
+.dashboard-feedback-form__field select,
+.dashboard-feedback-form__field textarea {
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid rgba(112, 105, 92, 0.16);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.dashboard-feedback-form__field textarea {
+  min-height: 144px;
+  resize: vertical;
+}
+
+.dashboard-feedback-form__identity {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem 1.1rem;
+  border-radius: 22px;
+  border: 1px solid rgba(112, 105, 92, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.dashboard-feedback-modal__thankyou {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.1rem 1.15rem;
+  border-radius: 22px;
+  border: 1px solid rgba(112, 105, 92, 0.14);
+  background: linear-gradient(135deg, rgba(24, 58, 99, 0.06), rgba(162, 122, 44, 0.08));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.dashboard-feedback-modal__thankyou strong {
+  font-size: 1.05rem;
+}
+
+.dashboard-feedback-modal__thankyou p {
+  margin: 0;
+  line-height: 1.65;
+}
+
 .quick-link {
   display: grid;
   gap: var(--space-2);

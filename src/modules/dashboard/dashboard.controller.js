@@ -19,6 +19,10 @@ import {
   getUpcomingLiveSessionAlertsForStudent,
   listInstructorEngagementSnapshots,
 } from "../instructor/instructor-engagement.service.js";
+import {
+  sendLmsFeedbackNotification,
+  validateLmsFeedbackSubmission,
+} from "./lms-feedback.service.js";
 
 const DAYS_7_MS = 7 * 24 * 60 * 60 * 1000;
 const LIVE_SESSION_ADMIN_LOOKBACK_MS = 6 * 60 * 60 * 1000;
@@ -73,6 +77,42 @@ const getEngagementPeriodFromRequest = (req) => {
   return ENGAGEMENT_REPORTING_PERIOD_OPTIONS.some((option) => option.value === requested)
     ? requested
     : DEFAULT_ENGAGEMENT_PERIOD;
+};
+
+const buildDashboardFeedbackDismissHref = (req) => {
+  const params = new URLSearchParams();
+
+  Object.entries(req.query || {}).forEach(([key, value]) => {
+    if (
+      ["feedbackModal", "feedbackFocus"].includes(key) ||
+      value == null ||
+      String(value).trim() === ""
+    ) {
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach((item) => params.append(key, String(item)));
+      return;
+    }
+
+    params.set(key, String(value));
+  });
+
+  const query = params.toString();
+  return query ? `${req.path}?${query}` : req.path;
+};
+
+const getDashboardFeedbackState = (req) => {
+  const mode = String(req.query.feedbackModal || "").trim().toLowerCase();
+  const validMode = mode === "success" || mode === "form" ? mode : null;
+
+  return {
+    mode: validMode,
+    isSuccess: validMode === "success",
+    shouldOpen: Boolean(validMode),
+    dismissHref: buildDashboardFeedbackDismissHref(req),
+  };
 };
 
 const getReviewerPublicDisplayName = (reviewedBy) => {
@@ -1057,6 +1097,59 @@ export const getDashboardRedirect = (req, res) => {
   return res.redirect("/student/dashboard");
 };
 
+export const submitLmsDashboardFeedback = async (req, res) => {
+  const validation = validateLmsFeedbackSubmission(req.body);
+  const origin = "http://localhost";
+  const referer = String(req.get("referer") || "").trim();
+  const requestedPath = String(req.body.pagePath || "").trim();
+  const baseUrl = referer || (requestedPath ? `${origin}${requestedPath}` : `${origin}/dashboard`);
+  const redirectUrl = new URL(baseUrl, origin);
+
+  redirectUrl.searchParams.delete("feedbackModal");
+  redirectUrl.searchParams.delete("feedbackFocus");
+  redirectUrl.searchParams.set("feedbackFocus", "lms-feedback");
+
+  if (!validation.isValid) {
+    req.session.flash = {
+      type: "error",
+      message: validation.errors.join(" "),
+    };
+    redirectUrl.searchParams.set("feedbackModal", "form");
+    return res.redirect(`${redirectUrl.pathname}${redirectUrl.search}${redirectUrl.hash}`);
+  }
+
+  try {
+    const delivery = await sendLmsFeedbackNotification({
+      payload: validation.data,
+      user: req.session.user,
+    });
+
+    req.session.flash = delivery?.delivered
+        ? {
+          type: "success",
+          message:
+            "Your LMS feedback was sent to Bilge successfully. Thank you for helping us improve the platform.",
+        }
+      : {
+          type: "error",
+          message:
+            "The LMS feedback form could not send right now. Please try again in a moment.",
+        };
+
+    redirectUrl.searchParams.set("feedbackModal", delivery?.delivered ? "success" : "form");
+    return res.redirect(`${redirectUrl.pathname}${redirectUrl.search}${redirectUrl.hash}`);
+  } catch (error) {
+    console.error("[lms-feedback-mail] Failed to send LMS feedback email:", error);
+    req.session.flash = {
+      type: "error",
+      message:
+        "The LMS feedback form could not send right now. Please try again in a moment.",
+    };
+    redirectUrl.searchParams.set("feedbackModal", "form");
+    return res.redirect(`${redirectUrl.pathname}${redirectUrl.search}${redirectUrl.hash}`);
+  }
+};
+
 export const getSuperAdminDashboard = async (req, res, next) => {
   try {
     const flash = req.session.flash || null;
@@ -1284,6 +1377,7 @@ export const getSuperAdminDashboard = async (req, res, next) => {
       atRiskInstructorCount,
       inactiveInstructorCount,
       systemHealth,
+      dashboardFeedbackState: getDashboardFeedbackState(req),
       flash
     });
   } catch (err) {
@@ -1465,6 +1559,7 @@ export const getAdminDashboard = async (req, res, next) => {
       engagementPeriod,
       engagementPeriodOptions: ENGAGEMENT_REPORTING_PERIOD_OPTIONS,
       engagementAvailable: instructorEngagementSnapshots.length > 0,
+      dashboardFeedbackState: getDashboardFeedbackState(req),
       flash
     });
   } catch (err) {
@@ -1515,6 +1610,7 @@ export const getInstructorDashboard = async (req, res, next) => {
       engagementSnapshot,
       upcomingLiveSessionAlerts,
       nextDayLiveSessionAlerts,
+      dashboardFeedbackState: getDashboardFeedbackState(req),
       flash,
     });
   } catch (err) {
@@ -1663,6 +1759,7 @@ export const getStudentDashboard = async (req, res, next) => {
       pendingSwitchTopUps,
       upcomingLiveSessionAlerts,
       nextDayLiveSessionAlerts,
+      dashboardFeedbackState: getDashboardFeedbackState(req),
       flash
     });
   } catch (err) {

@@ -1,0 +1,168 @@
+<%
+  const feedbackModalId = `lms-feedback-modal-${String(dashboardLabel || "dashboard")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")}`;
+  const feedbackState = dashboardFeedbackState || {};
+  const isSuccess = Boolean(feedbackState.isSuccess);
+  const shouldOpen = Boolean(feedbackState.shouldOpen);
+  const dismissHref = feedbackState.dismissHref || pagePath || "/dashboard";
+  const personalizedName = user?.name ? `, ${user.name}` : "";
+%>
+
+<section class="card dashboard-panel dashboard-feedback-panel" id="lms-feedback">
+  <div class="dashboard-panel-header">
+    <div>
+      <p class="page-eyebrow">LMS Feedback</p>
+      <h2>
+        <button
+          type="button"
+          class="dashboard-feedback-panel__trigger"
+          data-feedback-modal-trigger="<%= feedbackModalId %>"
+          aria-haspopup="dialog"
+          aria-controls="<%= feedbackModalId %>"
+        >
+          Tell Bilge what is helping, blocking, or missing.
+        </button>
+      </h2>
+      <p class="muted">
+        Open the feedback form to request help, report system challenges, or suggest improvements directly from the LMS.
+      </p>
+    </div>
+  </div>
+</section>
+
+<div
+  class="review-modal dashboard-feedback-modal"
+  id="<%= feedbackModalId %>"
+  <% if (!shouldOpen) { %>hidden<% } %>
+>
+  <div class="review-modal__backdrop" data-feedback-modal-close></div>
+  <div
+    class="review-modal__panel dashboard-feedback-modal__panel"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="<%= feedbackModalId %>-title"
+  >
+    <div class="review-modal__header">
+      <div>
+        <p class="page-eyebrow">LMS Feedback</p>
+        <h3 id="<%= feedbackModalId %>-title">
+          <%= isSuccess ? `Thank you${personalizedName}.` : "Tell Bilge what you need from the LMS." %>
+        </h3>
+      </div>
+      <button
+        type="button"
+        class="review-modal__icon"
+        aria-label="Close"
+        data-feedback-modal-close
+      >&times;</button>
+    </div>
+
+    <% if (isSuccess) { %>
+      <div class="review-modal__body">
+        <div class="dashboard-feedback-modal__thankyou">
+          <strong>Your LMS feedback was sent successfully.</strong>
+          <p>
+            The Bilge team can now review your help request, challenge, or improvement idea from the
+            <strong><%= dashboardLabel %></strong>.
+          </p>
+          <p class="muted">
+            Thank you for helping us improve the learning experience for everyone on the platform.
+          </p>
+        </div>
+      </div>
+      <div class="review-modal__footer">
+        <a class="button primary" href="<%= dismissHref %>">Back to dashboard</a>
+      </div>
+    <% } else { %>
+      <form class="dashboard-feedback-form" method="POST" action="/dashboard/feedback">
+        <input type="hidden" name="dashboardLabel" value="<%= dashboardLabel %>" />
+        <input type="hidden" name="pagePath" value="<%= pagePath %>" />
+
+        <div class="review-modal__body">
+          <div class="dashboard-feedback-form__grid">
+            <label class="dashboard-feedback-form__field">
+              <span>Feedback type</span>
+              <select name="feedbackType" required>
+                <option value="">Choose one</option>
+                <option value="help">I need help</option>
+                <option value="challenge">I am facing a challenge</option>
+                <option value="bug">Something in the system is not working</option>
+                <option value="improvement">I want to suggest an improvement</option>
+                <option value="general">General feedback</option>
+              </select>
+            </label>
+
+            <div class="dashboard-feedback-form__identity">
+              <div class="metric-label">Sending as</div>
+              <strong><%= user?.name || "LMS User" %></strong>
+              <span class="muted"><%= user?.email || "" %></span>
+              <span class="muted"><%= dashboardLabel %></span>
+            </div>
+          </div>
+
+          <label class="dashboard-feedback-form__field">
+            <span>What should Bilge know?</span>
+            <textarea
+              name="message"
+              rows="5"
+              minlength="20"
+              required
+              placeholder="Tell us what you need help with, what is confusing, what should improve, or what challenge you faced in the LMS."
+            ></textarea>
+          </label>
+        </div>
+
+        <div class="review-modal__footer">
+          <button type="button" class="button ghost" data-feedback-modal-close>Cancel</button>
+          <button type="submit" class="button primary">Send LMS feedback</button>
+        </div>
+      </form>
+    <% } %>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const modal = document.getElementById("<%= feedbackModalId %>");
+    if (!modal || modal.dataset.feedbackModalBound === "true") return;
+    modal.dataset.feedbackModalBound = "true";
+
+    const openModal = () => {
+      modal.hidden = false;
+      document.body.classList.add("review-modal-open");
+    };
+
+    const closeModal = () => {
+      modal.hidden = true;
+      document.body.classList.remove("review-modal-open");
+
+      if ("<%= shouldOpen ? "true" : "false" %>" === "true" && window.location.pathname + window.location.search !== "<%= dismissHref %>") {
+        window.history.replaceState({}, "", "<%= dismissHref %>");
+      }
+    };
+
+    document.querySelectorAll('[data-feedback-modal-trigger="<%= feedbackModalId %>"]').forEach((trigger) => {
+      trigger.addEventListener("click", openModal);
+    });
+
+    modal.querySelectorAll("[data-feedback-modal-close]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        if (button.tagName === "A") return;
+        event.preventDefault();
+        closeModal();
+      });
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !modal.hidden) {
+        closeModal();
+      }
+    });
+
+    if ("<%= shouldOpen ? "true" : "false" %>" === "true") {
+      openModal();
+    }
+  })();
+</script>

@@ -837,6 +837,12 @@
       <% } %>
     </section>
 
+    <%- include("../partials/lms-feedback-panel", {
+      user,
+      dashboardLabel: "Admin Dashboard",
+      pagePath: "/admin/dashboard",
+    }) %>
+
     <section class="quick-links">
       <a class="quick-link" href="/admin/cms">
         <strong>CMS</strong>

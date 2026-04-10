@@ -235,6 +235,12 @@
         </div>
       <% } %>
     </section>
+
+    <%- include("../partials/lms-feedback-panel", {
+      user,
+      dashboardLabel: "Instructor Dashboard",
+      pagePath: "/instructor/dashboard",
+    }) %>
   </div>
 </body>
 </html>
