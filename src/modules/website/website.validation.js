@@ -21,6 +21,10 @@ export const parseWebsiteListParams = (query = {}, options = {}) => {
   const search = normalizeString(query.search);
   const category = normalizeString(query.category);
   const sort = normalizeString(query.sort).toLowerCase() || "featured";
+  const readyFirst =
+    String(query.ready_first || "")
+      .trim()
+      .toLowerCase() === "1";
 
   return {
     page,
@@ -28,6 +32,7 @@ export const parseWebsiteListParams = (query = {}, options = {}) => {
     search,
     category,
     sort,
+    readyFirst,
     skip: (page - 1) * pageSize,
   };
 };

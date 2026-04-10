@@ -45,6 +45,9 @@
                     <option value="price_low" <%= filters.sort === 'price_low' ? 'selected' : '' %>>Price</option>
                   </select>
                 </label>
+                <% if (filters.readyFirst) { %>
+                  <input type="hidden" name="ready_first" value="1" />
+                <% } %>
                 <div class="hero-actions">
                   <button class="button button-cta-light" type="submit">Apply filters</button>
                   <a class="button-ghost" href="/programmes">Reset</a>
@@ -68,9 +71,40 @@
 
         <section class="section">
           <div class="container">
+            <% const readyCourses = promotedReadyCourses || []; %>
             <% const groupedEntries = Object.entries(groupedCourses || {}); %>
+            <% if (readyFirstActive && readyCourses.length) { %>
+              <div class="soft-banner pricing-banner">
+                <strong>Ready programmes are being shown first.</strong>
+                <span>
+                  You arrived from the homepage ready-to-start rail, so Bilge is prioritizing currently
+                  available <strong>READY</strong> programmes before the rest of the catalogue.
+                </span>
+              </div>
+
+              <section class="catalogue-section catalogue-section--priority" id="category-ready-now">
+                <div class="catalogue-section__header">
+                  <div>
+                    <span class="eyebrow">Ready to start now</span>
+                    <h2>Programmes available for immediate action</h2>
+                  </div>
+                  <span class="catalogue-section__count"><%= readyCourses.length %> course(s)</span>
+                </div>
+                <div class="course-grid">
+                  <% readyCourses.forEach((course) => { %>
+                    <%- include("components/course-card", { course }) %>
+                  <% }) %>
+                </div>
+              </section>
+            <% } %>
+
             <% if (groupedEntries.length) { %>
               <div class="catalogue-index">
+                <% if (readyFirstActive && readyCourses.length) { %>
+                  <a class="catalogue-index__link" href="#category-ready-now">
+                    Ready now (<%= readyCourses.length %>)
+                  </a>
+                <% } %>
                 <% groupedEntries.forEach(([categoryName, categoryCourses]) => { %>
                   <a class="catalogue-index__link" href="#category-<%= categoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-') %>">
                     <%= categoryName %> (<%= categoryCourses.length %>)
@@ -99,7 +133,7 @@
                   </section>
                 <% }) %>
               </div>
-            <% } else { %>
+            <% } else if (!(readyFirstActive && readyCourses.length)) { %>
               <div class="empty-state form-card">
                 <h3>No programmes matched your filters.</h3>
                 <p>Try a broader search or clear the category and sorting filters.</p>

@@ -1195,21 +1195,31 @@ export const getCoursesListingData = async (params) => {
     }),
   ]);
 
-  const groupedCourses = courses.reduce((acc, course) => {
-    const categoryName = course.category?.name || "General";
+  const mappedCourses = courses.map(mapCourseCard);
+  const promotedReadyCourses = params.readyFirst
+    ? mappedCourses.filter((course) => course.status === "READY")
+    : [];
+  const groupedCourseSource = params.readyFirst
+    ? mappedCourses.filter((course) => course.status !== "READY")
+    : mappedCourses;
+
+  const groupedCourses = groupedCourseSource.reduce((acc, course) => {
+    const categoryName = course.categoryName || "General";
     if (!acc[categoryName]) {
       acc[categoryName] = [];
     }
 
-    acc[categoryName].push(mapCourseCard(course));
+    acc[categoryName].push(course);
     return acc;
   }, {});
 
   return {
     filters: params,
     categories,
-    courses: courses.map(mapCourseCard),
+    courses: mappedCourses,
     groupedCourses,
+    promotedReadyCourses,
+    readyFirstActive: Boolean(params.readyFirst),
     seo: buildSeo({
       title: "Programmes | Bilge Online Institute",
       description:
