@@ -1085,6 +1085,7 @@ export const getHomepageData = async () => {
   return {
     hero: homepageHero,
     featuredCourses: mappedFeaturedCourses.slice(0, 6),
+    readyCourseAds: mappedFeaturedCourses.slice(0, 8),
     categories: mappedCategories.filter((category) => category.courseCount > 0),
     featuredFaculty: featuredFaculty.map((profile) => ({
       slug: profile.slug,

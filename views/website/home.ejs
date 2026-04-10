@@ -24,6 +24,11 @@
           .slice(0, 2)
           .map((part) => part.charAt(0).toUpperCase())
           .join("") || "BL";
+
+      const formatCourseAdPrice = (course = {}) => {
+        const amount = Number(course.priceUsd || 0);
+        return amount > 0 ? `From $${amount.toLocaleString()}` : "Request pricing";
+      };
     %>
     <div class="site-shell">
       <%- include("partials/header") %>
@@ -76,6 +81,47 @@
                 <span>Certificates issued across the Bilge learning system.</span>
               </article>
             </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="container">
+            <% if (home.readyCourseAds?.length) {
+              const marqueeCourses =
+                home.readyCourseAds.length > 1
+                  ? home.readyCourseAds.concat(home.readyCourseAds)
+                  : home.readyCourseAds;
+            %>
+              <div class="ready-course-rail">
+                <div class="ready-course-rail__header">
+                  <div>
+                    <span class="eyebrow">Ready to start now</span>
+                    <h2>Live programme advertisements powered by the LMS.</h2>
+                  </div>
+                  <p>
+                    These featured promotions are rendered from currently published
+                    <strong>READY</strong> courses, so every card reflects a real programme available in Bilge right now.
+                  </p>
+                  <a class="ready-course-rail__browse" href="/programmes?sort=featured">Browse all ready programmes</a>
+                </div>
+
+                <div class="ready-course-rail__viewport">
+                  <div class="ready-course-rail__track">
+                    <% marqueeCourses.forEach((course, index) => { %>
+                      <div
+                        class="ready-course-rail__item"
+                        <% if (index >= home.readyCourseAds.length) { %>aria-hidden="true"<% } %>
+                      >
+                        <%- include("components/home-course-marquee-card", {
+                          course,
+                          priceLabel: formatCourseAdPrice(course),
+                        }) %>
+                      </div>
+                    <% }) %>
+                  </div>
+                </div>
+              </div>
+            <% } %>
           </div>
         </section>
 

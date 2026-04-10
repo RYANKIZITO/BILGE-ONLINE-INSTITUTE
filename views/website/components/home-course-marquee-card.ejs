@@ -1,0 +1,27 @@
+<article class="ready-course-marquee-card">
+  <a class="ready-course-marquee-card__media" href="/programmes/<%= course.slug %>">
+    <img
+      class="ready-course-marquee-card__image"
+      src="<%= course.heroCoverImageUrl || course.coverImageUrl %>"
+      alt="<%= course.title %> programme cover"
+      loading="lazy"
+    />
+  </a>
+  <div class="ready-course-marquee-card__body">
+    <div class="ready-course-marquee-card__topline">
+      <span class="ready-course-marquee-card__eyebrow"><%= course.categoryName %></span>
+      <span class="ready-course-marquee-card__status">Ready now</span>
+    </div>
+    <h3><a href="/programmes/<%= course.slug %>"><%= course.title %></a></h3>
+    <p><%= course.shortDescription %></p>
+    <div class="ready-course-marquee-card__meta">
+      <span><%= course.estimatedDuration %></span>
+      <span><%= priceLabel %></span>
+    </div>
+    <div class="ready-course-marquee-card__actions">
+      <a class="ready-course-marquee-card__cta" href="/programmes/<%= course.slug %>">
+        View programme
+      </a>
+    </div>
+  </div>
+</article>
