@@ -194,6 +194,7 @@
       triggerEl = null,
       historyMode = "push",
     } = options;
+    const shouldUsePremiumLoader = !targetSelector && typeof window.__bilgeShowPageLoader === "function";
 
     const currentTarget = targetSelector ? document.querySelector(targetSelector) : null;
     const currentTargetTop = currentTarget?.getBoundingClientRect().top ?? null;
@@ -209,6 +210,10 @@
     try {
       if (triggerEl) {
         triggerEl.setAttribute("aria-busy", "true");
+      }
+
+      if (shouldUsePremiumLoader) {
+        window.__bilgeShowPageLoader();
       }
 
       const response = await fetch(url, {
@@ -302,6 +307,10 @@
         } else {
           triggerEl.setAttribute("aria-busy", previousBusy);
         }
+      }
+
+      if (shouldUsePremiumLoader && typeof window.__bilgeHidePageLoader === "function") {
+        window.__bilgeHidePageLoader();
       }
     }
   };

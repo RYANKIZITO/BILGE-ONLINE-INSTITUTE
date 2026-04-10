@@ -11,9 +11,12 @@
   <% } %>
   <link rel="icon" type="image/png" href="/public/images/branding/favicon.png" />
   <link rel="apple-touch-icon" href="/public/images/branding/favicon.png" />
+  <link rel="preload" as="image" href="/public/images/branding/logo-dark.jpg" />
+  <link rel="preload" as="image" href="/public/images/branding/logo-light.jpg" />
   <script>
     (function () {
       try {
+        document.documentElement.setAttribute("data-bilge-loader", "loading");
         var themeKey = "bilge-website-theme";
         var languageKey = "bilge-language-preference";
         var legacyLanguageKey = "bilge-website-language";
@@ -87,6 +90,217 @@
         window.__bilgeLanguageUserAuthenticated = <%- JSON.stringify(Boolean(user)) %>;
         window.__bilgePreferredLanguage = "en";
       }
+    })();
+  </script>
+  <style>
+    .bilge-page-loader {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: none;
+      place-items: center;
+      padding: 1.5rem;
+      background:
+        radial-gradient(circle at top left, rgba(215, 166, 77, 0.18) 0%, transparent 32%),
+        radial-gradient(circle at bottom right, rgba(215, 166, 77, 0.12) 0%, transparent 28%),
+        linear-gradient(180deg, #0b0a08 0%, #12100d 100%);
+      opacity: 0;
+      visibility: hidden;
+      transition:
+        opacity 420ms ease,
+        visibility 420ms ease;
+    }
+
+    html[data-theme="light"] .bilge-page-loader {
+      background:
+        radial-gradient(circle at top left, rgba(198, 143, 49, 0.12) 0%, transparent 30%),
+        radial-gradient(circle at bottom right, rgba(198, 143, 49, 0.08) 0%, transparent 26%),
+        linear-gradient(180deg, #f7f2e8 0%, #fdfaf3 100%);
+    }
+
+    html[data-bilge-loader="loading"] .bilge-page-loader,
+    html[data-bilge-loader="ready"] .bilge-page-loader {
+      display: grid;
+      opacity: 1;
+      visibility: visible;
+    }
+
+    html[data-bilge-loader="ready"] .bilge-page-loader {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .bilge-page-loader__panel {
+      width: min(680px, 100%);
+      display: grid;
+      gap: 1.15rem;
+      justify-items: center;
+      padding: clamp(1.25rem, 3vw, 2rem);
+      border: 1px solid rgba(215, 166, 77, 0.18);
+      border-radius: 28px;
+      background: rgba(12, 10, 8, 0.82);
+      box-shadow:
+        0 24px 80px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    html[data-theme="light"] .bilge-page-loader__panel {
+      background: rgba(255, 251, 244, 0.88);
+      box-shadow:
+        0 24px 80px rgba(44, 30, 8, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.62);
+    }
+
+    .bilge-page-loader__brand {
+      width: min(100%, 420px);
+    }
+
+    .bilge-page-loader__brand img {
+      display: none;
+      width: 100%;
+      height: auto;
+    }
+
+    html[data-theme="dark"] .bilge-page-loader__brand .bilge-page-loader__brand--dark,
+    html:not([data-theme="light"]) .bilge-page-loader__brand .bilge-page-loader__brand--dark,
+    html[data-theme="light"] .bilge-page-loader__brand .bilge-page-loader__brand--light {
+      display: block;
+    }
+
+    .bilge-page-loader__label {
+      margin: 0;
+      color: rgba(252, 244, 227, 0.92);
+      font-size: clamp(0.96rem, 1.5vw, 1.08rem);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-align: center;
+      text-wrap: balance;
+    }
+
+    html[data-theme="light"] .bilge-page-loader__label {
+      color: rgba(54, 37, 10, 0.86);
+    }
+
+    .bilge-page-loader__track {
+      position: relative;
+      width: min(320px, 82vw);
+      height: 5px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    html[data-theme="light"] .bilge-page-loader__track {
+      background: rgba(102, 76, 26, 0.12);
+    }
+
+    .bilge-page-loader__track::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, transparent 0%, rgba(215, 166, 77, 0.16) 35%, transparent 100%);
+    }
+
+    .bilge-page-loader__bar {
+      position: absolute;
+      inset: 0;
+      width: 42%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, rgba(215, 166, 77, 0) 0%, rgba(244, 199, 116, 0.92) 40%, rgba(215, 166, 77, 0.35) 100%);
+      box-shadow: 0 0 24px rgba(215, 166, 77, 0.35);
+      animation: bilgeLoaderSweep 1.45s ease-in-out infinite;
+      will-change: transform;
+    }
+
+    .bilge-page-loader__note {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.7rem;
+      color: rgba(240, 221, 182, 0.75);
+      font-size: 0.82rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    html[data-theme="light"] .bilge-page-loader__note {
+      color: rgba(108, 77, 23, 0.72);
+    }
+
+    .bilge-page-loader__pulse {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #f4c774, #c7922f);
+      box-shadow: 0 0 18px rgba(215, 166, 77, 0.48);
+      animation: bilgeLoaderPulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes bilgeLoaderSweep {
+      0% {
+        transform: translateX(-115%);
+      }
+
+      100% {
+        transform: translateX(260%);
+      }
+    }
+
+    @keyframes bilgeLoaderPulse {
+      0%,
+      100% {
+        transform: scale(0.92);
+        opacity: 0.72;
+      }
+
+      50% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .bilge-page-loader,
+      .bilge-page-loader__bar,
+      .bilge-page-loader__pulse {
+        transition: none;
+        animation: none;
+      }
+    }
+  </style>
+  <script>
+    (function () {
+      var startTime = Date.now();
+      var transitionToken = 0;
+
+      var showLoader = function () {
+        transitionToken += 1;
+        startTime = Date.now();
+        document.documentElement.setAttribute("data-bilge-loader", "loading");
+      };
+
+      var hideLoader = function () {
+        var currentToken = transitionToken;
+
+        var remaining = Math.max(0, 520 - (Date.now() - startTime));
+        window.setTimeout(function () {
+          if (currentToken !== transitionToken) return;
+          document.documentElement.setAttribute("data-bilge-loader", "ready");
+          window.setTimeout(function () {
+            if (currentToken !== transitionToken) return;
+            document.documentElement.removeAttribute("data-bilge-loader");
+          }, 430);
+        }, remaining);
+      };
+
+      window.__bilgeShowPageLoader = showLoader;
+      window.__bilgeHidePageLoader = hideLoader;
+      document.addEventListener("DOMContentLoaded", hideLoader, { once: true });
+      window.addEventListener("pageshow", hideLoader, { once: true });
+      window.addEventListener("load", hideLoader, { once: true });
+      window.setTimeout(hideLoader, 2400);
     })();
   </script>
   <link rel="stylesheet" href="/public/css/language-selector.css" />

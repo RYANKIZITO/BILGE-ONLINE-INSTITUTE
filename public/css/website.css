@@ -3004,21 +3004,27 @@ body.profile-modal-open {
 
 .ready-course-rail__header {
   display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.95fr);
   gap: 0.75rem;
+  align-items: end;
+}
+
+.ready-course-rail__header > div {
+  min-width: 0;
 }
 
 .ready-course-rail__header h2 {
   margin: 0;
-  max-width: 16ch;
+  max-width: none;
   font-family: var(--heading-font);
-  font-size: clamp(2rem, 3.4vw, 3.2rem);
-  line-height: 1;
+  font-size: clamp(2.4rem, 4.8vw, 4.4rem);
+  line-height: 0.94;
   text-wrap: balance;
 }
 
 .ready-course-rail__header p {
   margin: 0;
-  max-width: 58rem;
+  max-width: none;
   color: var(--text-muted);
   text-wrap: pretty;
 }
@@ -3028,6 +3034,7 @@ body.profile-modal-open {
   align-items: center;
   gap: 0.65rem;
   width: fit-content;
+  grid-column: 1 / -1;
   color: var(--accent-soft);
   font-weight: 700;
 }
