@@ -20,6 +20,7 @@ import {
 
 import {
   listAdminUsers,
+  reassignInstructorCourses,
   updateAdminUserRole,
   createAdminUser,
   deleteAdminUser,
@@ -350,6 +351,13 @@ router.post(
   isAuthenticated, requireCompletedProfile,
   allowRoles("ADMIN", "SUPER_ADMIN"),
   updateAdminUserRole
+);
+
+router.post(
+  "/admin/settings/users/:id/reassign-courses",
+  isAuthenticated, requireCompletedProfile,
+  allowRoles("ADMIN", "SUPER_ADMIN"),
+  reassignInstructorCourses
 );
 
 router.post(

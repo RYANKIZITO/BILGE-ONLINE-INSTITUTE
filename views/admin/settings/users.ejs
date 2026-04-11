@@ -179,6 +179,28 @@
                         <button type="submit">Update</button>
                       </form>
 
+                      <% if (hasAssignedCourses) { %>
+                        <% const reassignmentTargets = (instructorOptions || []).filter((instructor) => instructor.id !== user.id); %>
+                        <% if (reassignmentTargets.length > 0) { %>
+                          <form
+                            class="search-bar user-role-form"
+                            method="POST"
+                            action="/admin/settings/users/<%= user.id %>/reassign-courses<%= q ? `?q=${encodeURIComponent(q)}` : "" %>"
+                            onsubmit="return confirm('Reassign all courses from <%= user.name %> to the selected instructor?');"
+                          >
+                            <select name="targetInstructorId" style="min-width: 220px;" required>
+                              <option value="">Reassign courses to...</option>
+                              <% reassignmentTargets.forEach((instructor) => { %>
+                                <option value="<%= instructor.id %>"><%= instructor.name %> (<%= instructor.email %>)</option>
+                              <% }) %>
+                            </select>
+                            <button type="submit">Reassign Courses</button>
+                          </form>
+                        <% } else { %>
+                          <div class="muted user-action-note">Create another instructor before reassigning these courses.</div>
+                        <% } %>
+                      <% } %>
+
                       <% if (!hasProtectedPayments && !hasAssignedCourses) { %>
                         <form
                           method="POST"
@@ -191,7 +213,7 @@
                       <% } else { %>
                         <div class="muted user-action-note">
                           <%= hasAssignedCourses
-                            ? "Reassign instructor courses before deleting."
+                            ? "Reassign this instructor's courses first, then the delete option will be available."
                             : "Users with successful payments are protected from deletion." %>
                         </div>
                       <% } %>

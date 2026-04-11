@@ -83,14 +83,25 @@ export const listAdminUsers = async (req, res, next) => {
       },
     });
 
-    const assignableCourses = await prisma.course.findMany({
-      orderBy: [{ title: "asc" }],
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-      },
-    });
+    const [assignableCourses, instructorOptions] = await Promise.all([
+      prisma.course.findMany({
+        orderBy: [{ title: "asc" }],
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+        },
+      }),
+      prisma.user.findMany({
+        where: { role: "INSTRUCTOR" },
+        orderBy: [{ name: "asc" }, { email: "asc" }],
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      }),
+    ]);
 
     const flash = req.session.flash || null;
     req.session.flash = null;
@@ -104,6 +115,7 @@ export const listAdminUsers = async (req, res, next) => {
       roleOptions: ROLE_OPTIONS,
       createRoleOptions: CREATE_ROLE_OPTIONS,
       assignableCourses,
+      instructorOptions,
     });
   } catch (err) {
     return next(err);
@@ -283,6 +295,97 @@ export const updateAdminUserRole = async (req, res, next) => {
     });
 
     req.session.flash = { type: "success", message: "User role updated" };
+    return res.redirect(`/admin/settings/users${redirectSuffix}`);
+  } catch (err) {
+    return next(err);
+  }
+};
+
+export const reassignInstructorCourses = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const targetInstructorId = String(req.body.targetInstructorId || "").trim();
+    const q = String(req.query.q || "").trim();
+    const redirectSuffix = q ? `?q=${encodeURIComponent(q)}` : "";
+
+    if (!targetInstructorId || targetInstructorId === id) {
+      req.session.flash = {
+        type: "error",
+        message: "Select another instructor to receive the assigned courses.",
+      };
+      return res.status(400).redirect(`/admin/settings/users${redirectSuffix}`);
+    }
+
+    const [sourceInstructor, targetInstructor] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          courses: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+        },
+      }),
+      prisma.user.findFirst({
+        where: { id: targetInstructorId, role: "INSTRUCTOR" },
+        select: { id: true, name: true, email: true },
+      }),
+    ]);
+
+    if (!sourceInstructor || sourceInstructor.role !== "INSTRUCTOR") {
+      req.session.flash = { type: "error", message: "Instructor not found" };
+      return res.status(404).redirect(`/admin/settings/users${redirectSuffix}`);
+    }
+
+    if (!targetInstructor) {
+      req.session.flash = {
+        type: "error",
+        message: "Select a valid instructor to receive the courses.",
+      };
+      return res.status(400).redirect(`/admin/settings/users${redirectSuffix}`);
+    }
+
+    if (sourceInstructor.courses.length === 0) {
+      req.session.flash = {
+        type: "error",
+        message: "This instructor has no courses to reassign.",
+      };
+      return res.status(400).redirect(`/admin/settings/users${redirectSuffix}`);
+    }
+
+    const courseIds = sourceInstructor.courses.map((course) => course.id);
+
+    await prisma.course.updateMany({
+      where: {
+        instructorId: sourceInstructor.id,
+      },
+      data: {
+        instructorId: targetInstructor.id,
+      },
+    });
+
+    await logAudit({
+      actorUserId: req.session.user.id,
+      action: "REASSIGN_INSTRUCTOR_COURSES",
+      targetType: "USER",
+      targetId: sourceInstructor.id,
+      metadata: {
+        fromInstructorEmail: sourceInstructor.email,
+        toInstructorEmail: targetInstructor.email,
+        courseIds,
+      },
+    });
+
+    req.session.flash = {
+      type: "success",
+      message: `Reassigned ${courseIds.length} course/program${courseIds.length === 1 ? "" : "s"} to ${targetInstructor.name}.`,
+    };
     return res.redirect(`/admin/settings/users${redirectSuffix}`);
   } catch (err) {
     return next(err);
