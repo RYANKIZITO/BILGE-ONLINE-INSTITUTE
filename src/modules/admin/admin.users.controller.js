@@ -159,6 +159,14 @@ export const createAdminUser = async (req, res, next) => {
       .map((id) => String(id || "").trim())
       .filter(Boolean);
 
+    if (role === "INSTRUCTOR" && selectedCourseIds.length === 0) {
+      req.session.flash = {
+        type: "error",
+        message: "Select at least one course/program for the instructor",
+      };
+      return res.redirect("/admin/settings/users");
+    }
+
     const hashed = await hashPassword(password);
 
     const newUser = await prisma.user.create({

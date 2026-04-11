@@ -204,23 +204,31 @@
         </table>
       </div>
     </section>
+
+      <script>
+      (() => {
+        const roleSelect = document.getElementById("role");
+        const courseAssignmentBlock = document.getElementById("course-assignment-block");
+        const courseSelect = document.getElementById("courseIds");
+
+        function syncCreateUserForm() {
+          if (!roleSelect || !courseAssignmentBlock) return;
+          const isInstructor = roleSelect.value === "INSTRUCTOR";
+          courseAssignmentBlock.style.display = isInstructor ? "block" : "none";
+          if (courseSelect) {
+            courseSelect.required = isInstructor;
+          }
+        }
+
+        if (roleSelect && roleSelect.dataset.courseAssignmentBound !== "1") {
+          roleSelect.dataset.courseAssignmentBound = "1";
+          roleSelect.addEventListener("change", syncCreateUserForm);
+        }
+
+        syncCreateUserForm();
+      })();
+      </script>
     </div>
   </div>
-
-  <script>
-    const roleSelect = document.getElementById("role");
-    const courseAssignmentBlock = document.getElementById("course-assignment-block");
-
-    function syncCreateUserForm() {
-      if (!roleSelect || !courseAssignmentBlock) return;
-      const isInstructor = roleSelect.value === "INSTRUCTOR";
-      courseAssignmentBlock.style.display = isInstructor ? "block" : "none";
-    }
-
-    if (roleSelect) {
-      roleSelect.addEventListener("change", syncCreateUserForm);
-      syncCreateUserForm();
-    }
-  </script>
 </body>
 </html>
