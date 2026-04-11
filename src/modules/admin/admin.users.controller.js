@@ -396,6 +396,7 @@ export const deleteAdminUser = async (req, res, next) => {
   try {
     const { id } = req.params;
     const q = String(req.query.q || "").trim();
+    const targetInstructorId = String(req.body.targetInstructorId || "").trim();
     const redirectSuffix = q ? `?q=${encodeURIComponent(q)}` : "";
 
     const requester = await prisma.user.findUnique({
@@ -424,6 +425,7 @@ export const deleteAdminUser = async (req, res, next) => {
         courses: {
           select: {
             id: true,
+            title: true,
           },
         },
         payments: {
@@ -451,14 +453,6 @@ export const deleteAdminUser = async (req, res, next) => {
       return res.status(403).send("Forbidden");
     }
 
-    if (targetUser.role === "INSTRUCTOR" && targetUser.courses.length > 0) {
-      req.session.flash = {
-        type: "error",
-        message: "Reassign this instructor's courses before deleting the account.",
-      };
-      return res.status(400).redirect(`/admin/settings/users${redirectSuffix}`);
-    }
-
     if (targetUser.payments.length > 0) {
       req.session.flash = {
         type: "error",
@@ -467,7 +461,44 @@ export const deleteAdminUser = async (req, res, next) => {
       return res.status(400).redirect(`/admin/settings/users${redirectSuffix}`);
     }
 
+    let courseReassignmentTarget = null;
+    const assignedCourseIds = targetUser.courses.map((course) => course.id);
+
+    if (assignedCourseIds.length > 0) {
+      if (!targetInstructorId || targetInstructorId === targetUser.id) {
+        req.session.flash = {
+          type: "error",
+          message: "Select another instructor to receive this user's courses before deleting.",
+        };
+        return res.status(400).redirect(`/admin/settings/users${redirectSuffix}`);
+      }
+
+      courseReassignmentTarget = await prisma.user.findFirst({
+        where: { id: targetInstructorId, role: "INSTRUCTOR" },
+        select: { id: true, name: true, email: true },
+      });
+
+      if (!courseReassignmentTarget) {
+        req.session.flash = {
+          type: "error",
+          message: "Select a valid instructor to receive this user's courses.",
+        };
+        return res.status(400).redirect(`/admin/settings/users${redirectSuffix}`);
+      }
+    }
+
     await prisma.$transaction(async (tx) => {
+      if (courseReassignmentTarget) {
+        await tx.course.updateMany({
+          where: {
+            instructorId: targetUser.id,
+          },
+          data: {
+            instructorId: courseReassignmentTarget.id,
+          },
+        });
+      }
+
       await tx.certificate.deleteMany({ where: { userId: targetUser.id } });
       await tx.payment.deleteMany({ where: { userId: targetUser.id } });
       await tx.progress.deleteMany({ where: { userId: targetUser.id } });
@@ -483,6 +514,8 @@ export const deleteAdminUser = async (req, res, next) => {
       metadata: {
         email: targetUser.email,
         role: targetUser.role,
+        reassignedCourseIds: courseReassignmentTarget ? assignedCourseIds : [],
+        reassignedToInstructorEmail: courseReassignmentTarget?.email || null,
       },
     });
 

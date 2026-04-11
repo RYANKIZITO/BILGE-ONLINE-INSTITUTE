@@ -134,7 +134,7 @@
                   <% } %>
                 </td>
                 <td>
-                  <% if (user.role === "INSTRUCTOR" && user.courses && user.courses.length > 0) { %>
+                  <% if (user.courses && user.courses.length > 0) { %>
                     <% const primaryCourse = user.courses[0]; %>
                     <% const remainingCourses = user.courses.slice(1); %>
                     <div class="engagement-course-list">
@@ -160,7 +160,8 @@
                 <td><%= new Date(user.createdAt).toLocaleDateString() %></td>
                 <td>
                   <% const hasProtectedPayments = user.payments && user.payments.length > 0; %>
-                  <% const hasAssignedCourses = user.role === "INSTRUCTOR" && user.courses && user.courses.length > 0; %>
+                  <% const hasAssignedCourses = user.courses && user.courses.length > 0; %>
+                  <% const reassignmentTargets = hasAssignedCourses ? (instructorOptions || []).filter((instructor) => instructor.id !== user.id) : []; %>
                   <% if (user.id === currentUserId) { %>
                     <em>Role locked</em>
                   <% } else { %>
@@ -180,7 +181,6 @@
                       </form>
 
                       <% if (hasAssignedCourses) { %>
-                        <% const reassignmentTargets = (instructorOptions || []).filter((instructor) => instructor.id !== user.id); %>
                         <% if (reassignmentTargets.length > 0) { %>
                           <form
                             class="search-bar user-role-form"
@@ -201,20 +201,27 @@
                         <% } %>
                       <% } %>
 
-                      <% if (!hasProtectedPayments && !hasAssignedCourses) { %>
+                      <% if (!hasProtectedPayments) { %>
                         <form
                           method="POST"
                           action="/admin/settings/users/<%= user.id %>/delete<%= q ? `?q=${encodeURIComponent(q)}` : "" %>"
                           class="user-delete-form"
-                          onsubmit="return confirm('Delete this user account? This action cannot be undone.');"
+                          onsubmit="return confirm('<%= hasAssignedCourses ? 'Delete this user account and move all assigned courses to the selected instructor? This action cannot be undone.' : 'Delete this user account? This action cannot be undone.' %>');"
                         >
+                          <% if (hasAssignedCourses) { %>
+                            <select name="targetInstructorId" style="min-width: 220px;" <%= reassignmentTargets.length > 0 ? "required" : "" %>>
+                              <option value=""><%= reassignmentTargets.length > 0 ? "Move courses before deleting..." : "No other instructor available" %></option>
+                              <% reassignmentTargets.forEach((instructor) => { %>
+                                <option value="<%= instructor.id %>"><%= instructor.name %> (<%= instructor.email %>)</option>
+                              <% }) %>
+                            </select>
+                            <div class="muted user-action-note">Deleting this instructor will first reassign every course/program they own.</div>
+                          <% } %>
                           <button type="submit" class="danger">Delete User</button>
                         </form>
                       <% } else { %>
                         <div class="muted user-action-note">
-                          <%= hasAssignedCourses
-                            ? "Reassign this instructor's courses first, then the delete option will be available."
-                            : "Users with successful payments are protected from deletion." %>
+                          Users with successful payments are protected from deletion.
                         </div>
                       <% } %>
                     </div>
