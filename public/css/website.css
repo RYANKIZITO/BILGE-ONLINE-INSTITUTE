@@ -3708,6 +3708,121 @@ body.profile-modal-open {
   color: var(--text-soft);
 }
 
+.registration-cta-popup {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 80;
+  width: min(360px, calc(100vw - 2rem));
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.1rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg-card) 94%, var(--bg-soft));
+  color: var(--text-main);
+  box-shadow: var(--shadow-deep);
+  opacity: 0;
+  transform: translateY(0.85rem);
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease,
+    border-color 180ms ease;
+}
+
+.registration-cta-popup[hidden] {
+  display: none;
+}
+
+.registration-cta-popup.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.registration-cta-popup__close {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg-soft) 80%, var(--bg-card));
+  color: var(--text-main);
+  line-height: 1;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
+}
+
+.registration-cta-popup__close:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--border));
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-card));
+}
+
+.registration-cta-popup__close span {
+  display: block;
+  transform: translateY(-1px);
+  font-size: 1.35rem;
+}
+
+.registration-cta-popup__eyebrow {
+  margin: 0;
+  padding-right: 2.45rem;
+  color: var(--accent-soft);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+[data-theme="light"] .registration-cta-popup__eyebrow {
+  color: var(--accent);
+}
+
+.registration-cta-popup h2 {
+  margin: 0;
+  padding-right: 2.45rem;
+  font-family: var(--heading-font);
+  font-size: 1.55rem;
+  line-height: 1.1;
+  letter-spacing: 0;
+  text-wrap: balance;
+}
+
+.registration-cta-popup p {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.registration-cta-popup__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 42px;
+  padding: 0.72rem 1rem;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: 800;
+  letter-spacing: 0;
+  transition:
+    background-color 180ms ease,
+    transform 180ms ease;
+}
+
+.registration-cta-popup__button:hover {
+  transform: translateY(-1px);
+  background: var(--accent-hover);
+}
+
 .google-translate-anchor,
 .goog-logo-link,
 .goog-te-gadget span,
@@ -3756,6 +3871,12 @@ body {
   .ready-course-marquee-card__cta,
   .ready-course-rail__browse::after,
   .ready-course-marquee-card__cta::after {
+    transition: none;
+  }
+
+  .registration-cta-popup,
+  .registration-cta-popup__close,
+  .registration-cta-popup__button {
     transition: none;
   }
 }
@@ -4112,6 +4233,12 @@ body {
 
   .footer-socials {
     width: 100%;
+  }
+
+  .registration-cta-popup {
+    right: 0.75rem;
+    bottom: 0.75rem;
+    width: calc(100vw - 1.5rem);
   }
 
   .faculty-card-actions,
