@@ -378,7 +378,7 @@ button {
   display: flex;
   width: max-content;
   min-width: 100%;
-  animation: grandOpeningSlide 24s linear infinite;
+  animation: grandOpeningSlide 40s linear infinite;
   will-change: transform;
 }
 
