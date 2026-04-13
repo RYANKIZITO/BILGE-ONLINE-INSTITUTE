@@ -220,6 +220,59 @@ const mapPublicFaq = (faq) => ({
   category: PUBLIC_FAQ_CATEGORY_LABELS[String(faq?.category || "").trim()] || String(faq?.category || "").trim() || "Getting Started",
 });
 
+const DR_MARWAN_GHALEB_PROFILE = {
+  name: "Dr. Marwan Ghaleb",
+  role: "Board Member | Business Management Specialist",
+  office: "Trustee Board",
+  summary:
+    "Brings a decade of management-field experience across behavioural finance, auditing, marketing, organisational behaviour, and accounting. His background combines senior audit practice with advanced business-management research and extensive publication in high-quality journals.",
+  label: "Board member",
+  sortOrder: 2,
+  profilePhotoUrl: "/public/website/faculty/marwan-ghaleb.jpg",
+  resumeHighlights: [
+    "Former assistant manager auditor with Deloitte Middle East in Yemen",
+    "MBA from Istanbul Aydin University, Turkey",
+    "PhD in Business Management from Istanbul University, Turkey",
+    "Experience in behavioural finance, auditing, marketing, organisational behaviour, and accounting",
+    "Published extensively in high-quality journals",
+  ],
+};
+
+const REQUIRED_TRUSTEE_PROFILES = [DR_MARWAN_GHALEB_PROFILE];
+
+const DR_ABUBAKAR_LUJJA_BOARD_PROFILE = {
+  name: "Dr. Abubakar Lujja, PhD",
+  role: "Board Member | Family Business Specialist",
+  office: "Trustee Board",
+  summary:
+    "Brings a deep understanding of business dynamics, especially within family-owned enterprises, adding strategic value to Bilge Online Institute's mission of delivering practical, career-focused education. His work bridges traditional business practice and modern strategic management, helping multi-generational businesses strengthen sustainability, governance, and long-term growth.",
+  label: "Board member",
+  profilePhotoUrl: "/public/website/faculty/abubakar-lujja.jpg",
+  resumeHighlights: [
+    "PhD in Business Management - Istanbul Universitesi, Turkey",
+    "Master of Business Administration (MBA) - Anadolu University, Turkey",
+    "Over a decade of management and entrepreneurship experience",
+    "Family-business governance, sustainability, and growth strategy",
+  ],
+};
+
+const DR_ABUBAKAR_LUJJA_VICE_RECTOR_PROFILE = {
+  ...DR_ABUBAKAR_LUJJA_BOARD_PROFILE,
+  role: "Vice Rector",
+  office: "Office of the Vice Rector",
+  summary:
+    "Supports institutional leadership, academic coordination, and executive oversight across Bilge Online Institute. His background in business management, entrepreneurship, and family-business strategy strengthens academic governance, programme direction, and practical learner outcomes.",
+  label: "Deputy leadership",
+  sortOrder: 1,
+  resumeHighlights: [
+    ...DR_ABUBAKAR_LUJJA_BOARD_PROFILE.resumeHighlights,
+    "Supports academic coordination, programme quality, and institutional leadership priorities",
+    "Strengthens executive oversight through business-management research and practical governance experience",
+  ],
+};
+
+const REQUIRED_ADMINISTRATION_PROFILES = [DR_ABUBAKAR_LUJJA_VICE_RECTOR_PROFILE];
+
 const TRUSTEE_BOARD_CHAIN = [
   {
     name: "Mahmoud Elkholy",
@@ -237,21 +290,8 @@ const TRUSTEE_BOARD_CHAIN = [
       "Led recruitment training for UAE national employees, temporary staff, trainees, and students, while supporting excellence awards, accreditations, and audits",
     ],
   },
-  {
-    name: "Dr. Abubakar Lujja, PhD",
-    role: "Board Member | Family Business Specialist",
-    office: "Trustee Board",
-    summary:
-      "Brings a deep understanding of business dynamics, especially within family-owned enterprises, adding strategic value to Bilge Online Institute's mission of delivering practical, career-focused education. His work bridges traditional business practice and modern strategic management, helping multi-generational businesses strengthen sustainability, governance, and long-term growth.",
-    label: "Board member",
-    profilePhotoUrl: "/public/website/faculty/abubakar-lujja.jpg",
-    resumeHighlights: [
-      "PhD in Business Management - Istanbul Universitesi, Turkey",
-      "Master of Business Administration (MBA) - Anadolu University, Turkey",
-      "Over a decade of management and entrepreneurship experience",
-      "Family-business governance, sustainability, and growth strategy",
-    ],
-  },
+  DR_ABUBAKAR_LUJJA_BOARD_PROFILE,
+  DR_MARWAN_GHALEB_PROFILE,
   {
     role: "Trustee - Industry Relations",
     office: "Trustee Board",
@@ -304,16 +344,7 @@ const ADMINISTRATION_CHAIN = [
     ],
   },
   {
-    role: "Vice Rector",
-    office: "Office of the Vice Rector",
-    summary:
-      "Supports institutional leadership, academic coordination, and executive oversight across the institute.",
-    label: "Deputy leadership",
-    resumeHighlights: [
-      "Executive coordination",
-      "Academic support leadership",
-      "Institutional oversight",
-    ],
+    ...DR_ABUBAKAR_LUJJA_VICE_RECTOR_PROFILE,
   },
   {
     role: "Academic Registrar",
@@ -474,6 +505,90 @@ const normalizeLeadershipProfiles = (value = {}) => {
   administrators.sort((a, b) => a.sortOrder - b.sortOrder || a.role.localeCompare(b.role));
 
   return { trustees, administrators };
+};
+
+const ensureRequiredLeadershipProfiles = (leadership) => {
+  const trustees = [...leadership.trustees];
+  const administrators = [...leadership.administrators];
+
+  REQUIRED_TRUSTEE_PROFILES.forEach((requiredProfile) => {
+    const requiredName = slugify(requiredProfile.name);
+    const requiredRole = slugify(requiredProfile.role);
+    const alreadyIncluded = trustees.some((profile) => {
+      const profileName = slugify(profile.name);
+      return (
+        (requiredName && profileName === requiredName) ||
+        (!profileName && requiredRole && slugify(profile.role) === requiredRole)
+      );
+    });
+
+    if (!alreadyIncluded) {
+      trustees.push(
+        normalizeLeadershipEntry(
+          {
+            ...requiredProfile,
+            sortOrder: Number.isFinite(Number(requiredProfile.sortOrder))
+              ? Number(requiredProfile.sortOrder)
+              : trustees.length,
+          },
+          "trustee",
+          trustees.length
+        )
+      );
+    }
+  });
+
+  trustees.sort((a, b) => a.sortOrder - b.sortOrder || a.role.localeCompare(b.role));
+
+  REQUIRED_ADMINISTRATION_PROFILES.forEach((requiredProfile) => {
+    const requiredName = slugify(requiredProfile.name);
+    const requiredRole = slugify(requiredProfile.role);
+    const matchingNameIndex = administrators.findIndex(
+      (profile) => requiredName && slugify(profile.name) === requiredName
+    );
+    const matchingRoleIndex = administrators.findIndex(
+      (profile) => requiredRole && slugify(profile.role) === requiredRole
+    );
+    const targetIndex = matchingNameIndex >= 0 ? matchingNameIndex : matchingRoleIndex;
+
+    if (targetIndex >= 0) {
+      const existingProfile = administrators[targetIndex];
+      administrators[targetIndex] = normalizeLeadershipEntry(
+        {
+          ...existingProfile,
+          ...requiredProfile,
+          id: existingProfile.id,
+          sortOrder: Number.isFinite(Number(existingProfile.sortOrder))
+            ? Number(existingProfile.sortOrder)
+            : requiredProfile.sortOrder,
+        },
+        "administration",
+        targetIndex
+      );
+      return;
+    }
+
+    administrators.push(
+      normalizeLeadershipEntry(
+        {
+          ...requiredProfile,
+          sortOrder: Number.isFinite(Number(requiredProfile.sortOrder))
+            ? Number(requiredProfile.sortOrder)
+            : administrators.length,
+        },
+        "administration",
+        administrators.length
+      )
+    );
+  });
+
+  administrators.sort((a, b) => a.sortOrder - b.sortOrder || a.role.localeCompare(b.role));
+
+  return {
+    ...leadership,
+    trustees,
+    administrators,
+  };
 };
 
 const normalizeCareerVacancy = (vacancy = {}, index = 0) => {
@@ -1456,11 +1571,13 @@ export const getFacultyPageData = async () => {
 };
 
 export const getLeadershipProfilesContent = async () =>
-  normalizeLeadershipProfiles(
-    await getSiteSetting("leadership_profiles", {
-      trustees: TRUSTEE_BOARD_CHAIN,
-      administrators: ADMINISTRATION_CHAIN,
-    })
+  ensureRequiredLeadershipProfiles(
+    normalizeLeadershipProfiles(
+      await getSiteSetting("leadership_profiles", {
+        trustees: TRUSTEE_BOARD_CHAIN,
+        administrators: ADMINISTRATION_CHAIN,
+      })
+    )
   );
 
 export const getTestimonialsPageData = async () => {
