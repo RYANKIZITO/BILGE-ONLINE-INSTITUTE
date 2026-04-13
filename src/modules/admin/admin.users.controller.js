@@ -1,5 +1,6 @@
 import { prisma } from "../../config/prisma.js";
 import { hashPassword } from "../../utils/password.js";
+import { notify } from "../../../services/notificationService.js";
 
 const ROLE_OPTIONS = ["ADMIN", "INSTRUCTOR", "STUDENT"];
 const CREATE_ROLE_OPTIONS = ["ADMIN", "INSTRUCTOR"];
@@ -14,6 +15,25 @@ const logAudit = async (data) => {
   } catch (err) {
     console.error("AuditLog write failed", err?.message || err);
   }
+};
+
+const queueNotification = (payload) => {
+  notify(payload).catch((error) => {
+    console.error("[notifications] Failed to queue admin user notification.", error);
+  });
+};
+
+const queueCourseAssignmentNotifications = (user, courses = []) => {
+  courses.forEach((course) => {
+    queueNotification({
+      type: "COURSE_ASSIGNED",
+      user,
+      data: {
+        courseId: course.id,
+        courseTitle: course.title,
+      },
+    });
+  });
 };
 
 export const listAdminUsers = async (req, res, next) => {
@@ -199,6 +219,12 @@ export const createAdminUser = async (req, res, next) => {
           instructorId: newUser.id,
         },
       });
+
+      const assignedCourses = await prisma.course.findMany({
+        where: { id: { in: selectedCourseIds } },
+        select: { id: true, title: true },
+      });
+      queueCourseAssignmentNotifications(newUser, assignedCourses);
     }
 
     await logAudit({
@@ -369,6 +395,8 @@ export const reassignInstructorCourses = async (req, res, next) => {
         instructorId: targetInstructor.id,
       },
     });
+
+    queueCourseAssignmentNotifications(targetInstructor, sourceInstructor.courses);
 
     await logAudit({
       actorUserId: req.session.user.id,

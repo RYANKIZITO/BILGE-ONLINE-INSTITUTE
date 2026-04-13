@@ -22,6 +22,44 @@ const buildNotificationJobId = ({ type, user, data }) => {
     return `${normalizedType}:${user.id}:${data.paymentId}`;
   }
 
+  if (normalizedType === "PAYMENT_FAILED" && (data?.paymentId || data?.reference)) {
+    return `${normalizedType}:${user.id}:${data.paymentId || data.reference}`;
+  }
+
+  if (normalizedType === "COURSE_ENROLLED" && data?.courseId) {
+    return `${normalizedType}:${user.id}:${data.courseId}`;
+  }
+
+  if (normalizedType === "COURSE_COMPLETED" && data?.courseId) {
+    return `${normalizedType}:${user.id}:${data.courseId}`;
+  }
+
+  if (normalizedType === "COURSE_ASSIGNMENT_PUBLISHED" && data?.assignmentId) {
+    return `${normalizedType}:${user.id}:${data.assignmentId}`;
+  }
+
+  if (normalizedType === "COURSE_ASSIGNED" && data?.courseId) {
+    return `${normalizedType}:${user.id}:${data.courseId}`;
+  }
+
+  if (
+    (normalizedType === "ENROLLMENT_CANCELLED" ||
+      normalizedType === "COURSE_SWITCH_REQUESTED" ||
+      normalizedType === "ENROLLMENT_CANCELLATION_REVIEWED" ||
+      normalizedType === "COURSE_SWITCH_REVIEWED") &&
+    data?.cancellationId
+  ) {
+    return `${normalizedType}:${user.id}:${data.cancellationId}`;
+  }
+
+  if (
+    (normalizedType === "LIVE_SESSION_SCHEDULED" ||
+      normalizedType === "LIVE_SESSION_UPDATED") &&
+    data?.liveSessionId
+  ) {
+    return `${normalizedType}:${user.id}:${data.liveSessionId}:${data?.status || ""}`;
+  }
+
   if (normalizedType === "CERTIFICATE_READY" && (data?.certificateId || data?.verificationCode)) {
     return `${normalizedType}:${user.id}:${data.certificateId || data.verificationCode}`;
   }

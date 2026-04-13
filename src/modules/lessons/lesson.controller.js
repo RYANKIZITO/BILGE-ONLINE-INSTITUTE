@@ -1,9 +1,16 @@
 import { prisma } from "../../config/prisma.js";
 import { computeFinalCourseMark } from "../assessments/assessment.grading.service.js";
 import { isCloudflareStreamVideoUrl } from "../videos/cloudflare-stream.service.js";
+import { notify } from "../../../services/notificationService.js";
 
 const CONTINUOUS_INTERVAL = 7;
 const COURSE_PASS_MARK = 50;
+
+const queueNotification = (payload) => {
+  notify(payload).catch((error) => {
+    console.error("[notifications] Failed to queue lesson notification.", error);
+  });
+};
 
 const normalizeUploadsPath = (rawUrl) => {
   const value = String(rawUrl || "").trim();
@@ -338,7 +345,7 @@ export const completeLesson = async (req, res, next) => {
 
     const course = await prisma.course.findUnique({
       where: { id: lesson.courseId },
-      select: { id: true, slug: true },
+      select: { id: true, slug: true, title: true },
     });
 
     const timeOnPageMs = Number(req.body?.timeOnPageMs || 0);
@@ -458,6 +465,7 @@ export const completeLesson = async (req, res, next) => {
       totalLessons > 0 &&
       doneLessons >= totalLessons &&
       passedOverallCourseMark;
+    const wasCompleted = Boolean(enrollment.completed);
 
     await prisma.enrollment.update({
       where: {
@@ -470,6 +478,31 @@ export const completeLesson = async (req, res, next) => {
         completed,
       },
     });
+
+    if (completed && !wasCompleted) {
+      const student = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          name: true,
+          fullName: true,
+          email: true,
+          phoneNumber: true,
+          countryCode: true,
+        },
+      });
+
+      if (student) {
+        queueNotification({
+          type: "COURSE_COMPLETED",
+          user: student,
+          data: {
+            courseId: lesson.courseId,
+            courseTitle: course?.title || "your programme",
+          },
+        });
+      }
+    }
 
     const nextLesson = await prisma.lesson.findFirst({
       where: {

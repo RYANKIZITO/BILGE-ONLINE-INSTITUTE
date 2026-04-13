@@ -3,6 +3,8 @@ import { syncCourseStatusFromContent } from "./course.status.js";
 import { getStudentCourseEngagementData } from "../instructor/instructor-engagement.service.js";
 import { buildSwitchFinancialSummary } from "./course.pricing.js";
 import { listPendingSwitchTopUpsForUser } from "../payments/switch-top-up.service.js";
+import { enrollUser } from "./course.service.js";
+import { notify } from "../../../services/notificationService.js";
 
 const CONTINUOUS_INTERVAL = 7;
 const ADAPTIVE_LOW_SCORE_PERCENT = 60;
@@ -36,6 +38,12 @@ const ENROLLMENT_CANCELLATION_REASON_OPTIONS = Object.entries(
 const ENROLLMENT_CANCELLATION_REASON_VALUES = new Set(
   ENROLLMENT_CANCELLATION_REASON_OPTIONS.map((option) => option.value)
 );
+
+const queueNotification = (payload) => {
+  notify(payload).catch((error) => {
+    console.error("[notifications] Failed to queue course notification.", error);
+  });
+};
 
 const isSampleStudent = (user) => {
   if (!user) return false;
@@ -461,12 +469,7 @@ export const enrollInCourse = async (req, res, next) => {
     }
 
     try {
-      await prisma.enrollment.create({
-        data: {
-          userId,
-          courseId,
-        },
-      });
+      await enrollUser(userId, courseId);
 
       req.session.flash = { type: "success", message: "Enrolled successfully" };
       return res.redirect("/my-courses");
@@ -586,7 +589,11 @@ export const cancelEnrollment = async (req, res, next) => {
         where: { id: userId },
         select: {
           id: true,
+          email: true,
+          name: true,
+          fullName: true,
           countryCode: true,
+          phoneNumber: true,
         },
       }),
       prisma.payment.findFirst({
@@ -646,8 +653,10 @@ export const cancelEnrollment = async (req, res, next) => {
         ? "PENDING_REVIEW"
         : "NOT_APPLICABLE";
 
+    let createdCancellation = null;
+
     await prisma.$transaction(async (tx) => {
-      await tx.enrollmentCancellation.create({
+      createdCancellation = await tx.enrollmentCancellation.create({
         data: {
           previousEnrollmentId: enrollment.id,
           userId,
@@ -676,6 +685,31 @@ export const cancelEnrollment = async (req, res, next) => {
         },
       });
     });
+
+    if (student && createdCancellation) {
+      queueNotification({
+        type: targetCourse ? "COURSE_SWITCH_REQUESTED" : "ENROLLMENT_CANCELLED",
+        user: student,
+        data: {
+          cancellationId: createdCancellation.id,
+          courseId,
+          courseTitle: enrollment.course?.title || "your programme",
+          targetCourseId: targetCourse?.id || null,
+          targetCourseTitle: targetCourse?.title || null,
+          reasonOption,
+          reasonLabel: ENROLLMENT_CANCELLATION_REASON_LABELS[reasonOption] || reasonOption,
+          reasonText,
+          refundReviewStatus,
+          refundRecommended,
+          amount: refundablePayment?.amount ?? null,
+          currency: refundablePayment?.currency || null,
+          switchFinancialSummary:
+            targetCourse && switchFinancialSummary.direction !== "NOT_APPLICABLE"
+              ? `Switch pricing status: ${switchFinancialSummary.direction}.`
+              : null,
+        },
+      });
+    }
 
     req.session.flash = {
       type: "success",

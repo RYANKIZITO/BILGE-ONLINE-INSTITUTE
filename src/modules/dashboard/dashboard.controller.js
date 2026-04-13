@@ -23,6 +23,7 @@ import {
   sendLmsFeedbackNotification,
   validateLmsFeedbackSubmission,
 } from "./lms-feedback.service.js";
+import { notify } from "../../../services/notificationService.js";
 
 const DAYS_7_MS = 7 * 24 * 60 * 60 * 1000;
 const LIVE_SESSION_ADMIN_LOOKBACK_MS = 6 * 60 * 60 * 1000;
@@ -62,6 +63,12 @@ const PAYMENT_METHOD_BY_PROVIDER = {
   stripe: "card",
   pesapal: "mobile_money",
   paypal: "paypal",
+};
+
+const queueNotification = (payload) => {
+  notify(payload).catch((error) => {
+    console.error("[notifications] Failed to queue dashboard notification.", error);
+  });
 };
 
 const safeQuery = async (fn, fallback) => {
@@ -1963,6 +1970,25 @@ export const reviewEnrollmentCancellationRefund = async (req, res, next) => {
         reviewedAt: new Date(),
       },
     });
+
+    if (cancellation.user) {
+      queueNotification({
+        type: cancellation.requestedTargetCourse
+          ? "COURSE_SWITCH_REVIEWED"
+          : "ENROLLMENT_CANCELLATION_REVIEWED",
+        user: cancellation.user,
+        data: {
+          cancellationId: cancellation.id,
+          courseId: cancellation.course?.id || null,
+          courseTitle: cancellation.course?.title || "your programme",
+          targetCourseId: cancellation.requestedTargetCourse?.id || null,
+          targetCourseTitle: cancellation.requestedTargetCourse?.title || null,
+          status: nextStatus,
+          statusLabel: REFUND_REVIEW_STATUS_LABELS[nextStatus] || nextStatus,
+          decisionNote: adjustmentNote,
+        },
+      });
+    }
 
     req.session.flash = {
       type: "success",

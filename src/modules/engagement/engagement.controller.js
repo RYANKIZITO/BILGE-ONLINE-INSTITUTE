@@ -5,21 +5,91 @@ import {
   respondToCourseQuestion,
   updateLiveSessionForInstructor,
 } from "../instructor/instructor-engagement.service.js";
+import { prisma } from "../../config/prisma.js";
+import { notify } from "../../../services/notificationService.js";
 
 const redirectToCourseWorkspace = (slug) => `/courses/${slug}?view=1#engagement`;
 const redirectToInstructorManage = (courseId) => `/instructor/courses/${courseId}/manage#engagement`;
+const SESSION_TYPE_LABELS = {
+  MID_WEEK: "Mid-week live session",
+  END_WEEK: "End-week live session",
+};
+const LIVE_SESSION_STATUS_LABELS = {
+  SCHEDULED: "Scheduled",
+  HOSTED: "Hosted",
+  MISSED: "Missed",
+  CANCELLED: "Cancelled",
+};
+
+const queueNotification = (payload) => {
+  notify(payload).catch((error) => {
+    console.error("[notifications] Failed to queue engagement notification.", error);
+  });
+};
+
+const getCourseStudents = async (courseId) =>
+  prisma.enrollment.findMany({
+    where: { courseId },
+    select: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          fullName: true,
+          email: true,
+          phoneNumber: true,
+          countryCode: true,
+        },
+      },
+    },
+  });
+
+const notifyCourseStudentsAboutLiveSession = async ({ type, session }) => {
+  const course = await prisma.course.findUnique({
+    where: { id: session.courseId },
+    select: { id: true, title: true },
+  });
+  const enrollments = await getCourseStudents(session.courseId);
+
+  enrollments.forEach((enrollment) => {
+    if (!enrollment.user) {
+      return;
+    }
+
+    queueNotification({
+      type,
+      user: enrollment.user,
+      data: {
+        liveSessionId: session.id,
+        courseId: session.courseId,
+        courseTitle: course?.title || "your programme",
+        sessionType: session.sessionType,
+        sessionTypeLabel: SESSION_TYPE_LABELS[session.sessionType] || "Live session",
+        scheduledStartTime: session.scheduledStartTime,
+        meetingUrl: session.meetingUrl || null,
+        status: session.status,
+        statusLabel: LIVE_SESSION_STATUS_LABELS[session.status] || session.status,
+      },
+    });
+  });
+};
 
 export const createLiveSession = async (req, res, next) => {
   try {
     const instructorId = req.session.user.id;
     const courseId = req.params.id;
 
-    await createLiveSessionForInstructor({
+    const session = await createLiveSessionForInstructor({
       courseId,
       instructorId,
       sessionType: String(req.body.sessionType || "").trim(),
       scheduledStartTime: req.body.scheduledStartTimeUtc || req.body.scheduledStartTime,
       meetingUrl: req.body.meetingUrl,
+    });
+
+    await notifyCourseStudentsAboutLiveSession({
+      type: "LIVE_SESSION_SCHEDULED",
+      session,
     });
 
     req.session.flash = {
@@ -52,6 +122,11 @@ export const updateLiveSession = async (req, res, next) => {
       actualStartTime: req.body.actualStartTime,
       endedAt: req.body.endedAt,
       durationMinutes: req.body.durationMinutes,
+    });
+
+    await notifyCourseStudentsAboutLiveSession({
+      type: "LIVE_SESSION_UPDATED",
+      session,
     });
 
     req.session.flash = {

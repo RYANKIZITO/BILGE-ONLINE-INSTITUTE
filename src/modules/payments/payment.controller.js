@@ -35,6 +35,68 @@ const queueNotification = (payload) => {
   });
 };
 
+const queuePaymentFailedNotification = async ({
+  reference,
+  provider,
+  user,
+  course,
+  amount,
+  currency,
+  failureReason
+}) => {
+  let payment = null;
+
+  if (reference) {
+    payment = await prisma.payment.findUnique({
+      where: { reference },
+      select: {
+        id: true,
+        amount: true,
+        currency: true,
+        provider: true,
+        reference: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            fullName: true,
+            email: true,
+            phoneNumber: true,
+            countryCode: true
+          }
+        },
+        course: {
+          select: {
+            id: true,
+            title: true
+          }
+        }
+      }
+    });
+  }
+
+  const notificationUser = payment?.user || user;
+
+  if (!notificationUser) {
+    return;
+  }
+
+  queueNotification({
+    type: 'PAYMENT_FAILED',
+    user: notificationUser,
+    data: {
+      paymentId: payment?.id || null,
+      reference: payment?.reference || reference || null,
+      provider: payment?.provider || provider || null,
+      amount: payment?.amount ?? amount ?? null,
+      currency: payment?.currency || currency || null,
+      courseId: payment?.course?.id || course?.id || null,
+      courseTitle: payment?.course?.title || course?.title || 'your programme',
+      failureReason: failureReason || 'The payment could not be completed.'
+    }
+  });
+};
+
 const finalizeSwitchTopUpIfNeeded = async (payment) => {
   const purpose = payment?.metadata?.paymentPurpose;
   const cancellationId = payment?.metadata?.cancellationId;
@@ -259,6 +321,15 @@ export const payForCourse = async (req, res, next) => {
         }
       });
     } catch (error) {
+      await queuePaymentFailedNotification({
+        provider,
+        user: dbUser,
+        course,
+        amount,
+        currency,
+        failureReason: error.message || 'Payment provider is not available right now.'
+      });
+
       req.session.flash = {
         type: 'error',
         message: error.message || 'Payment provider is not available right now.'
@@ -313,6 +384,11 @@ export const confirmPayment = async (req, res, next) => {
             data: { status: 'FAILED' }
           })
           .catch(() => {});
+        await queuePaymentFailedNotification({
+          reference,
+          provider,
+          failureReason: 'PayPal payment was cancelled.'
+        });
 
         req.session.flash = {
           type: 'info',
@@ -375,6 +451,11 @@ export const confirmPayment = async (req, res, next) => {
           data: { status: 'FAILED' }
         })
         .catch(() => {});
+      await queuePaymentFailedNotification({
+        reference,
+        provider,
+        failureReason: 'Payment verification failed.'
+      });
       return res.status(400).send('Payment failed');
     }
 
@@ -538,6 +619,11 @@ export const handlePesapalIpn = async (req, res, next) => {
           data: { status: 'FAILED' }
         })
         .catch(() => {});
+      await queuePaymentFailedNotification({
+        reference: payment.reference,
+        provider: 'pesapal',
+        failureReason: 'Pesapal reported the payment as unsuccessful.'
+      });
       return sendAcknowledgement(200);
     }
 

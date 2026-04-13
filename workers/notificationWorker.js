@@ -5,13 +5,14 @@ import {
   NOTIFICATION_QUEUE_NAME,
   createRedisConnection,
 } from "../queues/notificationQueue.js";
-import { sendSMS } from "../services/smsService.js";
+// import { sendSMS } from "../services/smsService.js";
 import {
   getMailConfig,
   sendBrevoEmail,
 } from "../src/modules/website/contact-mail.service.js";
 
 const WORKER_LOG_PREFIX = "[notifications:worker]";
+const INSTITUTE_NOTIFICATION_EMAIL = "bilgeonlineinstitute@gmail.com";
 const APP_BASE_URL =
   String(
     process.env.APP_BASE_URL ||
@@ -75,6 +76,82 @@ const formatSmsPhoneNumber = (user = {}) => {
 const getDisplayName = (user = {}) =>
   normalizeString(user.fullName) || normalizeString(user.name) || "Student";
 
+const formatDateTime = (value) => {
+  const date = value ? new Date(value) : null;
+
+  if (!date || Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toLocaleString("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Africa/Kampala",
+  });
+};
+
+const buildUserMessage = ({ subject, displayName, lines }) => {
+  const filteredLines = lines.filter(Boolean);
+
+  return {
+    emailSubject: subject,
+    emailText: [
+      `Hello ${displayName},`,
+      "",
+      ...filteredLines,
+      "",
+      "Regards,",
+      "Bilge Online Institute",
+    ].join("\n"),
+    emailHtml: `
+      <div style="font-family:Segoe UI,Arial,sans-serif;line-height:1.6;color:#181818">
+        <p>Hello ${escapeHtml(displayName)},</p>
+        ${filteredLines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}
+        <p style="margin-top:18px">Regards,<br />Bilge Online Institute</p>
+      </div>
+    `.trim(),
+  };
+};
+
+const buildAdminMessage = ({ subject, heading, fields }) => {
+  const rows = fields.filter(([, value]) => value !== null && value !== undefined && value !== "");
+
+  return {
+    subject,
+    text: [
+      heading,
+      "",
+      ...rows.map(([label, value]) => `${label}: ${value}`),
+    ].join("\n"),
+    html: `
+      <div style="font-family:Segoe UI,Arial,sans-serif;line-height:1.6;color:#181818">
+        <h2 style="margin:0 0 16px">${escapeHtml(heading)}</h2>
+        <table style="border-collapse:collapse">
+          <tbody>
+            ${rows
+              .map(
+                ([label, value]) => `
+                  <tr>
+                    <td style="padding:6px 14px 6px 0;font-weight:700;vertical-align:top">${escapeHtml(label)}</td>
+                    <td style="padding:6px 0">${escapeHtml(value)}</td>
+                  </tr>
+                `
+              )
+              .join("")}
+          </tbody>
+        </table>
+      </div>
+    `.trim(),
+  };
+};
+
+const withAdminMessage = (content, adminMessage) => ({
+  ...content,
+  adminEmailSubject: adminMessage.subject,
+  adminEmailText: adminMessage.text,
+  adminEmailHtml: adminMessage.html,
+});
+
 const buildEventContent = ({ type, user, data = {} }) => {
   const displayName = getDisplayName(user);
   const courseTitle = normalizeString(data.courseTitle) || "your programme";
@@ -93,50 +170,241 @@ const buildEventContent = ({ type, user, data = {} }) => {
       : null;
 
   if (type === "USER_REGISTERED") {
-    return {
-      emailSubject: "Welcome to Bilge Online Institute",
-      emailText: [
-        `Hello ${displayName},`,
-        "",
-        "Welcome to Bilge Online Institute.",
-        "Your account has been created successfully and you can now continue your learning journey on the platform.",
-        "",
-        "Regards,",
-        "Bilge Online Institute",
-      ].join("\n"),
-      emailHtml: `
-        <div style="font-family:Segoe UI,Arial,sans-serif;line-height:1.6;color:#181818">
-          <p>Hello ${escapeHtml(displayName)},</p>
-          <p>Welcome to <strong>Bilge Online Institute</strong>.</p>
-          <p>Your account has been created successfully and you can now continue your learning journey on the platform.</p>
-          <p style="margin-top:18px">Regards,<br />Bilge Online Institute</p>
-        </div>
-      `.trim(),
-      smsText: `Welcome to Bilge Online Institute, ${displayName}. Your account has been created successfully.`,
-    };
+    return withAdminMessage(
+      {
+        ...buildUserMessage({
+          subject: "Welcome to Bilge Online Institute",
+          displayName,
+          lines: [
+            "Welcome to Bilge Online Institute.",
+            "Your account has been created successfully and you can now continue your learning journey on the platform.",
+          ],
+        }),
+        smsText: `Welcome to Bilge Online Institute, ${displayName}. Your account has been created successfully.`,
+      },
+      buildAdminMessage({
+        subject: "[Bilge LMS] New student signup",
+        heading: "New student signup",
+        fields: [
+          ["Name", displayName],
+          ["Email", user.email],
+          ["Student ID", user.id],
+          ["Signup time", data.createdAt || new Date().toISOString()],
+        ],
+      })
+    );
   }
 
   if (type === "PAYMENT_SUCCESS") {
     return {
-      emailSubject: `Payment confirmed for ${courseTitle}`,
-      emailText: [
-        `Hello ${displayName},`,
-        "",
-        `Your payment for ${courseTitle} was successful${amountLabel ? ` (${amountLabel})` : ""}.`,
-        "Your enrollment has been confirmed.",
-        "",
-        "Regards,",
-        "Bilge Online Institute",
-      ].join("\n"),
-      emailHtml: `
-        <div style="font-family:Segoe UI,Arial,sans-serif;line-height:1.6;color:#181818">
-          <p>Hello ${escapeHtml(displayName)},</p>
-          <p>Your payment for <strong>${escapeHtml(courseTitle)}</strong> was successful${amountLabel ? ` (${escapeHtml(amountLabel)})` : ""}.</p>
-          <p>Your enrollment has been confirmed.</p>
-          <p style="margin-top:18px">Regards,<br />Bilge Online Institute</p>
-        </div>
-      `.trim(),
+      ...buildUserMessage({
+        subject: `Payment confirmed for ${courseTitle}`,
+        displayName,
+        lines: [
+          `Your payment for ${courseTitle} was successful${amountLabel ? ` (${amountLabel})` : ""}.`,
+          "Your enrollment has been confirmed.",
+        ],
+      }),
       smsText: `Bilge payment confirmed: ${courseTitle}${amountLabel ? ` (${amountLabel})` : ""}. Your enrollment is confirmed.`,
+    };
+  }
+
+  if (type === "PAYMENT_FAILED") {
+    const reason = normalizeString(data.failureReason) || "The payment could not be completed.";
+    return {
+      ...buildUserMessage({
+        subject: `Payment was not completed for ${courseTitle}`,
+        displayName,
+        lines: [
+          `Your payment for ${courseTitle} was not successful${amountLabel ? ` (${amountLabel})` : ""}.`,
+          reason,
+          "You can return to the course page and try again when you are ready.",
+        ],
+      }),
+      smsText: `Bilge payment unsuccessful: ${courseTitle}. Please try again from the course page.`,
+    };
+  }
+
+  if (type === "COURSE_ENROLLED") {
+    return {
+      ...buildUserMessage({
+        subject: `Enrollment confirmed for ${courseTitle}`,
+        displayName,
+        lines: [
+          `You are now enrolled in ${courseTitle}.`,
+          "You can open My Courses and continue with your lessons.",
+        ],
+      }),
+      smsText: `Bilge enrollment confirmed: ${courseTitle}.`,
+    };
+  }
+
+  if (type === "COURSE_COMPLETED") {
+    return {
+      ...buildUserMessage({
+        subject: `Course completed: ${courseTitle}`,
+        displayName,
+        lines: [
+          `Congratulations. You have completed ${courseTitle}.`,
+          "Your certificate eligibility can now be checked from the course page.",
+        ],
+      }),
+      smsText: `Bilge course completed: ${courseTitle}.`,
+    };
+  }
+
+  if (type === "COURSE_ASSIGNMENT_PUBLISHED") {
+    const assignmentTitle = normalizeString(data.assignmentTitle) || "A course assessment";
+    return {
+      ...buildUserMessage({
+        subject: `New course assignment: ${assignmentTitle}`,
+        displayName,
+        lines: [
+          `${assignmentTitle} has been published for ${courseTitle}.`,
+          "Open the course assessments area to review and submit it.",
+        ],
+      }),
+      smsText: `New Bilge assignment: ${assignmentTitle} for ${courseTitle}.`,
+    };
+  }
+
+  if (type === "COURSE_ASSIGNED") {
+    return {
+      ...buildUserMessage({
+        subject: `Course assigned: ${courseTitle}`,
+        displayName,
+        lines: [
+          `${courseTitle} has been assigned to you.`,
+          "Open your instructor dashboard to manage the course.",
+        ],
+      }),
+      smsText: `Bilge course assigned: ${courseTitle}.`,
+    };
+  }
+
+  if (type === "ENROLLMENT_CANCELLED") {
+    return withAdminMessage(
+      {
+        ...buildUserMessage({
+          subject: `Enrollment cancelled for ${courseTitle}`,
+          displayName,
+          lines: [
+            `Your enrollment for ${courseTitle} has been cancelled.`,
+            data.refundReviewStatus === "PENDING_REVIEW"
+              ? "Your request is awaiting admin review."
+              : null,
+          ],
+        }),
+        smsText: `Bilge enrollment cancelled: ${courseTitle}.`,
+      },
+      buildAdminMessage({
+        subject: "[Bilge LMS] Course cancellation",
+        heading: "Course cancellation submitted",
+        fields: [
+          ["Student", displayName],
+          ["Email", user.email],
+          ["Course", courseTitle],
+          ["Reason", data.reasonLabel || data.reasonOption],
+          ["Details", data.reasonText],
+          ["Refund review", data.refundReviewStatus],
+          ["Cancellation ID", data.cancellationId],
+        ],
+      })
+    );
+  }
+
+  if (type === "COURSE_SWITCH_REQUESTED") {
+    const targetCourseTitle = normalizeString(data.targetCourseTitle) || "the selected course";
+    return withAdminMessage(
+      {
+        ...buildUserMessage({
+          subject: `Course switch requested: ${courseTitle}`,
+          displayName,
+          lines: [
+            `Your enrollment for ${courseTitle} has been cancelled and your switch request to ${targetCourseTitle} is awaiting admin review.`,
+            data.switchFinancialSummary || null,
+          ],
+        }),
+        smsText: `Bilge switch requested: ${courseTitle} to ${targetCourseTitle}.`,
+      },
+      buildAdminMessage({
+        subject: "[Bilge LMS] Course switch request",
+        heading: "Course switch request submitted",
+        fields: [
+          ["Student", displayName],
+          ["Email", user.email],
+          ["Current course", courseTitle],
+          ["Requested course", targetCourseTitle],
+          ["Reason", data.reasonLabel || data.reasonOption],
+          ["Details", data.reasonText],
+          ["Review status", data.refundReviewStatus],
+          ["Cancellation ID", data.cancellationId],
+        ],
+      })
+    );
+  }
+
+  if (type === "ENROLLMENT_CANCELLATION_REVIEWED") {
+    const statusLabel = normalizeString(data.statusLabel) || normalizeString(data.status) || "reviewed";
+    return {
+      ...buildUserMessage({
+        subject: `Cancellation review update for ${courseTitle}`,
+        displayName,
+        lines: [
+          `Your cancellation request for ${courseTitle} has been reviewed: ${statusLabel}.`,
+          normalizeString(data.decisionNote) || null,
+        ],
+      }),
+      smsText: `Bilge cancellation review update: ${courseTitle} - ${statusLabel}.`,
+    };
+  }
+
+  if (type === "COURSE_SWITCH_REVIEWED") {
+    const targetCourseTitle = normalizeString(data.targetCourseTitle) || "the requested course";
+    const statusLabel = normalizeString(data.statusLabel) || normalizeString(data.status) || "reviewed";
+    return {
+      ...buildUserMessage({
+        subject: `Course switch update for ${courseTitle}`,
+        displayName,
+        lines: [
+          `Your switch request from ${courseTitle} to ${targetCourseTitle} has been reviewed: ${statusLabel}.`,
+          normalizeString(data.decisionNote) || null,
+        ],
+      }),
+      smsText: `Bilge switch review update: ${courseTitle} - ${statusLabel}.`,
+    };
+  }
+
+  if (type === "LIVE_SESSION_SCHEDULED") {
+    const sessionLabel = normalizeString(data.sessionTypeLabel) || "Live session";
+    const scheduledLabel = formatDateTime(data.scheduledStartTime);
+    return {
+      ...buildUserMessage({
+        subject: `${sessionLabel} scheduled for ${courseTitle}`,
+        displayName,
+        lines: [
+          `${sessionLabel} has been scheduled for ${courseTitle}.`,
+          scheduledLabel ? `Scheduled time: ${scheduledLabel} EAT.` : null,
+          data.meetingUrl ? `Join link: ${data.meetingUrl}` : null,
+        ],
+      }),
+      smsText: `Bilge live session scheduled: ${courseTitle}${scheduledLabel ? ` at ${scheduledLabel} EAT` : ""}.`,
+    };
+  }
+
+  if (type === "LIVE_SESSION_UPDATED") {
+    const sessionLabel = normalizeString(data.sessionTypeLabel) || "Live session";
+    const statusLabel = normalizeString(data.statusLabel) || normalizeString(data.status) || "updated";
+    return {
+      ...buildUserMessage({
+        subject: `${sessionLabel} update for ${courseTitle}`,
+        displayName,
+        lines: [
+          `${sessionLabel} for ${courseTitle} has been updated: ${statusLabel}.`,
+          data.meetingUrl ? `Join link: ${data.meetingUrl}` : null,
+        ],
+      }),
+      smsText: `Bilge live session update: ${courseTitle} - ${statusLabel}.`,
     };
   }
 
@@ -179,28 +447,28 @@ const buildEventContent = ({ type, user, data = {} }) => {
   throw new Error(`Unsupported notification type: ${type}`);
 };
 
-const sendNotificationEmail = async ({ user, subject, text, html }) => {
+const sendNotificationEmail = async ({ user, recipient, subject, text, html }) => {
   const config = getMailConfig();
-  const recipient = normalizeString(user?.email).toLowerCase();
+  const destination = normalizeString(recipient || user?.email).toLowerCase();
 
   if (!config.isConfigured) {
     console.warn(`${WORKER_LOG_PREFIX} Email service is not configured. Skipping email delivery.`);
     return { delivered: false, skipped: true, reason: "not_configured" };
   }
 
-  if (!recipient) {
+  if (!destination) {
     return { delivered: false, skipped: true, reason: "missing_email" };
   }
 
   await sendBrevoEmail({
-    to: [recipient],
+    to: [destination],
     replyTo: config.replyTo || undefined,
     subject,
     text,
     html,
   });
 
-  return { delivered: true, skipped: false, recipient };
+  return { delivered: true, skipped: false, recipient: destination };
 };
 
 const processNotificationJob = async (job) => {
@@ -225,18 +493,40 @@ const processNotificationJob = async (job) => {
     failures.push({ channel: "email", error });
   }
 
-  const smsDestination = formatSmsPhoneNumber(user);
-  if (smsDestination) {
+  if (content.adminEmailSubject) {
     try {
-      const smsResult = await sendSMS(smsDestination, content.smsText);
-      results.push({ channel: "sms", ...smsResult });
+      const adminEmailResult = await sendNotificationEmail({
+        recipient: INSTITUTE_NOTIFICATION_EMAIL,
+        subject: content.adminEmailSubject,
+        text: content.adminEmailText,
+        html: content.adminEmailHtml,
+      });
+      results.push({ channel: "admin_email", ...adminEmailResult });
     } catch (error) {
-      console.error(`${WORKER_LOG_PREFIX} SMS delivery failed for ${type}.`, error);
-      failures.push({ channel: "sms", error });
+      console.error(`${WORKER_LOG_PREFIX} Admin email delivery failed for ${type}.`, error);
+      failures.push({ channel: "admin_email", error });
     }
-  } else {
-    results.push({ channel: "sms", delivered: false, skipped: true, reason: "missing_or_invalid_phone" });
   }
+
+  // SMS and WhatsApp delivery via Twilio are intentionally paused while
+  // notifications are email-only. Keep this block for easy re-enable later.
+  // const smsDestination = formatSmsPhoneNumber(user);
+  // if (smsDestination) {
+  //   try {
+  //     const smsResult = await sendSMS(smsDestination, content.smsText);
+  //     results.push({ channel: "sms", ...smsResult });
+  //   } catch (error) {
+  //     console.error(`${WORKER_LOG_PREFIX} SMS delivery failed for ${type}.`, error);
+  //     failures.push({ channel: "sms", error });
+  //   }
+  // } else {
+  //   results.push({ channel: "sms", delivered: false, skipped: true, reason: "missing_or_invalid_phone" });
+  // }
+  //
+  // const whatsappDestination = formatSmsPhoneNumber(user);
+  // if (whatsappDestination) {
+  //   Twilio WhatsApp delivery can be restored here when WhatsApp is enabled again.
+  // }
 
   const deliveredCount = results.filter((result) => result.delivered).length;
   const configuredFailureCount = failures.length;
@@ -274,4 +564,3 @@ worker.on("failed", (job, error) => {
 });
 
 console.log(`${WORKER_LOG_PREFIX} Worker is listening on queue "${NOTIFICATION_QUEUE_NAME}".`);
-

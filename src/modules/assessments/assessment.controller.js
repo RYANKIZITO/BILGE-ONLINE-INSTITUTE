@@ -1,11 +1,18 @@
 import { prisma } from "../../config/prisma.js";
 import { computeFinalCourseMark } from "./assessment.grading.service.js";
 import { syncCourseStatusFromContent } from "../courses/course.status.js";
+import { notify } from "../../../services/notificationService.js";
 
 const getFlash = (req) => {
   const flash = req.session.flash || null;
   req.session.flash = null;
   return flash;
+};
+
+const queueNotification = (payload) => {
+  notify(payload).catch((error) => {
+    console.error("[notifications] Failed to queue assessment notification.", error);
+  });
 };
 
 const getInstructorCourse = async (courseId, instructorId) =>
@@ -756,7 +763,7 @@ export const publishCourseAssessment = async (req, res, next) => {
 
     const assessment = await prisma.assessment.findFirst({
       where: { id: assessmentId, courseId: course.id },
-      select: { id: true, published: true },
+      select: { id: true, title: true, published: true },
     });
 
     if (!assessment) {
@@ -777,6 +784,39 @@ export const publishCourseAssessment = async (req, res, next) => {
       data: { published: true },
     });
     await syncCourseStatusFromContent(course.id);
+
+    const enrolledStudents = await prisma.enrollment.findMany({
+      where: { courseId: course.id },
+      select: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            fullName: true,
+            email: true,
+            phoneNumber: true,
+            countryCode: true,
+          },
+        },
+      },
+    });
+
+    enrolledStudents.forEach((enrollment) => {
+      if (!enrollment.user) {
+        return;
+      }
+
+      queueNotification({
+        type: "COURSE_ASSIGNMENT_PUBLISHED",
+        user: enrollment.user,
+        data: {
+          assignmentId: assessment.id,
+          assignmentTitle: assessment.title,
+          courseId: course.id,
+          courseTitle: course.title,
+        },
+      });
+    });
 
     req.session.flash = {
       type: "success",
