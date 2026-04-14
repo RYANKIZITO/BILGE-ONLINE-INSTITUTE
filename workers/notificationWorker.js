@@ -5,7 +5,6 @@ import {
   NOTIFICATION_QUEUE_NAME,
   createRedisConnection,
 } from "../queues/notificationQueue.js";
-// import { sendSMS } from "../services/smsService.js";
 import {
   getMailConfig,
   sendBrevoEmail,
@@ -21,29 +20,6 @@ const APP_BASE_URL =
       ""
   ).trim() || null;
 
-const COUNTRY_DIAL_CODES = {
-  AE: "971",
-  AU: "61",
-  BI: "257",
-  CA: "1",
-  DE: "49",
-  ET: "251",
-  FR: "33",
-  GB: "44",
-  GH: "233",
-  IN: "91",
-  KE: "254",
-  NG: "234",
-  NZ: "64",
-  RW: "250",
-  SA: "966",
-  SS: "211",
-  TZ: "255",
-  UG: "256",
-  US: "1",
-  ZA: "27",
-};
-
 const normalizeString = (value) => String(value || "").trim();
 
 const escapeHtml = (value) =>
@@ -53,25 +29,6 @@ const escapeHtml = (value) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
-
-const formatSmsPhoneNumber = (user = {}) => {
-  const phoneNumber = normalizeString(user.phoneNumber).replace(/[^\d+]/g, "");
-  if (!phoneNumber) {
-    return null;
-  }
-
-  if (phoneNumber.startsWith("+")) {
-    return phoneNumber;
-  }
-
-  const dialCode = COUNTRY_DIAL_CODES[normalizeString(user.countryCode).toUpperCase()];
-  if (!dialCode) {
-    return null;
-  }
-
-  const withoutLeadingZeroes = phoneNumber.replace(/^0+/, "");
-  return `+${dialCode}${withoutLeadingZeroes}`;
-};
 
 const getDisplayName = (user = {}) =>
   normalizeString(user.fullName) || normalizeString(user.name) || "Student";
@@ -180,7 +137,6 @@ const buildEventContent = ({ type, user, data = {} }) => {
             "Your account has been created successfully and you can now continue your learning journey on the platform.",
           ],
         }),
-        smsText: `Welcome to Bilge Online Institute, ${displayName}. Your account has been created successfully.`,
       },
       buildAdminMessage({
         subject: "[Bilge LMS] New student signup",
@@ -205,7 +161,6 @@ const buildEventContent = ({ type, user, data = {} }) => {
           "Your enrollment has been confirmed.",
         ],
       }),
-      smsText: `Bilge payment confirmed: ${courseTitle}${amountLabel ? ` (${amountLabel})` : ""}. Your enrollment is confirmed.`,
     };
   }
 
@@ -221,7 +176,6 @@ const buildEventContent = ({ type, user, data = {} }) => {
           "You can return to the course page and try again when you are ready.",
         ],
       }),
-      smsText: `Bilge payment unsuccessful: ${courseTitle}. Please try again from the course page.`,
     };
   }
 
@@ -235,7 +189,6 @@ const buildEventContent = ({ type, user, data = {} }) => {
           "You can open My Courses and continue with your lessons.",
         ],
       }),
-      smsText: `Bilge enrollment confirmed: ${courseTitle}.`,
     };
   }
 
@@ -249,7 +202,6 @@ const buildEventContent = ({ type, user, data = {} }) => {
           "Your certificate eligibility can now be checked from the course page.",
         ],
       }),
-      smsText: `Bilge course completed: ${courseTitle}.`,
     };
   }
 
@@ -264,7 +216,6 @@ const buildEventContent = ({ type, user, data = {} }) => {
           "Open the course assessments area to review and submit it.",
         ],
       }),
-      smsText: `New Bilge assignment: ${assignmentTitle} for ${courseTitle}.`,
     };
   }
 
@@ -278,7 +229,6 @@ const buildEventContent = ({ type, user, data = {} }) => {
           "Open your instructor dashboard to manage the course.",
         ],
       }),
-      smsText: `Bilge course assigned: ${courseTitle}.`,
     };
   }
 
@@ -295,7 +245,6 @@ const buildEventContent = ({ type, user, data = {} }) => {
               : null,
           ],
         }),
-        smsText: `Bilge enrollment cancelled: ${courseTitle}.`,
       },
       buildAdminMessage({
         subject: "[Bilge LMS] Course cancellation",
@@ -325,7 +274,6 @@ const buildEventContent = ({ type, user, data = {} }) => {
             data.switchFinancialSummary || null,
           ],
         }),
-        smsText: `Bilge switch requested: ${courseTitle} to ${targetCourseTitle}.`,
       },
       buildAdminMessage({
         subject: "[Bilge LMS] Course switch request",
@@ -355,7 +303,6 @@ const buildEventContent = ({ type, user, data = {} }) => {
           normalizeString(data.decisionNote) || null,
         ],
       }),
-      smsText: `Bilge cancellation review update: ${courseTitle} - ${statusLabel}.`,
     };
   }
 
@@ -371,7 +318,6 @@ const buildEventContent = ({ type, user, data = {} }) => {
           normalizeString(data.decisionNote) || null,
         ],
       }),
-      smsText: `Bilge switch review update: ${courseTitle} - ${statusLabel}.`,
     };
   }
 
@@ -388,7 +334,6 @@ const buildEventContent = ({ type, user, data = {} }) => {
           data.meetingUrl ? `Join link: ${data.meetingUrl}` : null,
         ],
       }),
-      smsText: `Bilge live session scheduled: ${courseTitle}${scheduledLabel ? ` at ${scheduledLabel} EAT` : ""}.`,
     };
   }
 
@@ -404,7 +349,6 @@ const buildEventContent = ({ type, user, data = {} }) => {
           data.meetingUrl ? `Join link: ${data.meetingUrl}` : null,
         ],
       }),
-      smsText: `Bilge live session update: ${courseTitle} - ${statusLabel}.`,
     };
   }
 
@@ -440,7 +384,6 @@ const buildEventContent = ({ type, user, data = {} }) => {
           <p style="margin-top:18px">Regards,<br />Bilge Online Institute</p>
         </div>
       `.trim(),
-      smsText: `Bilge certificate ready: ${courseTitle}.${data.verificationCode ? ` Code: ${data.verificationCode}.` : ""}`,
     };
   }
 
@@ -507,26 +450,6 @@ const processNotificationJob = async (job) => {
       failures.push({ channel: "admin_email", error });
     }
   }
-
-  // SMS and WhatsApp delivery via Twilio are intentionally paused while
-  // notifications are email-only. Keep this block for easy re-enable later.
-  // const smsDestination = formatSmsPhoneNumber(user);
-  // if (smsDestination) {
-  //   try {
-  //     const smsResult = await sendSMS(smsDestination, content.smsText);
-  //     results.push({ channel: "sms", ...smsResult });
-  //   } catch (error) {
-  //     console.error(`${WORKER_LOG_PREFIX} SMS delivery failed for ${type}.`, error);
-  //     failures.push({ channel: "sms", error });
-  //   }
-  // } else {
-  //   results.push({ channel: "sms", delivered: false, skipped: true, reason: "missing_or_invalid_phone" });
-  // }
-  //
-  // const whatsappDestination = formatSmsPhoneNumber(user);
-  // if (whatsappDestination) {
-  //   Twilio WhatsApp delivery can be restored here when WhatsApp is enabled again.
-  // }
 
   const deliveredCount = results.filter((result) => result.delivered).length;
   const configuredFailureCount = failures.length;

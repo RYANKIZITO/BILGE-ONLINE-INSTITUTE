@@ -221,24 +221,49 @@ const mapPublicFaq = (faq) => ({
 });
 
 const DR_MARWAN_GHALEB_PROFILE = {
-  name: "Dr. Marwan Ghaleb",
+  name: "Assist. Prof. Dr. Marwan Ghaleb",
   role: "Board Member | Business Management Specialist",
   office: "Trustee Board",
   summary:
-    "Brings a decade of management-field experience across behavioural finance, auditing, marketing, organisational behaviour, and accounting. His background combines senior audit practice with advanced business-management research and extensive publication in high-quality journals.",
+    "Brings extensive auditing, accounting, management, and behavioral finance experience to Bilge Online Institute. His background combines a PhD in behavioral finance, audit leadership with Deloitte Middle East, academic teaching in Istanbul, and voluntary management training with NGOs in Yemen.",
   label: "Board member",
   sortOrder: 2,
   profilePhotoUrl: "/public/website/faculty/marwan-ghaleb.jpg",
+  matchNames: ["Dr. Marwan Ghaleb"],
   resumeHighlights: [
-    "Former assistant manager auditor with Deloitte Middle East in Yemen",
-    "MBA from Istanbul Aydin University, Turkey",
-    "PhD in Business Management from Istanbul University, Turkey",
-    "Experience in behavioural finance, auditing, marketing, organisational behaviour, and accounting",
-    "Published extensively in high-quality journals",
+    "PhD in behavioral finance from Istanbul University, School of Business",
+    "Former assistant manager auditor at Deloitte Middle East, Yemen office",
+    "MBA from Istanbul Aydin University",
+    "Degree in accounting from Sana'a University, Yemen",
+    "Auditing industry experience from 2008 to 2026",
+    "Voluntary management trainer with several NGOs in Yemen",
+    "Full-time academic and lecturer in Istanbul, Turkiye",
+    "Research interests include management, organizational behavior, marketing, behavioral finance, auditing, and accounting",
+    "Published several papers in managerial science",
   ],
 };
 
-const REQUIRED_TRUSTEE_PROFILES = [DR_MARWAN_GHALEB_PROFILE];
+const DR_KUJTIM_HAMELI_PROFILE = {
+  name: "Asst. Prof. Dr. Kujtim Hameli",
+  role: "Board Member | Business Administration Specialist",
+  office: "Trustee Board",
+  summary:
+    "Brings academic expertise in business administration, organisational behaviour, research methods, human resource management, and strategic management. His background combines doctoral and MBA study at Istanbul University with research focused on people, organisations, and management practice.",
+  label: "Board member",
+  sortOrder: 3,
+  profilePhotoUrl: "/public/website/faculty/kujtim-hameli.jpg",
+  matchNames: ["Dr. Kujtim Hameli"],
+  resumeHighlights: [
+    "PhD in Business Administration from Istanbul University",
+    "MBA from Istanbul University",
+    "Research focus in organisational behaviour",
+    "Research methods expertise",
+    "Human Resource Management research interest",
+    "Strategic Management research interest",
+  ],
+};
+
+const REQUIRED_TRUSTEE_PROFILES = [DR_MARWAN_GHALEB_PROFILE, DR_KUJTIM_HAMELI_PROFILE];
 
 const DR_ABUBAKAR_LUJJA_BOARD_PROFILE = {
   name: "Dr. Abubakar Lujja, PhD",
@@ -292,6 +317,7 @@ const TRUSTEE_BOARD_CHAIN = [
   },
   DR_ABUBAKAR_LUJJA_BOARD_PROFILE,
   DR_MARWAN_GHALEB_PROFILE,
+  DR_KUJTIM_HAMELI_PROFILE,
   {
     role: "Trustee - Industry Relations",
     office: "Trustee Board",
@@ -514,28 +540,50 @@ const ensureRequiredLeadershipProfiles = (leadership) => {
   REQUIRED_TRUSTEE_PROFILES.forEach((requiredProfile) => {
     const requiredName = slugify(requiredProfile.name);
     const requiredRole = slugify(requiredProfile.role);
-    const alreadyIncluded = trustees.some((profile) => {
+    const requiredNameAliases = [
+      requiredName,
+      ...(Array.isArray(requiredProfile.matchNames)
+        ? requiredProfile.matchNames.map((name) => slugify(name))
+        : []),
+    ].filter(Boolean);
+    const matchingNameIndex = trustees.findIndex((profile) => {
       const profileName = slugify(profile.name);
-      return (
-        (requiredName && profileName === requiredName) ||
-        (!profileName && requiredRole && slugify(profile.role) === requiredRole)
-      );
+      return profileName && requiredNameAliases.includes(profileName);
     });
+    const matchingRoleIndex = trustees.findIndex(
+      (profile) => requiredRole && !slugify(profile.name) && slugify(profile.role) === requiredRole
+    );
+    const targetIndex = matchingNameIndex >= 0 ? matchingNameIndex : matchingRoleIndex;
 
-    if (!alreadyIncluded) {
-      trustees.push(
-        normalizeLeadershipEntry(
-          {
-            ...requiredProfile,
-            sortOrder: Number.isFinite(Number(requiredProfile.sortOrder))
-              ? Number(requiredProfile.sortOrder)
-              : trustees.length,
-          },
-          "trustee",
-          trustees.length
-        )
+    if (targetIndex >= 0) {
+      const existingProfile = trustees[targetIndex];
+      trustees[targetIndex] = normalizeLeadershipEntry(
+        {
+          ...existingProfile,
+          ...requiredProfile,
+          id: existingProfile.id,
+          sortOrder: Number.isFinite(Number(existingProfile.sortOrder))
+            ? Number(existingProfile.sortOrder)
+            : requiredProfile.sortOrder,
+        },
+        "trustee",
+        targetIndex
       );
+      return;
     }
+
+    trustees.push(
+      normalizeLeadershipEntry(
+        {
+          ...requiredProfile,
+          sortOrder: Number.isFinite(Number(requiredProfile.sortOrder))
+            ? Number(requiredProfile.sortOrder)
+            : trustees.length,
+        },
+        "trustee",
+        trustees.length
+      )
+    );
   });
 
   trustees.sort((a, b) => a.sortOrder - b.sortOrder || a.role.localeCompare(b.role));

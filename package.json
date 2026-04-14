@@ -34,7 +34,6 @@
     "qrcode": "^1.5.4",
     "stripe": "^12.10.0",
     "tus-js-client": "^4.3.1",
-    "twilio": "^5.13.1",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
