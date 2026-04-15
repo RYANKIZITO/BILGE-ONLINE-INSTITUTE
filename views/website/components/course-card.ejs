@@ -1,7 +1,7 @@
 <article class="glass-card course-card">
   <a class="course-cover-link" href="/programmes/<%= course.slug %>" aria-label="View <%= course.title %>">
     <img
-      class="course-cover-image"
+      class="course-cover-image <%= course.hasCustomCoverImage ? 'course-cover-image--wide' : '' %>"
       src="<%= course.coverImageUrl %>"
       alt="<%= course.title %> programme cover"
       loading="lazy"

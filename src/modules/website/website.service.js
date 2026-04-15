@@ -862,6 +862,48 @@ const buildSeo = ({
   canonicalPath: path,
 });
 
+const COURSE_COVER_IMAGE_OVERRIDES = {
+  "certificate-in-accounting-essentials": "/public/website/course-covers/accounting-essentials.webp",
+  "certificate-in-ai-and-ml": "/public/website/course-covers/ai-and-machine-learning.webp",
+  "certificate-in-banking-operations": "/public/website/course-covers/banking-operations.webp",
+  "certificate-in-blockchain-and-cryptocurrency": "/public/website/course-covers/blockchain-and-cryptocurrency.webp",
+  "certificate-in-business-administration-essentials-practical-sme-corporate-readiness-track":
+    "/public/website/course-covers/business-administration-essentials.webp",
+  "certificate-in-cloud-computing-aws-azure-google-cloud":
+    "/public/website/course-covers/cloud-computing-aws-azure-google-cloud.webp",
+  "certificate-in-cyber-security-fundamentals-entry-level-skills-track":
+    "/public/website/course-covers/cyber-security-fundamentals.webp",
+  "certificate-in-data-science-and-analytics-business-data-analyst-track":
+    "/public/website/course-covers/data-science-and-analytics.webp",
+  "certificate-in-database-management-and-sql": "/public/website/course-covers/database-management-and-sql.webp",
+  "certificate-in-devops-and-ci-cd": "/public/website/course-covers/devops-and-ci-cd.webp",
+  "certificate-in-digital-marketing-sme-practical-social-media-and-ads-track":
+    "/public/website/course-covers/digital-marketing.webp",
+  "certificate-in-entrepreneurship-and-startup-fundamentals-practical-sme-business-launch-track":
+    "/public/website/course-covers/entrepreneurship-and-startup-fundamentals.webp",
+  "certificate-in-financial-modeling-and-valuation": "/public/website/course-covers/financial-modeling-and-valuation.webp",
+  "certificate-in-financial-planning-and-wealth-management":
+    "/public/website/course-covers/financial-planning-and-wealth-management.webp",
+  "certificate-in-graphic-design-canva-adobe-basics-freelance-business-branding-track":
+    "/public/website/course-covers/graphic-design-canva-adobe-basics.webp",
+  "certificate-in-insurance-fundamentals": "/public/website/course-covers/insurance-fundamentals.webp",
+  "certificate-in-investment-analysis-and-portfolio-management":
+    "/public/website/course-covers/investment-analysis-and-portfolio-management.webp",
+  "certificate-in-mobile-app-development-android-ios": "/public/website/course-covers/mobile-app-development.webp",
+  "certificate-in-operations-and-supply-chain-management":
+    "/public/website/course-covers/operations-and-supply-chain-management.webp",
+  "certificate-in-programming-fundamentals-python-track":
+    "/public/website/course-covers/programming-fundamentals-python.webp",
+  "certificate-in-project-management-practical-agile-scrum-basics-track":
+    "/public/website/course-covers/project-management.webp",
+  "certificate-in-public-speaking-and-presentation-skills-professional-communication-leadership-track":
+    "/public/website/course-covers/public-speaking-presentation-skills.webp",
+  "certificate-in-risk-management": "/public/website/course-covers/risk-management.webp",
+  "certificate-in-ux-ui-design": "/public/website/course-covers/ux-ui-design.webp",
+  "certificate-in-website-designing-wordpress-practical-web-foundations":
+    "/public/website/course-covers/website-designing-wordpress.webp",
+};
+
 const getSiteSetting = async (key, fallback) => {
   const setting = await prisma.siteSetting.findUnique({
     where: { key },
@@ -900,10 +942,14 @@ const normalizeContactDetails = (value = {}) => {
   };
 };
 
+const getCustomProgrammeCoverUrl = (course) =>
+  COURSE_COVER_IMAGE_OVERRIDES[String(course?.slug || "").trim()] || null;
+
 const buildProgrammeCoverUrl = (course, variant = "card") =>
-  variant === "hero"
+  getCustomProgrammeCoverUrl(course) ||
+  (variant === "hero"
     ? `/programme-cover/${encodeURIComponent(String(course?.slug || "programme"))}/hero.svg`
-    : `/programme-cover/${encodeURIComponent(String(course?.slug || "programme"))}.svg`;
+    : `/programme-cover/${encodeURIComponent(String(course?.slug || "programme"))}.svg`);
 
 const getPublishedPageBySlug = (slug) =>
   prisma.page.findFirst({
@@ -929,6 +975,7 @@ const mapCourseCard = (course) => ({
   estimatedDuration: course.estimatedDuration || "Structured online programme",
   instructorName: course.instructor?.fullName || course.instructor?.name || "Bilge Instructor",
   instructorPhotoUrl: course.instructor?.profilePhotoUrl || null,
+  hasCustomCoverImage: Boolean(getCustomProgrammeCoverUrl(course)),
   coverImageUrl: buildProgrammeCoverUrl(course, "card"),
   heroCoverImageUrl: buildProgrammeCoverUrl(course, "hero"),
   priceUgandanUsd: Number(course.priceUgandanUsd || 0),
