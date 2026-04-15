@@ -1,16 +1,12 @@
 import "../src/config/load-env.js";
 
-import { Worker } from "bullmq";
-import {
-  NOTIFICATION_QUEUE_NAME,
-  createRedisConnection,
-} from "../queues/notificationQueue.js";
+import { pathToFileURL } from "url";
 import {
   getMailConfig,
   sendBrevoEmail,
 } from "../src/modules/website/contact-mail.service.js";
 
-const WORKER_LOG_PREFIX = "[notifications:worker]";
+const DELIVERY_LOG_PREFIX = "[notifications:brevo]";
 const INSTITUTE_NOTIFICATION_EMAIL = "bilgeonlineinstitute@gmail.com";
 const APP_BASE_URL =
   String(
@@ -457,7 +453,7 @@ const sendNotificationEmail = async ({ user, recipient, subject, text, html }) =
   const destination = normalizeString(recipient || user?.email).toLowerCase();
 
   if (!config.isConfigured) {
-    console.warn(`${WORKER_LOG_PREFIX} Email service is not configured. Skipping email delivery.`);
+    console.warn(`${DELIVERY_LOG_PREFIX} Email service is not configured. Skipping email delivery.`);
     return { delivered: false, skipped: true, reason: "not_configured" };
   }
 
@@ -476,8 +472,7 @@ const sendNotificationEmail = async ({ user, recipient, subject, text, html }) =
   return { delivered: true, skipped: false, recipient: destination };
 };
 
-const processNotificationJob = async (job) => {
-  const payload = job?.data || {};
+export const processNotificationPayload = async (payload = {}) => {
   const type = normalizeString(payload.type).toUpperCase();
   const user = payload.user || {};
   const data = payload.data || {};
@@ -494,7 +489,7 @@ const processNotificationJob = async (job) => {
     });
     results.push({ channel: "email", ...emailResult });
   } catch (error) {
-    console.error(`${WORKER_LOG_PREFIX} Email delivery failed for ${type}.`, error);
+    console.error(`${DELIVERY_LOG_PREFIX} Email delivery failed for ${type}.`, error);
     failures.push({ channel: "email", error });
   }
 
@@ -508,7 +503,7 @@ const processNotificationJob = async (job) => {
       });
       results.push({ channel: "admin_email", ...adminEmailResult });
     } catch (error) {
-      console.error(`${WORKER_LOG_PREFIX} Admin email delivery failed for ${type}.`, error);
+      console.error(`${DELIVERY_LOG_PREFIX} Admin email delivery failed for ${type}.`, error);
       failures.push({ channel: "admin_email", error });
     }
   }
@@ -528,24 +523,6 @@ const processNotificationJob = async (job) => {
   };
 };
 
-const workerConnection = createRedisConnection();
-
-const worker = new Worker(NOTIFICATION_QUEUE_NAME, processNotificationJob, {
-  connection: workerConnection,
-  concurrency: Number.parseInt(String(process.env.NOTIFICATION_WORKER_CONCURRENCY || "5"), 10) || 5,
-});
-
-worker.on("completed", (job, result) => {
-  console.log(
-    `${WORKER_LOG_PREFIX} Job ${job?.id || "unknown"} completed for ${result?.type || job?.name || "notification"}.`
-  );
-});
-
-worker.on("failed", (job, error) => {
-  console.error(
-    `${WORKER_LOG_PREFIX} Job ${job?.id || "unknown"} failed for ${job?.name || "notification"}.`,
-    error
-  );
-});
-
-console.log(`${WORKER_LOG_PREFIX} Worker is listening on queue "${NOTIFICATION_QUEUE_NAME}".`);
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  console.log(`${DELIVERY_LOG_PREFIX} Notifications are delivered directly through Brevo.`);
+}

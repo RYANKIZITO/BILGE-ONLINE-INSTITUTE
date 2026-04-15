@@ -1,3 +1,5 @@
+import { processNotificationPayload } from "../workers/notificationWorker.js";
+
 const NOTIFICATION_LOG_PREFIX = "[notifications:dispatcher]";
 
 const normalizeString = (value) => String(value || "").trim();
@@ -76,45 +78,36 @@ export const notify = async ({ type, user, data = {} }) => {
   const serializedUser = serializeUser(user);
 
   if (!normalizedType || !serializedUser.id) {
-    console.warn(`${NOTIFICATION_LOG_PREFIX} Skipping enqueue because notification type or user is missing.`);
+    console.warn(`${NOTIFICATION_LOG_PREFIX} Skipping delivery because notification type or user is missing.`);
     return { queued: false, reason: "invalid_payload" };
   }
 
   try {
-    const { notificationQueue } = await import("../queues/notificationQueue.js");
     const payload = {
       type: normalizedType,
       user: serializedUser,
       data,
-      queuedAt: new Date().toISOString(),
+      dispatchedAt: new Date().toISOString(),
     };
 
-    const job = await notificationQueue.add(normalizedType, payload, {
-      jobId: buildNotificationJobId({ type: normalizedType, user: serializedUser, data }),
-      attempts: 3,
-      backoff: {
-        type: "exponential",
-        delay: 5000,
-      },
-    });
+    const result = await processNotificationPayload(payload);
 
-    return {
-      queued: true,
-      jobId: job.id,
-    };
-  } catch (error) {
-    if (/jobId/i.test(String(error?.message || "")) && /exists/i.test(String(error?.message || ""))) {
-      return {
-        queued: true,
-        duplicate: true,
-        reason: "duplicate_job",
-      };
-    }
-
-    console.error(`${NOTIFICATION_LOG_PREFIX} Failed to enqueue ${normalizedType}.`, error);
     return {
       queued: false,
-      reason: "enqueue_failed",
+      delivered: result.deliveredCount > 0,
+      direct: true,
+      type: result.type,
+      results: result.results,
+      failureCount: result.failureCount,
+      notificationId: buildNotificationJobId({ type: normalizedType, user: serializedUser, data }),
+    };
+  } catch (error) {
+    console.error(`${NOTIFICATION_LOG_PREFIX} Failed to deliver ${normalizedType}.`, error);
+    return {
+      queued: false,
+      delivered: false,
+      direct: true,
+      reason: "delivery_failed",
       error: error?.message || String(error),
     };
   }
