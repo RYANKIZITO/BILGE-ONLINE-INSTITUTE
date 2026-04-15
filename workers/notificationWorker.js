@@ -152,31 +152,62 @@ const buildEventContent = ({ type, user, data = {} }) => {
   }
 
   if (type === "PAYMENT_SUCCESS") {
-    return {
-      ...buildUserMessage({
-        subject: `Payment confirmed for ${courseTitle}`,
-        displayName,
-        lines: [
-          `Your payment for ${courseTitle} was successful${amountLabel ? ` (${amountLabel})` : ""}.`,
-          "Your enrollment has been confirmed.",
+    return withAdminMessage(
+      {
+        ...buildUserMessage({
+          subject: `Payment confirmed for ${courseTitle}`,
+          displayName,
+          lines: [
+            `Your payment for ${courseTitle} was successful${amountLabel ? ` (${amountLabel})` : ""}.`,
+            "Your enrollment has been confirmed.",
+          ],
+        }),
+      },
+      buildAdminMessage({
+        subject: "[Bilge LMS] Payment confirmed",
+        heading: "Payment confirmed",
+        fields: [
+          ["Student", displayName],
+          ["Email", user.email],
+          ["Course", courseTitle],
+          ["Amount", amountLabel],
+          ["Provider", data.provider],
+          ["Reference", data.reference],
+          ["Payment ID", data.paymentId],
         ],
-      }),
-    };
+      })
+    );
   }
 
   if (type === "PAYMENT_FAILED") {
     const reason = normalizeString(data.failureReason) || "The payment could not be completed.";
-    return {
-      ...buildUserMessage({
-        subject: `Payment was not completed for ${courseTitle}`,
-        displayName,
-        lines: [
-          `Your payment for ${courseTitle} was not successful${amountLabel ? ` (${amountLabel})` : ""}.`,
-          reason,
-          "You can return to the course page and try again when you are ready.",
+    return withAdminMessage(
+      {
+        ...buildUserMessage({
+          subject: `Payment was not completed for ${courseTitle}`,
+          displayName,
+          lines: [
+            `Your payment for ${courseTitle} was not successful${amountLabel ? ` (${amountLabel})` : ""}.`,
+            reason,
+            "You can return to the course page and try again when you are ready.",
+          ],
+        }),
+      },
+      buildAdminMessage({
+        subject: "[Bilge LMS] Payment failed",
+        heading: "Payment failed",
+        fields: [
+          ["Student", displayName],
+          ["Email", user.email],
+          ["Course", courseTitle],
+          ["Amount", amountLabel],
+          ["Provider", data.provider],
+          ["Reference", data.reference],
+          ["Payment ID", data.paymentId],
+          ["Reason", reason],
         ],
-      }),
-    };
+      })
+    );
   }
 
   if (type === "COURSE_ENROLLED") {
@@ -294,31 +325,62 @@ const buildEventContent = ({ type, user, data = {} }) => {
 
   if (type === "ENROLLMENT_CANCELLATION_REVIEWED") {
     const statusLabel = normalizeString(data.statusLabel) || normalizeString(data.status) || "reviewed";
-    return {
-      ...buildUserMessage({
-        subject: `Cancellation review update for ${courseTitle}`,
-        displayName,
-        lines: [
-          `Your cancellation request for ${courseTitle} has been reviewed: ${statusLabel}.`,
-          normalizeString(data.decisionNote) || null,
+    const decisionNote = normalizeString(data.decisionNote) || null;
+    return withAdminMessage(
+      {
+        ...buildUserMessage({
+          subject: `Cancellation review update for ${courseTitle}`,
+          displayName,
+          lines: [
+            `Your cancellation request for ${courseTitle} has been reviewed: ${statusLabel}.`,
+            decisionNote,
+          ],
+        }),
+      },
+      buildAdminMessage({
+        subject: "[Bilge LMS] Cancellation review update",
+        heading: "Cancellation review update",
+        fields: [
+          ["Student", displayName],
+          ["Email", user.email],
+          ["Course", courseTitle],
+          ["Status", statusLabel],
+          ["Decision note", decisionNote],
+          ["Cancellation ID", data.cancellationId],
         ],
-      }),
-    };
+      })
+    );
   }
 
   if (type === "COURSE_SWITCH_REVIEWED") {
     const targetCourseTitle = normalizeString(data.targetCourseTitle) || "the requested course";
     const statusLabel = normalizeString(data.statusLabel) || normalizeString(data.status) || "reviewed";
-    return {
-      ...buildUserMessage({
-        subject: `Course switch update for ${courseTitle}`,
-        displayName,
-        lines: [
-          `Your switch request from ${courseTitle} to ${targetCourseTitle} has been reviewed: ${statusLabel}.`,
-          normalizeString(data.decisionNote) || null,
+    const decisionNote = normalizeString(data.decisionNote) || null;
+    return withAdminMessage(
+      {
+        ...buildUserMessage({
+          subject: `Course switch update for ${courseTitle}`,
+          displayName,
+          lines: [
+            `Your switch request from ${courseTitle} to ${targetCourseTitle} has been reviewed: ${statusLabel}.`,
+            decisionNote,
+          ],
+        }),
+      },
+      buildAdminMessage({
+        subject: "[Bilge LMS] Course switch review update",
+        heading: "Course switch review update",
+        fields: [
+          ["Student", displayName],
+          ["Email", user.email],
+          ["Current course", courseTitle],
+          ["Requested course", targetCourseTitle],
+          ["Status", statusLabel],
+          ["Decision note", decisionNote],
+          ["Cancellation ID", data.cancellationId],
         ],
-      }),
-    };
+      })
+    );
   }
 
   if (type === "LIVE_SESSION_SCHEDULED") {
