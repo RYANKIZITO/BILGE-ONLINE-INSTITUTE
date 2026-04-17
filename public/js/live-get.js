@@ -174,9 +174,16 @@
 
   const runSwapTransition = async (swapOperation) => {
     if (typeof document.startViewTransition === "function") {
-      const transition = document.startViewTransition(() => {
+      let transition = null;
+
+      try {
+        transition = document.startViewTransition(() => {
+          swapOperation();
+        });
+      } catch {
         swapOperation();
-      });
+        return;
+      }
 
       try {
         await transition.finished;

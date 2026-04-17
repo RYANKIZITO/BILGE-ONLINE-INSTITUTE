@@ -1,3 +1,4 @@
+(function () {
 const WEBSITE_LANGUAGE_KEY = "bilge-language-preference";
 const WEBSITE_LEGACY_LANGUAGE_KEY = "bilge-website-language";
 const WEBSITE_SOURCE_LANGUAGE = "en";
@@ -662,3 +663,4 @@ const initializeLanguagePreferences = (root) => {
 
 window.__runBilgeLanguageEnhancements = initializeLanguagePreferences;
 initializeLanguagePreferences(document);
+})();

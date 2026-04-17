@@ -1,3 +1,4 @@
+(function () {
 const WEBSITE_THEME_KEY = "bilge-website-theme";
 const WEBSITE_THEME_API_ENDPOINT = "/preferences/theme";
 const prefersLightScheme = window.matchMedia("(prefers-color-scheme: light)");
@@ -110,10 +111,14 @@ const initializeThemeControls = (root) => {
 window.__runBilgeThemeEnhancements = initializeThemeControls;
 initializeThemeControls(document);
 
-prefersLightScheme.addEventListener("change", (event) => {
-  if (readStoredTheme()) {
-    return;
-  }
+if (!window.__bilgeThemeSystemListenerBound) {
+  window.__bilgeThemeSystemListenerBound = true;
+  prefersLightScheme.addEventListener("change", (event) => {
+    if (readStoredTheme()) {
+      return;
+    }
 
-  applyTheme(event.matches ? "light" : "dark", false);
-});
+    applyTheme(event.matches ? "light" : "dark", false);
+  });
+}
+})();

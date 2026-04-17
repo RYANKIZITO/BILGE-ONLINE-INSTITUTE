@@ -204,7 +204,11 @@ const PUBLIC_FAQ_CATEGORY_LABELS = {
 const PUBLIC_FAQ_EXCLUDED_CATEGORIES = new Set(["Instructors", "Staff", "Administration"]);
 
 const PUBLIC_FAQ_EXCLUDED_PATTERNS = [/instructor/i, /staff/i, /programme switch/i];
-const HIDDEN_TRUSTEE_ROLE_SLUGS = new Set(["trustee-strategy-growth"]);
+const HIDDEN_LEADERSHIP_ROLE_SLUGS = new Set(["trustee-strategy-growth"]);
+const HIDDEN_LEADERSHIP_TEXT_PATTERNS = [
+  /\btrustee\s*[-–—]?\s*strategy\s*(?:&|and)\s*growth\b/i,
+  /\bstrategy\s*(?:&|and)\s*growth\b/i,
+];
 
 const isPublicLearnerFaq = (faq) => {
   const category = String(faq?.category || "").trim();
@@ -501,6 +505,19 @@ const normalizeLeadershipEntry = (entry = {}, group, index = 0) => {
   };
 };
 
+const isHiddenLeadershipProfile = (entry = {}) => {
+  const roleSlug = slugify(entry.role);
+  const haystack = [entry.id, entry.name, entry.role, entry.label]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    HIDDEN_LEADERSHIP_ROLE_SLUGS.has(roleSlug) ||
+    HIDDEN_LEADERSHIP_TEXT_PATTERNS.some((pattern) => pattern.test(haystack))
+  );
+};
+
 const normalizeLeadershipProfiles = (value = {}) => {
   const trusteesSource =
     Array.isArray(value?.trustees) && value.trustees.length ? value.trustees : TRUSTEE_BOARD_CHAIN;
@@ -511,16 +528,10 @@ const normalizeLeadershipProfiles = (value = {}) => {
 
   const trustees = trusteesSource
     .map((item, index) => normalizeLeadershipEntry(item, "trustee", index))
-    .filter(
-      (item) =>
-        item.role &&
-        item.office &&
-        item.summary &&
-        !HIDDEN_TRUSTEE_ROLE_SLUGS.has(slugify(item.role))
-    );
+    .filter((item) => item.role && item.office && item.summary && !isHiddenLeadershipProfile(item));
   const administrators = administratorsSource
     .map((item, index) => normalizeLeadershipEntry(item, "administration", index))
-    .filter((item) => item.role && item.office && item.summary);
+    .filter((item) => item.role && item.office && item.summary && !isHiddenLeadershipProfile(item));
 
   trustees.sort((a, b) => a.sortOrder - b.sortOrder || a.role.localeCompare(b.role));
   administrators.sort((a, b) => a.sortOrder - b.sortOrder || a.role.localeCompare(b.role));
@@ -529,8 +540,10 @@ const normalizeLeadershipProfiles = (value = {}) => {
 };
 
 const ensureRequiredLeadershipProfiles = (leadership) => {
-  const trustees = [...leadership.trustees];
-  const administrators = [...leadership.administrators];
+  const trustees = leadership.trustees.filter((profile) => !isHiddenLeadershipProfile(profile));
+  const administrators = leadership.administrators.filter(
+    (profile) => !isHiddenLeadershipProfile(profile)
+  );
 
   REQUIRED_TRUSTEE_PROFILES.forEach((requiredProfile) => {
     const requiredName = slugify(requiredProfile.name);
@@ -581,7 +594,8 @@ const ensureRequiredLeadershipProfiles = (leadership) => {
     );
   });
 
-  trustees.sort((a, b) => a.sortOrder - b.sortOrder || a.role.localeCompare(b.role));
+  const visibleTrustees = trustees.filter((profile) => !isHiddenLeadershipProfile(profile));
+  visibleTrustees.sort((a, b) => a.sortOrder - b.sortOrder || a.role.localeCompare(b.role));
 
   REQUIRED_ADMINISTRATION_PROFILES.forEach((requiredProfile) => {
     const requiredName = slugify(requiredProfile.name);
@@ -625,12 +639,15 @@ const ensureRequiredLeadershipProfiles = (leadership) => {
     );
   });
 
-  administrators.sort((a, b) => a.sortOrder - b.sortOrder || a.role.localeCompare(b.role));
+  const visibleAdministrators = administrators.filter(
+    (profile) => !isHiddenLeadershipProfile(profile)
+  );
+  visibleAdministrators.sort((a, b) => a.sortOrder - b.sortOrder || a.role.localeCompare(b.role));
 
   return {
     ...leadership,
-    trustees,
-    administrators,
+    trustees: visibleTrustees,
+    administrators: visibleAdministrators,
   };
 };
 
@@ -1634,12 +1651,12 @@ export const getFacultyPageData = async () => {
   });
 
   return {
-    trustees: leadershipContent.trustees.map((trustee) =>
-      mapPublicLeadershipProfile(trustee, "trustee")
-    ),
-    administrators: leadershipContent.administrators.map((administrator) =>
-      mapPublicLeadershipProfile(administrator, "administration")
-    ),
+    trustees: leadershipContent.trustees
+      .filter((trustee) => !isHiddenLeadershipProfile(trustee))
+      .map((trustee) => mapPublicLeadershipProfile(trustee, "trustee")),
+    administrators: leadershipContent.administrators
+      .filter((administrator) => !isHiddenLeadershipProfile(administrator))
+      .map((administrator) => mapPublicLeadershipProfile(administrator, "administration")),
     faculty: faculty.map((profile) => ({
       slug: profile.slug,
       name: profile.user.fullName || profile.user.name,

@@ -1,3 +1,4 @@
+(function () {
 const HEADER_TOP_OFFSET = 24;
 const HEADER_SCROLL_TOLERANCE = 10;
 const MOBILE_NAV_BREAKPOINT = window.matchMedia("(max-width: 980px)");
@@ -171,3 +172,4 @@ if (document.readyState === "loading") {
 } else {
   initializeWebsiteHeader(document);
 }
+})();

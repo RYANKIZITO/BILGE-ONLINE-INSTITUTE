@@ -14,9 +14,10 @@
           </div>
         </section>
 
-        <% if (trustees?.length) { %>
-          <% const leadTrustee = trustees[0] || null; %>
-          <% const supportingTrustees = trustees.slice(1); %>
+        <% const visibleTrustees = (trustees || []).filter((profile) => !/strategy\s*(?:&|and)\s*growth/i.test(`${profile?.id || ""} ${profile?.name || ""} ${profile?.role || ""} ${profile?.label || ""}`)); %>
+        <% if (visibleTrustees.length) { %>
+          <% const leadTrustee = visibleTrustees[0] || null; %>
+          <% const supportingTrustees = visibleTrustees.slice(1); %>
           <section class="section">
             <div class="container">
               <div class="section-copy faculty-section-copy">
@@ -207,7 +208,7 @@
           </div>
         </section>
 
-        <% const leadershipProfiles = [...(trustees || []), ...(administrators || [])]; %>
+        <% const leadershipProfiles = [...visibleTrustees, ...(administrators || [])].filter((profile) => !/strategy\s*(?:&|and)\s*growth/i.test(`${profile?.id || ""} ${profile?.name || ""} ${profile?.role || ""} ${profile?.label || ""}`)); %>
         <% leadershipProfiles.forEach((profile, profileIndex) => { %>
           <div class="profile-modal profile-modal--leadership <%= profileIndex === 0 ? 'profile-modal--featured-trustee' : '' %>" id="<%= profile.modalId %>" hidden>
             <div class="profile-modal__backdrop" data-profile-modal-close></div>
