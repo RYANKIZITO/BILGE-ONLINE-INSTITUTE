@@ -35,6 +35,7 @@ const initializeWebsiteHeader = (root = document) => {
     siteHeader.dataset.navOpen = nextState ? "true" : "false";
     navToggle.setAttribute("aria-expanded", nextState ? "true" : "false");
     navToggle.setAttribute("aria-label", nextState ? "Close navigation" : "Open navigation");
+    document.body?.classList.toggle("site-nav-open", nextState);
 
     if (nextState) {
       siteHeader.classList.remove("site-header--hidden");
@@ -132,6 +133,7 @@ const initializeWebsiteHeader = (root = document) => {
     window.addEventListener("focus", handleFocus);
 
     window.__cleanupBilgeWebsiteHeader = () => {
+      document.body?.classList.remove("site-nav-open");
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("keydown", handleKeydown);
       window.removeEventListener("focus", handleFocus);

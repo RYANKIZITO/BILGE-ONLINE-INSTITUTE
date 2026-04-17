@@ -204,6 +204,7 @@ const PUBLIC_FAQ_CATEGORY_LABELS = {
 const PUBLIC_FAQ_EXCLUDED_CATEGORIES = new Set(["Instructors", "Staff", "Administration"]);
 
 const PUBLIC_FAQ_EXCLUDED_PATTERNS = [/instructor/i, /staff/i, /programme switch/i];
+const HIDDEN_TRUSTEE_ROLE_SLUGS = new Set(["trustee-strategy-growth"]);
 
 const isPublicLearnerFaq = (faq) => {
   const category = String(faq?.category || "").trim();
@@ -340,18 +341,6 @@ const TRUSTEE_BOARD_CHAIN = [
       "Legal oversight",
       "Policy and compliance",
       "Governance risk awareness",
-    ],
-  },
-  {
-    role: "Trustee - Strategy & Growth",
-    office: "Trustee Board",
-    summary:
-      "Advises on institutional growth, innovation pathways, sustainability, and long-term expansion priorities.",
-    label: "Trustee",
-    resumeHighlights: [
-      "Institutional strategy",
-      "Growth planning",
-      "Innovation and sustainability",
     ],
   },
 ];
@@ -522,7 +511,13 @@ const normalizeLeadershipProfiles = (value = {}) => {
 
   const trustees = trusteesSource
     .map((item, index) => normalizeLeadershipEntry(item, "trustee", index))
-    .filter((item) => item.role && item.office && item.summary);
+    .filter(
+      (item) =>
+        item.role &&
+        item.office &&
+        item.summary &&
+        !HIDDEN_TRUSTEE_ROLE_SLUGS.has(slugify(item.role))
+    );
   const administrators = administratorsSource
     .map((item, index) => normalizeLeadershipEntry(item, "administration", index))
     .filter((item) => item.role && item.office && item.summary);
