@@ -875,42 +875,97 @@ const buildSeo = ({
 });
 
 const COURSE_COVER_IMAGE_OVERRIDES = {
+  "certificate-in-3d-design-and-animation-blender-maya":
+    "/public/website/course-covers/3d-design-and-animation.webp",
   "certificate-in-accounting-essentials": "/public/website/course-covers/accounting-essentials.webp",
   "certificate-in-ai-and-ml": "/public/website/course-covers/ai-and-machine-learning.webp",
+  "certificate-in-arabic": "/public/website/course-covers/arabic.webp",
   "certificate-in-banking-operations": "/public/website/course-covers/banking-operations.webp",
   "certificate-in-blockchain-and-cryptocurrency": "/public/website/course-covers/blockchain-and-cryptocurrency.webp",
   "certificate-in-business-administration-essentials-practical-sme-corporate-readiness-track":
     "/public/website/course-covers/business-administration-essentials.webp",
+  "certificate-in-chinese": "/public/website/course-covers/chinese.webp",
   "certificate-in-cloud-computing-aws-azure-google-cloud":
     "/public/website/course-covers/cloud-computing-aws-azure-google-cloud.webp",
+  "certificate-in-conflict-resolution": "/public/website/course-covers/conflict-resolution.webp",
+  "certificate-in-cross-cultural-communication": "/public/website/course-covers/cross-cultural-communication.webp",
+  "certificate-in-customer-experience-cx-management":
+    "/public/website/course-covers/customer-experience-cx-management.webp",
   "certificate-in-cyber-security-fundamentals-entry-level-skills-track":
     "/public/website/course-covers/cyber-security-fundamentals.webp",
   "certificate-in-data-science-and-analytics-business-data-analyst-track":
     "/public/website/course-covers/data-science-and-analytics.webp",
+  "certificate-in-data-science-and-machine-learning":
+    "/public/website/course-covers/data-science-and-machine-learning.webp",
   "certificate-in-database-management-and-sql": "/public/website/course-covers/database-management-and-sql.webp",
   "certificate-in-devops-and-ci-cd": "/public/website/course-covers/devops-and-ci-cd.webp",
   "certificate-in-digital-marketing-sme-practical-social-media-and-ads-track":
     "/public/website/course-covers/digital-marketing.webp",
+  "certificate-in-digital-transformation": "/public/website/course-covers/digital-transformation.webp",
+  "certificate-in-emotional-intelligence": "/public/website/course-covers/emotional-intelligence.webp",
+  "certificate-in-english": "/public/website/course-covers/english-for-academic-and-professional-purposes.webp",
+  "certificate-in-english-for-academic-and-professional-purposes":
+    "/public/website/course-covers/english-for-academic-and-professional-purposes.webp",
   "certificate-in-entrepreneurship-and-startup-fundamentals-practical-sme-business-launch-track":
     "/public/website/course-covers/entrepreneurship-and-startup-fundamentals.webp",
+  "certificate-in-esg-and-sustainable-business": "/public/website/course-covers/esg-and-sustainable-business.webp",
+  "certificate-in-ethical-hacking-advanced-cyber":
+    "/public/website/course-covers/ethical-hacking-advanced-cyber.webp",
+  "certificate-in-family-business-management": "/public/website/course-covers/family-business-management.webp",
   "certificate-in-financial-modeling-and-valuation": "/public/website/course-covers/financial-modeling-and-valuation.webp",
   "certificate-in-financial-planning-and-wealth-management":
     "/public/website/course-covers/financial-planning-and-wealth-management.webp",
+  "certificate-in-french": "/public/website/course-covers/french.webp",
+  "certificate-in-german": "/public/website/course-covers/german.webp",
   "certificate-in-graphic-design-canva-adobe-basics-freelance-business-branding-track":
     "/public/website/course-covers/graphic-design-canva-adobe-basics.webp",
+  "certificate-in-health-informatics": "/public/website/course-covers/health-informatics.webp",
+  "certificate-in-healthcare-management": "/public/website/course-covers/healthcare-management.webp",
   "certificate-in-insurance-fundamentals": "/public/website/course-covers/insurance-fundamentals.webp",
+  "certificate-in-influencer-marketing": "/public/website/course-covers/influencer-marketing.webp",
+  "certificate-in-instructional-design": "/public/website/course-covers/instructional-design.webp",
+  "certificate-in-internet-of-things-iot": "/public/website/course-covers/internet-of-things-iot.webp",
   "certificate-in-investment-analysis-and-portfolio-management":
     "/public/website/course-covers/investment-analysis-and-portfolio-management.webp",
+  "certificate-in-japanese": "/public/website/course-covers/japanese.webp",
+  "certificate-in-kiswahili": "/public/website/course-covers/kiswahili.webp",
+  "certificate-in-korean": "/public/website/course-covers/korean.webp",
+  "certificate-in-leadership-fundamentals": "/public/website/course-covers/leadership-fundamentals.webp",
   "certificate-in-mobile-app-development-android-ios": "/public/website/course-covers/mobile-app-development.webp",
+  "certificate-in-negotiation-skills": "/public/website/course-covers/negotiation-skills.webp",
+  "certificate-in-online-teaching-e-learning-design":
+    "/public/website/course-covers/online-teaching-e-learning-design.webp",
   "certificate-in-operations-and-supply-chain-management":
     "/public/website/course-covers/operations-and-supply-chain-management.webp",
+  "certificate-in-podcasting-and-audio-production":
+    "/public/website/course-covers/podcasting-and-audio-production.webp",
   "certificate-in-programming-fundamentals-python-track":
     "/public/website/course-covers/programming-fundamentals-python.webp",
+  "certificate-in-productivity-and-personal-effectiveness":
+    "/public/website/course-covers/productivity-and-personal-effectiveness.webp",
   "certificate-in-project-management-practical-agile-scrum-basics-track":
     "/public/website/course-covers/project-management.webp",
+  "certificate-in-portuguese": "/public/website/course-covers/portuguese.webp",
   "certificate-in-public-speaking-and-presentation-skills-professional-communication-leadership-track":
     "/public/website/course-covers/public-speaking-presentation-skills.webp",
+  "certificate-in-quantum-computing-basics": "/public/website/course-covers/quantum-computing-basics.webp",
+  "certificate-in-remote-work-virtual-collaboration-skills":
+    "/public/website/course-covers/remote-work-virtual-collaboration-skills.webp",
+  "certificate-in-renewable-energy-and-green-skills":
+    "/public/website/course-covers/renewable-energy-and-green-skills.webp",
+  "certificate-in-renewable-energy-fundamentals":
+    "/public/website/course-covers/renewable-energy-and-green-skills.webp",
   "certificate-in-risk-management": "/public/website/course-covers/risk-management.webp",
+  "certificate-in-robotics-process-automation-rpa":
+    "/public/website/course-covers/robotics-process-automation-rpa.webp",
+  "certificate-in-smart-systems-and-automation":
+    "/public/website/course-covers/smart-systems-and-automation.webp",
+  "certificate-in-spanish": "/public/website/course-covers/spanish.webp",
+  "certificate-in-sustainability-and-green-skills":
+    "/public/website/course-covers/esg-and-sustainable-business.webp",
+  "certificate-in-swahili": "/public/website/course-covers/kiswahili.webp",
+  "certificate-in-time-management": "/public/website/course-covers/time-management.webp",
+  "certificate-in-turkish": "/public/website/course-covers/turkish.webp",
   "certificate-in-ux-ui-design": "/public/website/course-covers/ux-ui-design.webp",
   "certificate-in-website-designing-wordpress-practical-web-foundations":
     "/public/website/course-covers/website-designing-wordpress.webp",
